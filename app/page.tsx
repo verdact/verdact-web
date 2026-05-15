@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export const metadata = {
   title: 'Verdact — Chargeback Dispute Management for Stripe Merchants',
   description: 'Verdact helps Stripe merchants monitor their VAMP ratio and submit bank-compliant chargeback dispute rebuttals. Keep your Stripe account alive.',
@@ -7,6 +9,15 @@ export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-white px-6">
       <div className="text-center max-w-xl">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/verdact-logo.png"
+            alt="Verdact"
+            width={140}
+            height={140}
+            priority
+          />
+        </div>
         <h1 className="text-4xl font-bold text-gray-900">Verdact</h1>
         <p className="mt-4 text-lg text-gray-600 leading-relaxed">
           Chargeback dispute management for Stripe merchants.
