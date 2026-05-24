@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { GMAIL_REVIEWER_COOKIE, REVIEWER_COOKIE } from '../../../lib/reviewer';
+import { GMAIL_REVIEWER_COOKIE, GMAIL_TOKEN_COOKIE, REVIEWER_COOKIE } from '../../../lib/reviewer';
 import { PageFrame, SectionLabel } from '../../_components/site-chrome';
 
 type ConnectionsPageProps = {
@@ -18,6 +18,9 @@ export default async function ConnectionsPage({ searchParams }: ConnectionsPageP
   const cookieStore = await cookies();
   const isReviewer = cookieStore.get(REVIEWER_COOKIE)?.value === '1';
   const gmailReviewer = cookieStore.get(GMAIL_REVIEWER_COOKIE)?.value;
+  const gmailToken = cookieStore.get(GMAIL_TOKEN_COOKIE)?.value;
+  const gmailConnected = Boolean(gmailReviewer && gmailToken);
+  const gmailExpired = Boolean(gmailReviewer && !gmailToken);
   const googleConfigured = Boolean(
     process.env.NEXT_PUBLIC_APP_URL && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
   );
@@ -105,7 +108,7 @@ export default async function ConnectionsPage({ searchParams }: ConnectionsPageP
                       </ul>
                     </div>
                     <div className="md:min-w-[210px] md:text-right">
-                      {gmailReviewer ? (
+                      {gmailConnected ? (
                         <div>
                           <p className="mb-3 rounded-full bg-[#e5f1ee] px-3 py-1 text-center text-sm font-semibold text-[#235f5c] md:inline-block">
                             Connected for review
@@ -118,12 +121,19 @@ export default async function ConnectionsPage({ searchParams }: ConnectionsPageP
                           </a>
                         </div>
                       ) : googleConfigured ? (
-                        <a
-                          className="inline-flex w-full justify-center rounded-md bg-[#172033] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26364f] md:w-auto"
-                          href="/api/google/start"
-                        >
-                          Connect Gmail
-                        </a>
+                        <div>
+                          {gmailExpired ? (
+                            <p className="mb-3 rounded-full bg-[#fff4ef] px-3 py-1 text-center text-sm font-semibold text-[#7d321f] md:inline-block">
+                              Session expired
+                            </p>
+                          ) : null}
+                          <a
+                            className="inline-flex w-full justify-center rounded-md bg-[#172033] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26364f] md:w-auto"
+                            href="/api/google/start"
+                          >
+                            {gmailExpired ? 'Reconnect Gmail' : 'Connect Gmail'}
+                          </a>
+                        </div>
                       ) : (
                         <span className="inline-flex w-full justify-center rounded-md border border-[#d9e1dc] bg-[#f7f9f6] px-4 py-3 text-sm font-semibold text-[#657480] md:w-auto">
                           OAuth not configured

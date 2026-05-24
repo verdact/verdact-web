@@ -138,10 +138,10 @@ export default async function EvidenceImportPage({ searchParams }: ImportPagePro
                   </form>
                 ) : (
                   <div className="rounded-md border border-[#d99882] bg-[#fff4ef] px-4 py-3 text-sm leading-6 text-[#7d321f]">
-                    The temporary Gmail token is missing or expired. Return to
-                    Connections and choose Connect Gmail again.
+                    The temporary Gmail token is missing or expired. Reconnect
+                    Gmail to continue the reviewer flow.
                     <div className="mt-3">
-                      <a className="font-semibold text-[#235f5c] underline" href="/settings/connections">
+                      <a className="font-semibold text-[#235f5c] underline" href="/api/google/start">
                         Reconnect Gmail
                       </a>
                     </div>
