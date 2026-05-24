@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
@@ -7,6 +6,7 @@ import {
   GMAIL_TOKEN_COOKIE,
   REVIEWER_COOKIE,
 } from '../../../lib/reviewer';
+import { PageFrame, SectionLabel } from '../../_components/site-chrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,7 @@ type ImportPageProps = {
     gmail?: string;
     q?: string;
     message?: string;
+    marked?: string;
   }>;
 };
 
@@ -45,7 +46,7 @@ type MessageSummary = {
 };
 
 export const metadata = {
-  title: 'Import Gmail Evidence — Verdact',
+  title: 'Import Gmail Evidence - Verdact',
   description: 'Reviewer Gmail evidence import preview for Verdact.',
 };
 
@@ -62,6 +63,7 @@ export default async function EvidenceImportPage({ searchParams }: ImportPagePro
   const encryptedToken = cookieStore.get(GMAIL_TOKEN_COOKIE)?.value;
   const accessToken = encryptedToken ? decryptFromCookie(encryptedToken) : null;
   const query = (params.q || '').trim();
+  const marked = params.marked === '1';
 
   let summaries: MessageSummary[] = [];
   let selectedMessage: GmailMessage | null = null;
@@ -78,165 +80,174 @@ export default async function EvidenceImportPage({ searchParams }: ImportPagePro
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f7f3] px-6 py-8 text-[#172033]">
-      <div className="mx-auto max-w-6xl">
-        <header className="flex flex-col gap-4 border-b border-[#ddd7ca] pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/verdact-logo.png" alt="Verdact" width={42} height={42} priority />
+    <PageFrame active="evidence" reviewer>
+      <section className="px-5 py-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-4 border-b border-[#d9e1dc] pb-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-[#172033]">Verdact</p>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#6c7581]">
-                Evidence import
+              <SectionLabel>Gmail evidence preview</SectionLabel>
+              <h1 className="mt-3 text-4xl font-semibold text-[#172033]">
+                Search and inspect Gmail evidence
+              </h1>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-[#43515d]">
+                Reviewers can confirm that Verdact reads Gmail only after
+                explicit consent and only for a user-entered evidence query.
               </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm font-semibold">
+              <a className="rounded-md border border-[#bdc9c3] bg-white px-3 py-2 text-[#235f5c] hover:border-[#235f5c]" href="/settings/connections">
+                Connections
+              </a>
+              <a className="rounded-md border border-[#bdc9c3] bg-white px-3 py-2 text-[#235f5c] hover:border-[#235f5c]" href="/privacy">
+                Privacy
+              </a>
             </div>
           </div>
-          <a
-            className="rounded-md border border-[#cfc8b8] px-3 py-2 text-sm font-medium text-[#354254] transition hover:bg-white"
-            href="/settings/connections"
-          >
-            Connections
-          </a>
-        </header>
 
-        <section className="grid gap-8 py-10 lg:grid-cols-[1fr_420px]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2f6f73]">
-              Gmail reviewer flow
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-normal text-[#172033]">
-              Search and preview selected Gmail evidence
-            </h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#5f6976]">
-              The reviewer can search Gmail after explicit OAuth consent, inspect
-              message metadata, and preview one selected message before import.
-              Verdact does not run background inbox scans.
-            </p>
-
-            <div className="mt-6 rounded-lg border border-[#d8d1c3] bg-white p-5">
-              <div className="mb-4 text-sm text-[#5f6976]">
-                Connected Gmail account:{' '}
-                <span className="font-semibold text-[#172033]">
-                  {reviewerProfile?.email || 'Connected'}
-                </span>
-              </div>
-
-              {accessToken ? (
-                <form action="/evidence/import" className="flex flex-col gap-3 sm:flex-row">
-                  <label className="sr-only" htmlFor="q">
-                    Gmail search query
-                  </label>
-                  <input
-                    id="q"
-                    name="q"
-                    className="min-w-0 flex-1 rounded-md border border-[#cfc7b8] px-3 py-3 text-base outline-none transition focus:border-[#2f6f73] focus:ring-2 focus:ring-[#2f6f73]/20"
-                    defaultValue={query}
-                    placeholder="Example: from:customer@example.com newer_than:90d"
-                  />
-                  <button
-                    className="rounded-md bg-[#172033] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#22304a]"
-                    type="submit"
-                  >
-                    Search Gmail
-                  </button>
-                </form>
-              ) : (
-                <div className="rounded-md border border-[#e5b1a1] bg-[#fff4ef] px-4 py-3 text-sm leading-6 text-[#8a3b26]">
-                  The temporary Gmail token is missing or expired. Return to
-                  Connections and choose Connect Gmail again.
+          <div className="grid gap-8 py-8 lg:grid-cols-[1fr_420px]">
+            <div>
+              <div className="rounded-lg border border-[#d9e1dc] bg-white p-5 shadow-[0_18px_55px_rgba(23,32,51,0.08)]">
+                <div className="mb-4 text-sm text-[#52616d]">
+                  Connected Gmail account:{' '}
+                  <span className="font-semibold text-[#172033]">
+                    {reviewerProfile?.email || 'Connected reviewer account'}
+                  </span>
                 </div>
-              )}
 
-              <p className="mt-3 text-xs leading-5 text-[#7b8490]">
-                Search uses Google Gmail API read-only access for the reviewer
-                session. The temporary token expires from this browser session.
-              </p>
-            </div>
+                {accessToken ? (
+                  <form action="/evidence/import" className="flex flex-col gap-3 sm:flex-row">
+                    <label className="sr-only" htmlFor="q">
+                      Gmail search query
+                    </label>
+                    <input
+                      id="q"
+                      name="q"
+                      className="min-w-0 flex-1 rounded-md border border-[#bdc9c3] px-3 py-3 text-base text-[#172033] outline-none transition placeholder:text-[#7a8791] focus:border-[#235f5c] focus:ring-2 focus:ring-[#235f5c]/20"
+                      defaultValue={query}
+                      placeholder="Example: from:customer@example.com newer_than:90d"
+                    />
+                    <button
+                      className="rounded-md bg-[#172033] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26364f]"
+                      type="submit"
+                    >
+                      Search Gmail
+                    </button>
+                  </form>
+                ) : (
+                  <div className="rounded-md border border-[#d99882] bg-[#fff4ef] px-4 py-3 text-sm leading-6 text-[#7d321f]">
+                    The temporary Gmail token is missing or expired. Return to
+                    Connections and choose Connect Gmail again.
+                    <div className="mt-3">
+                      <a className="font-semibold text-[#235f5c] underline" href="/settings/connections">
+                        Reconnect Gmail
+                      </a>
+                    </div>
+                  </div>
+                )}
 
-            {searchError ? (
-              <div className="mt-5 rounded-md border border-[#e5b1a1] bg-[#fff4ef] px-4 py-3 text-sm text-[#8a3b26]">
-                {searchError}
+                <p className="mt-3 text-xs leading-5 text-[#657480]">
+                  Search uses Google Gmail API read-only access for the current
+                  reviewer session. The access token is short-lived and stored in
+                  an encrypted HTTP-only cookie.
+                </p>
               </div>
-            ) : null}
 
-            <div className="mt-5 grid gap-3">
-              {query && !searchError && summaries.length === 0 ? (
-                <div className="rounded-lg border border-[#d8d1c3] bg-white p-5 text-sm text-[#5f6976]">
-                  No messages matched that query.
+              {searchError ? (
+                <div className="mt-5 rounded-md border border-[#d99882] bg-[#fff4ef] px-4 py-3 text-sm font-medium text-[#7d321f]">
+                  {searchError}
                 </div>
               ) : null}
 
-              {summaries.map((message) => (
-                <article
-                  className="rounded-lg border border-[#d8d1c3] bg-white p-5 transition hover:border-[#b8ad9c]"
-                  key={message.id}
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xs text-[#7b8490]">{message.date}</p>
-                      <h2 className="mt-1 text-lg font-semibold text-[#172033]">
-                        {message.subject || '(No subject)'}
-                      </h2>
-                      <p className="mt-2 text-sm text-[#5f6976]">From: {message.from}</p>
-                      <p className="text-sm text-[#5f6976]">To: {message.to}</p>
-                      <p className="mt-3 text-sm leading-6 text-[#697381]">{message.snippet}</p>
-                    </div>
-                    <a
-                      className="shrink-0 rounded-md border border-[#172033] px-3 py-2 text-sm font-semibold text-[#172033] transition hover:bg-[#172033] hover:text-white"
-                      href={`/evidence/import?q=${encodeURIComponent(query)}&message=${message.id}`}
-                    >
-                      Preview
-                    </a>
+              <div className="mt-5 grid gap-3">
+                {query && !searchError && summaries.length === 0 ? (
+                  <div className="rounded-lg border border-[#d9e1dc] bg-white p-5 text-sm text-[#52616d]">
+                    No messages matched that query.
                   </div>
-                </article>
-              ))}
-            </div>
-          </div>
+                ) : null}
 
-          <aside className="rounded-lg border border-[#d8d1c3] bg-white p-5 shadow-[0_18px_45px_rgba(23,32,51,0.08)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2f6f73]">
-              Selected message
-            </p>
-            {selectedMessage ? (
-              <div className="mt-4">
-                <h2 className="text-lg font-semibold text-[#172033]">
-                  {headerValue(selectedMessage, 'Subject') || '(No subject)'}
-                </h2>
-                <dl className="mt-4 space-y-2 text-sm text-[#5f6976]">
-                  <div>
-                    <dt className="font-medium text-[#172033]">From</dt>
-                    <dd>{headerValue(selectedMessage, 'From')}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-[#172033]">Date</dt>
-                    <dd>{headerValue(selectedMessage, 'Date')}</dd>
-                  </div>
-                </dl>
-                <div className="mt-5 max-h-[420px] overflow-auto rounded-md border border-[#e2ddd2] bg-[#fbfaf7] p-4 text-sm leading-6 text-[#354254]">
-                  {extractText(selectedMessage).slice(0, 5000) ||
-                    selectedMessage.snippet ||
-                    'No readable text body returned for this message.'}
-                </div>
-                <button
-                  className="mt-5 w-full rounded-md bg-[#2f6f73] px-4 py-3 text-sm font-semibold text-white"
-                  type="button"
-                >
-                  Mark selected for evidence draft
-                </button>
-                <p className="mt-3 text-xs leading-5 text-[#7b8490]">
-                  Reviewer demo only: this confirms the selected-message import
-                  step without submitting a dispute.
-                </p>
+                {summaries.map((message) => (
+                  <article
+                    className="rounded-lg border border-[#d9e1dc] bg-white p-5 transition hover:border-[#235f5c]"
+                    key={message.id}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-[#657480]">{message.date}</p>
+                        <h2 className="mt-1 text-lg font-semibold text-[#172033]">
+                          {message.subject || '(No subject)'}
+                        </h2>
+                        <p className="mt-2 text-sm text-[#52616d]">From: {message.from}</p>
+                        <p className="text-sm text-[#52616d]">To: {message.to}</p>
+                        <p className="mt-3 text-sm leading-6 text-[#43515d]">{message.snippet}</p>
+                      </div>
+                      <a
+                        className="shrink-0 rounded-md border border-[#172033] px-3 py-2 text-center text-sm font-semibold text-[#172033] transition hover:bg-[#172033] hover:text-white"
+                        href={`/evidence/import?q=${encodeURIComponent(query)}&message=${message.id}`}
+                      >
+                        Preview
+                      </a>
+                    </div>
+                  </article>
+                ))}
               </div>
-            ) : (
-              <p className="mt-4 text-sm leading-6 text-[#5f6976]">
-                Search Gmail and select Preview to inspect one message that
-                could support a dispute evidence draft.
+            </div>
+
+            <aside className="h-fit rounded-lg border border-[#d9e1dc] bg-white p-5 shadow-[0_18px_55px_rgba(23,32,51,0.08)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#235f5c]">
+                Selected message
               </p>
-            )}
-          </aside>
-        </section>
-      </div>
-    </main>
+              {selectedMessage ? (
+                <div className="mt-4">
+                  {marked ? (
+                    <div className="mb-4 rounded-md border border-[#bdd9d3] bg-[#f2faf7] px-4 py-3 text-sm font-medium text-[#235f5c]">
+                      Selected message staged for the reviewer evidence draft.
+                    </div>
+                  ) : null}
+                  <h2 className="text-lg font-semibold text-[#172033]">
+                    {headerValue(selectedMessage, 'Subject') || '(No subject)'}
+                  </h2>
+                  <dl className="mt-4 space-y-3 text-sm text-[#52616d]">
+                    <div>
+                      <dt className="font-semibold text-[#172033]">From</dt>
+                      <dd>{headerValue(selectedMessage, 'From')}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-[#172033]">Date</dt>
+                      <dd>{headerValue(selectedMessage, 'Date')}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-5 max-h-[420px] overflow-auto rounded-md border border-[#d9e1dc] bg-[#f7f9f6] p-4 text-sm leading-6 text-[#344653]">
+                    {extractText(selectedMessage).slice(0, 5000) ||
+                      selectedMessage.snippet ||
+                      'No readable text body returned for this message.'}
+                  </div>
+                  <form action="/evidence/import" className="mt-5">
+                    <input type="hidden" name="q" value={query} />
+                    <input type="hidden" name="message" value={selectedMessage.id} />
+                    <input type="hidden" name="marked" value="1" />
+                    <button
+                      className="w-full rounded-md bg-[#235f5c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#194b48]"
+                      type="submit"
+                    >
+                      Mark selected for evidence draft
+                    </button>
+                  </form>
+                  <p className="mt-3 text-xs leading-5 text-[#657480]">
+                    Reviewer demo only: this confirms the selected-message
+                    import step without submitting a dispute.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm leading-6 text-[#52616d]">
+                  Search Gmail and select Preview to inspect one message that
+                  could support a dispute evidence draft.
+                </p>
+              )}
+            </aside>
+          </div>
+        </div>
+      </section>
+    </PageFrame>
   );
 }
 
