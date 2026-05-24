@@ -25,13 +25,13 @@ Open `http://localhost:3000`.
 Reviewer URL:
 
 ```text
-https://verdact.io/signin
+https://www.verdact.io/signin
 ```
 
 Reviewer instructions for Google:
 
 ```text
-1. Go to https://verdact.io/signin.
+1. Go to https://www.verdact.io/signin.
 2. Continue through the reviewer sign-in path. No 2FA is required on this reviewer path.
 3. Open Settings > Connections.
 4. Click Connect Gmail.
@@ -43,7 +43,7 @@ Reviewer instructions for Google:
 Required deployment environment variables:
 
 ```text
-NEXT_PUBLIC_APP_URL=https://verdact.io
+NEXT_PUBLIC_APP_URL=https://www.verdact.io
 NEXTAUTH_SECRET=<random production secret>
 GOOGLE_CLIENT_ID=<Google OAuth client ID>
 GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
@@ -53,7 +53,7 @@ REVIEWER_ACCESS_CODE=<optional reviewer gate code>
 Google Cloud OAuth redirect URI:
 
 ```text
-https://verdact.io/api/google/callback
+https://www.verdact.io/api/google/callback
 ```
 
 The reviewer flow uses `gmail.readonly`, starts only after a user clicks Connect Gmail, stores the temporary OAuth access token in an encrypted HTTP-only cookie, and does not persist Gmail data to a database.
