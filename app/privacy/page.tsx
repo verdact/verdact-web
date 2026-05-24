@@ -7,13 +7,13 @@ export default function PrivacyPage() {
   return (
     <main className="max-w-2xl mx-auto px-6 py-16 text-gray-800">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-sm text-gray-500 mb-10">Last updated: May 15, 2026</p>
+      <p className="text-sm text-gray-500 mb-10">Last updated: May 23, 2026</p>
 
       <div className="space-y-10">
 
         <section>
           <h2 className="text-xl font-semibold mb-2">1. Who We Are</h2>
-          <p>Verdact is a chargeback dispute management platform for Stripe merchants. We help merchants monitor their VAMP ratio and submit bank-compliant dispute rebuttals to Stripe.</p>
+          <p>Verdact is a chargeback dispute management platform for Stripe merchants. We help merchants monitor dispute-rate risk and prepare processor-ready dispute packets for Stripe submission.</p>
           <p className="mt-2">Contact: <a href="mailto:admin@verdact.io" className="text-blue-600 underline">admin@verdact.io</a></p>
         </section>
 
@@ -49,8 +49,8 @@ export default function PrivacyPage() {
           <p>We use your data solely to:</p>
           <ul className="list-disc ml-5 mt-2 space-y-1">
             <li>Identify relevant evidence for a chargeback dispute you are actively working on</li>
-            <li>Generate a dispute rebuttal submission to Stripe on your behalf</li>
-            <li>Calculate and display your VAMP ratio</li>
+            <li>Generate a dispute rebuttal submission to Stripe after your approval</li>
+            <li>Calculate and display estimated VAMP exposure</li>
             <li>Send transactional notifications about dispute deadlines and outcomes</li>
           </ul>
           <p className="mt-3">We do not:</p>
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc ml-5 mt-2 space-y-1">
             <li>We only request Gmail access when a user explicitly initiates an evidence search</li>
-            <li>Gmail data is used only to identify dispute-relevant emails such as order confirmations, shipping notifications, and customer communications</li>
+            <li>Gmail data is used only to identify dispute-relevant emails such as service delivery proof, usage confirmations, refund-policy references, and customer communications</li>
             <li>We do not use Gmail data for advertising or to build user profiles</li>
             <li>We do not allow humans to read your Gmail data except where you have given explicit consent or where required by law</li>
           </ul>
@@ -122,8 +122,10 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold mb-2">8. Data Retention</h2>
           <ul className="list-disc ml-5 space-y-1">
             <li>Active account data: retained while your account is active</li>
-            <li>Dispute evidence (Gmail/Slack extracts): deleted within 90 days of dispute resolution</li>
-            <li>Account data after deletion request: purged within 30 days</li>
+            <li>Raw Gmail/Slack imports not included in a submitted evidence packet: deleted within 90 days of dispute resolution</li>
+            <li>Submitted evidence packets: retained for at least 24 months or longer where card-network, legal, tax, fraud-prevention, or audit obligations require it</li>
+            <li>Customer PII in retained records: redacted on valid deletion request where retention rules allow</li>
+            <li>Account data after deletion request: purged or de-identified within 30 days unless retention rules require preservation</li>
           </ul>
         </section>
 
