@@ -4,6 +4,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Verdact",
   description: "Chargeback dispute management for Stripe merchants.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg?v=20260524", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=20260524", sizes: "32x32" },
+    ],
+    shortcut: "/favicon.ico?v=20260524",
+  },
 };
 
 export default function RootLayout({
