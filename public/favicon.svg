@@ -1,11 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2563eb" />
-      <stop offset="1" stop-color="#1e3a8a" />
+      <stop offset="0" stop-color="#1e3a8a" />
+      <stop offset="0.52" stop-color="#172554" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#22d3ee" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#ffffff" />
-  <path d="M16 8h32v21c0 15-8.5 23-16 26-7.5-3-16-11-16-26V8Z" fill="url(#shield)" />
-  <path d="m22 32 7 8 15-18" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M14 6h36v23c0 15.8-9.6 24.2-18 28-8.4-3.8-18-12.2-18-28V6Z" fill="url(#shield)" stroke="url(#edge)" stroke-width="3" stroke-linejoin="round" />
+  <path d="m22 32 7.5 8.3L44 23" fill="none" stroke="#ffffff" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

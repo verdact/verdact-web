@@ -6,10 +6,10 @@ export const metadata: Metadata = {
   description: "Chargeback dispute management for Stripe merchants.",
   icons: {
     icon: [
-      { url: "/favicon.svg?v=20260524", type: "image/svg+xml" },
-      { url: "/favicon.ico?v=20260524", sizes: "32x32" },
+      { url: "/favicon.svg?v=20260524dark", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=20260524dark", sizes: "32x32" },
     ],
-    shortcut: "/favicon.ico?v=20260524",
+    shortcut: "/favicon.ico?v=20260524dark",
   },
 };
 
