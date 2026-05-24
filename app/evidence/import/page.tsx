@@ -101,6 +101,9 @@ export default async function EvidenceImportPage({ searchParams }: ImportPagePro
               <a className="rounded-md border border-[#bdc9c3] bg-white px-3 py-2 text-[#235f5c] hover:border-[#235f5c]" href="/privacy">
                 Privacy
               </a>
+              <a className="rounded-md border border-[#bdc9c3] bg-white px-3 py-2 text-[#235f5c] hover:border-[#235f5c]" href="/terms">
+                Terms
+              </a>
             </div>
           </div>
 

@@ -35,6 +35,12 @@ export default function Home() {
               >
                 View privacy policy
               </a>
+              <a
+                className="inline-flex rounded-md border border-[#bdc9c3] bg-white px-5 py-3 text-sm font-semibold text-[#235f5c] transition hover:border-[#235f5c] hover:bg-[#f2faf7] focus:outline-none focus:ring-2 focus:ring-[#235f5c]/25"
+                href="/terms"
+              >
+                View terms of service
+              </a>
             </div>
           </div>
 

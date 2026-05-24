@@ -111,6 +111,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               <a className="text-[#235f5c] underline" href="/privacy">
                 Privacy policy
               </a>
+              <a className="text-[#235f5c] underline" href="/terms">
+                Terms of service
+              </a>
               <a className="text-[#235f5c] underline" href="mailto:admin@verdact.io">
                 Contact admin
               </a>

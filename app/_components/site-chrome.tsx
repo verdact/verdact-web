@@ -1,13 +1,14 @@
 import Image from 'next/image';
 
 type SiteHeaderProps = {
-  active?: 'home' | 'privacy' | 'signin' | 'connections' | 'evidence';
+  active?: 'home' | 'privacy' | 'signin' | 'connections' | 'evidence' | 'terms';
   reviewer?: boolean;
 };
 
 const navLinks = [
   { href: '/', label: 'Home', key: 'home' },
   { href: '/privacy', label: 'Privacy', key: 'privacy' },
+  { href: '/terms', label: 'Terms', key: 'terms' },
   { href: '/signin', label: 'Reviewer sign-in', key: 'signin' },
 ] as const;
 
