@@ -25,7 +25,7 @@ export default function PrivacyPage() {
               </h1>
               <p className="mt-3 max-w-2xl text-lg leading-8 text-[#43515d]">
                 Verdact uses connected account data only to prepare
-                merchant-approved chargeback evidence packets.
+                merchant-reviewed chargeback evidence records.
               </p>
             </div>
             <p className="w-fit rounded-full border border-[#d9e1dc] bg-[#f7f9f6] px-4 py-2 text-sm font-medium text-[#43515d]">
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
               <p>
                 Verdact is a chargeback dispute management platform for Stripe
                 merchants. We help merchants monitor dispute-rate risk and
-                prepare processor-ready dispute packets for Stripe submission.
+                organize dispute evidence records for merchant review.
               </p>
               <p className="mt-3">
                 Contact:{' '}
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
               <p>We use your data solely to:</p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
                 <li>Identify relevant evidence for a chargeback dispute you are actively working on</li>
-                <li>Generate a dispute rebuttal submission to Stripe after your approval</li>
+                <li>Prepare dispute evidence drafts for merchant review</li>
                 <li>Calculate and display estimated VAMP exposure</li>
                 <li>Send transactional notifications about dispute deadlines and outcomes</li>
               </ul>
@@ -176,8 +176,8 @@ export default function PrivacyPage() {
             <PolicySection title="8. Data Retention">
               <ul className="list-disc space-y-2 pl-5">
                 <li>Active account data: retained while your account is active</li>
-                <li>Raw Gmail or Slack imports not included in a submitted evidence packet: deleted within 90 days of dispute resolution</li>
-                <li>Submitted evidence packets: retained for at least 24 months or longer where card-network, legal, tax, fraud-prevention, or audit obligations require it</li>
+                <li>Raw Gmail or Slack imports not included in an evidence record: deleted within 90 days of dispute resolution</li>
+                <li>Evidence records: retained for at least 24 months or longer where card-network, legal, tax, fraud-prevention, or audit obligations require it</li>
                 <li>Customer PII in retained records: redacted on valid deletion request where retention rules allow</li>
                 <li>Account data after deletion request: purged or de-identified within 30 days unless retention rules require preservation</li>
               </ul>

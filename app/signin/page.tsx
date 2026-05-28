@@ -43,7 +43,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
                 ['Use', 'Evidence search preview'],
               ].map(([label, value]) => (
                 <div className="rounded-md border border-[#d9e1dc] bg-[#f7f9f6] p-4" key={label}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#235f5c]">
+                  <p className="text-xs font-semibold uppercase text-[#235f5c]">
                     {label}
                   </p>
                   <p className="mt-2 text-sm font-medium text-[#344653]">{value}</p>
@@ -60,7 +60,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
           <div className="rounded-lg border border-[#d9e1dc] bg-white p-6 shadow-[0_24px_70px_rgba(23,32,51,0.10)]">
             <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#235f5c]">
+              <p className="text-xs font-semibold uppercase text-[#235f5c]">
                 Review session
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-[#172033]">Continue to Verdact</h2>

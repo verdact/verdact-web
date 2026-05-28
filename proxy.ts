@@ -1,0 +1,53 @@
+import { updateSession } from './lib/supabase/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
+
+// Optimistic auth gates. The real authorization checks live in the Data Access
+// Layer (lib/dal.ts) and in route/server-action handlers; this just prevents
+// unnecessary renders and provides UX-level redirects.
+
+const AUTHED_REDIRECTS_AWAY_FROM = ['/login', '/signup'];
+
+function isProtectedPath(pathname: string): boolean {
+  return (
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/') ||
+    pathname === '/settings' ||
+    pathname.startsWith('/settings/')
+  );
+}
+
+function isAuthRoute(pathname: string): boolean {
+  return AUTHED_REDIRECTS_AWAY_FROM.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
+export async function proxy(request: NextRequest) {
+  const { response, user } = await updateSession(request);
+  const pathname = request.nextUrl.pathname;
+
+  if (isProtectedPath(pathname) && !user) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute(pathname) && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon files
+     * - Static assets (svg, png, jpg, jpeg, gif, webp, ico)
+     */
+    '/((?!_next/static|_next/image|favicon\\.ico|favicon\\.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+  ],
+};

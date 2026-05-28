@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 64" role="img" aria-labelledby="title">
+  <title id="title">Verdact wordmark</title>
+  <path d="M12 12 28 51" fill="none" stroke="#0F172A" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M48 12 28 51" fill="none" stroke="#B42318" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M15 15h15M18 23h12" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-linecap="square"/>
+  <text x="62" y="45" fill="#0F172A" font-family="Instrument Sans, Avenir Next, Segoe UI, sans-serif" font-size="42" font-weight="760">erdact</text>
+  <path d="M176 50h42" fill="none" stroke="#B42318" stroke-width="3" stroke-linecap="square"/>
+</svg>

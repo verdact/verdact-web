@@ -1,21 +1,211 @@
 @import "tailwindcss";
 
+/*
+ * Verdact design system v3
+ *
+ * Evidence Record / Payments Workbench identity. The palette is intentionally
+ * light, exact, and operational: slate record surfaces, blue for commands,
+ * red for decision pressure, teal for verified evidence, amber for deadlines.
+ *
+ * Tokens:
+ *   --surface     page background
+ *   --surface-2   card / panel
+ *   --surface-3   recessed (hover, table stripes)
+ *   --ink         primary text
+ *   --ink-soft    body text
+ *   --ink-mute    secondary
+ *   --ink-faint   tertiary / metadata
+ *   --rule        hairline border
+ *   --rule-strong defined border
+ *   --action      primary command blue
+ *   --accent      Verdact decision red
+ *   --trust       verified evidence teal
+ *   --warning     deadline amber
+ *   --accent-soft tinted accent background
+ *   --danger      system-error red (separate from accent)
+ *   --danger-soft error background
+ *   --shadow      elevation color
+ *   --focus       focus ring color (ink, not accent)
+ *
+ * Legacy reviewer pages (/signin, /privacy, /terms, /evidence/import,
+ * /settings/connections) inline their original hex codes and are
+ * unaffected by these tokens. They will be migrated after Google OAuth
+ * verification closes.
+ */
+
 :root {
-  --background: #f7f9f6;
-  --foreground: #172033;
+  color-scheme: light dark;
+
+  --surface: #f8fafc;
+  --surface-2: #ffffff;
+  --surface-3: #f1f5f9;
+
+  --ink: #0f172a;
+  --ink-soft: #334155;
+  --ink-mute: #64748b;
+  --ink-faint: #94a3b8;
+
+  --rule: #d8e0eb;
+  --rule-strong: #a8b3c4;
+
+  --action: #1e40af;
+  --action-soft: #eef2ff;
+  --action-deep: #172e75;
+
+  --accent: #b42318;
+  --accent-soft: #fff1f0;
+  --accent-deep: #7a271a;
+
+  --trust: #0e766e;
+  --trust-soft: #ecfdf5;
+
+  --warning: #b54708;
+  --warning-soft: #fffbeb;
+
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+
+  --shadow-color: 15, 23, 42;
+  --shadow-elev-1: 0 1px 2px 0 rgba(var(--shadow-color), 0.06), 0 8px 22px -10px rgba(var(--shadow-color), 0.10);
+  --shadow-elev-2: 0 4px 6px -1px rgba(var(--shadow-color), 0.10), 0 18px 32px -12px rgba(var(--shadow-color), 0.14);
+
+  --focus: #1e40af;
+
+  /* Compatibility aliases */
+  --background: var(--surface);
+  --foreground: var(--ink);
 }
 
+/*
+ * Dark theme tokens. Applied either by system preference (when no manual
+ * override is set) or by an explicit data-theme="dark" attribute on the html
+ * element. Manual data-theme="light" wins over system dark preference.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #0a0e1a;
+    --surface-2: #131a2e;
+    --surface-3: #1c2540;
+
+    --ink: #e2e8f0;
+    --ink-soft: #cbd5e1;
+    --ink-mute: #94a3b8;
+    --ink-faint: #64748b;
+
+    --rule: #1e293b;
+    --rule-strong: #334155;
+
+    --action: #4f7df9;
+    --action-soft: #1a2342;
+    --action-deep: #6c95ff;
+
+    --accent: #fb7185;
+    --accent-soft: #2a1414;
+    --accent-deep: #fda4af;
+
+    --trust: #2dd4bf;
+    --trust-soft: #042f2a;
+
+    --warning: #fbbf24;
+    --warning-soft: #2a1d05;
+
+    --danger: #ef4444;
+    --danger-soft: #2a1414;
+
+    --shadow-color: 0, 0, 0;
+    --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+    --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+
+    --focus: #4f7df9;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface: #0a0e1a;
+  --surface-2: #131a2e;
+  --surface-3: #1c2540;
+
+  --ink: #e2e8f0;
+  --ink-soft: #cbd5e1;
+  --ink-mute: #94a3b8;
+  --ink-faint: #64748b;
+
+  --rule: #1e293b;
+  --rule-strong: #334155;
+
+  --action: #4f7df9;
+  --action-soft: #1a2342;
+  --action-deep: #6c95ff;
+
+  --accent: #fb7185;
+  --accent-soft: #2a1414;
+  --accent-deep: #fda4af;
+
+  --trust: #2dd4bf;
+  --trust-soft: #042f2a;
+
+  --warning: #fbbf24;
+  --warning-soft: #2a1d05;
+
+  --danger: #ef4444;
+  --danger-soft: #2a1414;
+
+  --shadow-color: 0, 0, 0;
+  --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+
+  --focus: #4f7df9;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Aptos, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-mono: "Cascadia Code", "Courier New", Courier, monospace;
+
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --color-action: var(--action);
+  --color-action-soft: var(--action-soft);
+  --color-action-deep: var(--action-deep);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-deep: var(--accent-deep);
+
+  --color-trust: var(--trust);
+  --color-trust-soft: var(--trust-soft);
+
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-display: var(--font-display, "Fraunces"), "Iowan Old Style", "Palatino", "Georgia", serif;
+  --font-body: var(--font-body, "Instrument Sans"), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-mono, "JetBrains Mono"), "SFMono-Regular", "Menlo", monospace;
+
+  --font-sans: var(--font-body);
+}
+* {
+  border-color: var(--rule);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Aptos, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body), "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "ss01", "ss02", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -23,6 +213,405 @@ a {
 }
 
 ::selection {
-  background: #d9ece8;
-  color: #172033;
+  background: color-mix(in oklab, var(--action) 18%, white);
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ */
+/* Typography                                                          */
+/* ------------------------------------------------------------------ */
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  letter-spacing: 0;
+}
+
+.font-display-light {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+
+.label-mono-strong {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.meta-mono {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------------ */
+/* Pills                                                               */
+/* ------------------------------------------------------------------ */
+.pill-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+.pill-accent::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.pill-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-mute);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+.pill-ink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+.pill-trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--trust);
+  color: var(--trust);
+  background: var(--trust-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inputs                                                              */
+/* ------------------------------------------------------------------ */
+.field-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  padding: 0.7rem 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+  color: var(--ink);
+  border-radius: 3px;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ink) 12%, transparent);
+  background: var(--surface-2);
+}
+
+.field-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 0.4rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  background: var(--action);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.78rem 1.2rem;
+  border-radius: 3px;
+  border: 1px solid var(--action);
+  transition:
+    transform 140ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--action-deep);
+  border-color: var(--action-deep);
+  box-shadow: 0 12px 28px -16px rgba(30, 64, 175, 0.65);
+  transform: translateY(-1px);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 3px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--action);
+  border-color: var(--action);
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.72rem 1.15rem;
+  border-radius: 3px;
+  border: 1px solid var(--rule-strong);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--ink);
+  background: var(--surface-3);
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.93rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.btn-ghost:hover {
+  background: var(--surface-3);
+  border-color: var(--rule-strong);
+}
+
+/* ------------------------------------------------------------------ */
+/* Surfaces                                                            */
+/* ------------------------------------------------------------------ */
+.surface-card {
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  box-shadow: var(--shadow-elev-1);
+}
+
+.surface-card-flat {
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+}
+
+.surface-paper {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.92)),
+    radial-gradient(circle at 16px 16px, rgba(203, 213, 225, 0.56) 1px, transparent 1.5px);
+  background-color: var(--surface);
+  background-size: auto, 32px 32px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .surface-paper {
+    background:
+      linear-gradient(180deg, rgba(11, 18, 32, 0.7), rgba(10, 14, 26, 0.92)),
+      radial-gradient(circle at 16px 16px, rgba(51, 65, 85, 0.42) 1px, transparent 1.5px);
+    background-color: var(--surface);
+    background-size: auto, 32px 32px;
+  }
+
+  :root:not([data-theme="light"]) .record-field {
+    background:
+      linear-gradient(90deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
+      linear-gradient(135deg, rgba(79, 125, 249, 0.08), transparent 42%),
+      linear-gradient(315deg, rgba(251, 113, 133, 0.06), transparent 38%);
+    background-size: 56px 56px, 56px 56px, auto, auto;
+  }
+
+  :root:not([data-theme="light"]) ::selection {
+    background: color-mix(in oklab, var(--action) 30%, transparent);
+    color: var(--ink);
+  }
+}
+
+:root[data-theme="dark"] .surface-paper {
+  background:
+    linear-gradient(180deg, rgba(11, 18, 32, 0.7), rgba(10, 14, 26, 0.92)),
+    radial-gradient(circle at 16px 16px, rgba(51, 65, 85, 0.42) 1px, transparent 1.5px);
+  background-color: var(--surface);
+  background-size: auto, 32px 32px;
+}
+
+:root[data-theme="dark"] .record-field {
+  background:
+    linear-gradient(90deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(79, 125, 249, 0.08), transparent 42%),
+    linear-gradient(315deg, rgba(251, 113, 133, 0.06), transparent 38%);
+  background-size: 56px 56px, 56px 56px, auto, auto;
+}
+
+:root[data-theme="dark"] ::selection {
+  background: color-mix(in oklab, var(--action) 30%, transparent);
+  color: var(--ink);
+}
+
+.record-field {
+  background:
+    linear-gradient(90deg, rgba(168, 179, 196, 0.18) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(168, 179, 196, 0.18) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(30, 64, 175, 0.07), transparent 42%),
+    linear-gradient(315deg, rgba(180, 35, 24, 0.05), transparent 38%);
+  background-size: 64px 64px, 64px 64px, auto, auto;
+}
+
+.record-slat {
+  background: color-mix(in oklab, var(--surface-2) 92%, var(--action-soft));
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  box-shadow:
+    0 2px 6px -2px rgba(15, 23, 42, 0.10),
+    0 24px 48px -24px rgba(15, 23, 42, 0.22),
+    0 40px 80px -40px rgba(30, 64, 175, 0.16);
+}
+
+/* ------------------------------------------------------------------ */
+/* Notices                                                             */
+/* ------------------------------------------------------------------ */
+.notice-error {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+.notice-info {
+  border: 1px solid var(--rule-strong);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Editorial rules                                                     */
+/* ------------------------------------------------------------------ */
+.rule-thin {
+  border-top: 1px solid var(--rule);
+}
+
+.rule-strong {
+  border-top: 1px solid var(--rule-strong);
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+@keyframes verdact-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  animation: verdact-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.reveal-1 { animation-delay: 40ms; }
+.reveal-2 { animation-delay: 120ms; }
+.reveal-3 { animation-delay: 220ms; }
+.reveal-4 { animation-delay: 340ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-1,
+  .reveal-2,
+  .reveal-3,
+  .reveal-4 {
+    animation: none;
+  }
 }

@@ -4,7 +4,7 @@ Next.js app for Verdact, the Stripe-first chargeback evidence and dispute-risk p
 
 ## Current State
 
-This app currently includes the landing page, privacy policy, and a narrow Google reviewer path for Gmail OAuth verification. It is not yet the MVP dashboard.
+This app currently includes the landing page, privacy policy, a narrow Google reviewer path for Gmail OAuth verification, the Inngest route foundation, and the applied Supabase dev schema. It is not yet the MVP dashboard.
 
 Before implementation, read:
 
@@ -60,12 +60,10 @@ The reviewer flow uses `gmail.readonly`, starts only after a user clicks Connect
 
 ## Next Build Steps
 
-1. Add missing env keys: `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`, `STRIPE_API_VERSION`, `VERDACT_SIGNING_KEY_V1`.
-2. Install runtime SDKs for Supabase, Stripe, Inngest, Resend, Anthropic, and validation.
-3. Build Supabase migrations, starting with `merchants`, `merchant_users`, and `processor_connections`.
-4. Build Supabase Auth and merchant bootstrap.
-5. Build Stripe Standard OAuth connect/disconnect.
-6. Build webhook raw insert plus Inngest handoff.
-7. Expand the temporary Google reviewer path into the production Gmail import flow with persistent encrypted token storage, audit logging, and merchant-controlled evidence selection.
+1. Build Supabase Auth and merchant bootstrap against the applied `verdact-dev` schema.
+2. Build Stripe Standard OAuth connect/disconnect.
+3. Build webhook raw insert plus Inngest handoff.
+4. Expand the temporary Google reviewer path into the production Gmail import flow with persistent encrypted token storage, audit logging, and merchant-controlled evidence selection.
+5. Add local Docker/Supabase validation before the next schema change when Docker Desktop is available.
 
 Do not implement live billing or live dispute submission before the legal/company gates in the handoff are closed.
