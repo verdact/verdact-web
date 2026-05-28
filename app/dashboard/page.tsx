@@ -1,7 +1,14 @@
 import { AppShell } from '../_components/app-chrome';
-import { getMerchant, verifySession } from '@/lib/dal';
+import {
+  getDisputes,
+  getEfwAlerts,
+  getLatestVampSnapshot,
+  getMerchant,
+  verifySession,
+} from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
+import { DisputeSection } from './dispute-section';
 
 export const metadata = {
   title: 'Overview · Verdact',
@@ -44,6 +51,10 @@ export default async function DashboardPage({
       .maybeSingle();
     stripeConnection = data ?? null;
   }
+
+  const [disputes, efwAlerts, vampSnapshot] = membership
+    ? await Promise.all([getDisputes(), getEfwAlerts(), getLatestVampSnapshot()])
+    : [[], [], null];
 
   const stripeAccountLabel = stripeConnection
     ? formatStripeAccountId(stripeConnection.processor_account_id)
@@ -210,6 +221,12 @@ export default async function DashboardPage({
                 </div>
               ))}
             </div>
+
+            <DisputeSection
+              disputes={disputes}
+              efwAlerts={efwAlerts}
+              vampSnapshot={vampSnapshot}
+            />
           </div>
 
           <aside className="reveal reveal-4 lg:sticky lg:top-10">

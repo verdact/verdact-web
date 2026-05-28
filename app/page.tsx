@@ -1,9 +1,9 @@
 import { VerdactLogo } from './_components/verdact-logo';
 
 export const metadata = {
-  title: 'Verdact | Dispute-ready evidence for Stripe merchants',
+  title: 'Verdact | Know what you can prove before you fight the dispute',
   description:
-    'Verdact helps Stripe SaaS and digital-service merchants track dispute risk, prepare source-linked evidence, and choose paid, merchant-controlled filing modes.',
+    'Verdact builds a source-linked evidence record from Stripe, Gmail, and Slack, then shows Stripe SaaS and service merchants what is missing before they file.',
 };
 
 export default function Home() {
@@ -15,12 +15,12 @@ export default function Home() {
         <div className="record-field absolute inset-0 opacity-75" aria-hidden="true" />
         <div className="relative mx-auto flex min-h-[78svh] w-full max-w-[1200px] flex-col justify-between gap-12 px-6 py-14 md:px-10 md:py-20">
           <div className="max-w-4xl">
-            <p className="label-mono text-accent">For Stripe SaaS and service merchants</p>
+            <p className="label-mono text-accent">Dispute evidence for Stripe</p>
             <h1 className="font-display-light mt-6 max-w-5xl text-[3rem] leading-[1.03] text-ink md:text-[5.2rem]">
-              You shouldn't have to lose money on disputes you should win.
+              Know what you can prove before you fight the dispute.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-ink-soft">
-              Verdact tracks dispute risk, prepares source-linked evidence, and gives paid workspaces two filing modes: auto-file, or review the packet and submit.
+              Verdact builds a source-linked evidence record from Stripe, Gmail, and Slack, then shows you what is missing before you file.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <a className="btn-primary" href="/signup">
@@ -30,7 +30,7 @@ export default function Home() {
                 Sign in
               </a>
               <span className="text-sm text-ink-mute">
-                Paid filing automation. Merchant-controlled.
+                You see the full case before anything goes to the bank.
               </span>
             </div>
           </div>
@@ -44,10 +44,10 @@ export default function Home() {
           <div className="max-w-2xl">
             <p className="label-mono">How it works</p>
             <h2 className="font-display-light mt-5 text-[2.2rem] leading-[1.12] text-ink md:text-[3rem]">
-              Automation with controls at every step.
+              See the full case before you commit to it.
             </h2>
             <p className="mt-5 max-w-xl text-base leading-7 text-ink-soft">
-              Verdact prepares the evidence record automatically. Paid subscribers can let eligible filings run automatically, or review the full packet and click submit.
+              Verdact assembles the source-linked record, names the proof you do not have yet, and lets you decide what goes to the bank. Paid subscribers can let eligible filings run automatically, or review the full packet and click submit.
             </p>
           </div>
 
@@ -68,10 +68,13 @@ export default function Home() {
       <section className="border-b border-rule">
         <div className="mx-auto grid w-full max-w-[1200px] gap-10 px-6 py-18 md:px-10 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
-            <p className="label-mono">What you get</p>
+            <p className="label-mono">Why Verdact</p>
             <h2 className="font-display-light mt-5 text-[2.2rem] leading-[1.12] text-ink md:text-[3rem]">
-              The quiet things that keep you out of trouble.
+              Walk in knowing your case, not guessing at it.
             </h2>
+            <p className="mt-5 max-w-md text-base leading-7 text-ink-soft">
+              Verdact does not predict whether you will win. It shows you what you can actually prove for this reason code, so you decide with the full picture in front of you.
+            </p>
           </div>
 
           <div className="surface-card overflow-hidden">
@@ -95,7 +98,7 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-6 px-6 py-14 md:flex-row md:items-center md:justify-between md:px-10">
           <div>
             <h2 className="font-display-light text-[2rem] leading-tight text-ink md:text-[2.6rem]">
-              Your next dispute is already forming in Stripe.
+              Ready to see what you can prove?
             </h2>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -161,54 +164,50 @@ function HeroEvidencePacket() {
     <div className="record-slat overflow-hidden border border-rule-strong bg-surface-paper shadow-sm max-w-3xl rounded-md">
       <div className="grid border-b border-rule bg-surface-2 px-6 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
-          <p className="label-mono text-ink-soft uppercase text-xs">Evidence Packet</p>
+          <p className="label-mono text-ink-soft uppercase text-xs">Evidence Record</p>
           <p className="mt-1 text-xl font-semibold text-ink">
-            Marcus Kim · annual plan
+            Acme Corp · services not rendered
           </p>
         </div>
         <div className="mt-3 text-right sm:mt-0">
           <p className="text-2xl font-bold text-ink">$4,800</p>
-          <p className="label-mono text-ink-soft uppercase text-[0.65rem] mt-1 tracking-widest">Visa · 10.4</p>
+          <p className="label-mono text-ink-soft uppercase text-[0.65rem] mt-1 tracking-widest">Visa · 13.1</p>
         </div>
       </div>
 
-      <div className="px-6 py-8 text-base leading-relaxed text-ink-soft space-y-6">
-        <p>
-          On March 14, the customer{' '}
-          <span
-            className="px-1.5 py-0.5 rounded-sm border"
-            style={{
-              background: 'var(--trust-soft)',
-              borderColor: 'color-mix(in oklab, var(--trust) 40%, transparent)',
-              color: 'var(--ink)',
-            }}
-          >
-            confirmed delivery in writing
-          </span>{' '}
-          and used the product daily through April 18. The dispute was filed 134 days later.
-        </p>
-        <p>
-          Per the refund policy acknowledged at checkout, annual plans are{' '}
-          <span
-            className="px-1.5 py-0.5 rounded-sm border"
-            style={{
-              background: 'var(--trust-soft)',
-              borderColor: 'color-mix(in oklab, var(--trust) 40%, transparent)',
-              color: 'var(--ink)',
-            }}
-          >
-            non-refundable after 30 days
-          </span>
-          .
-        </p>
+      <div className="px-6 py-8 text-base leading-relaxed text-ink-soft space-y-5">
+        <div className="flex items-start gap-3">
+          <span className="pill-trust mt-0.5 shrink-0">Stripe</span>
+          <p className="text-ink">Payment confirmed, IP match, one prior transaction.</p>
+        </div>
+        <div className="flex items-start gap-3">
+          <span className="pill-trust mt-0.5 shrink-0">Gmail</span>
+          <p className="text-ink">Delivery confirmation email, sent before the dispute.</p>
+        </div>
+        <div className="flex items-start gap-3">
+          <span className="pill-trust mt-0.5 shrink-0">Slack</span>
+          <p className="text-ink">Client message: &ldquo;Looks good, ship it.&rdquo;</p>
+        </div>
+        <div
+          className="flex items-start gap-3 rounded-sm border px-3 py-3"
+          style={{
+            background: 'var(--accent-soft)',
+            borderColor: 'color-mix(in oklab, var(--accent) 40%, transparent)',
+          }}
+        >
+          <span className="pill-accent mt-0.5 shrink-0">Missing</span>
+          <p className="text-ink">
+            Found a gap. Issuers expect a formal acceptance record for service disputes. You can close it before you file.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-[1fr_auto] items-center border-t border-rule bg-surface-2 px-6 py-4">
         <div className="flex items-center gap-3">
-          <span className="pill-trust">Ready to file</span>
-          <span className="label-mono text-ink-soft text-xs">8 of 9 checks pass</span>
+          <span className="pill-neutral">Needs one more proof</span>
+          <span className="label-mono text-ink-soft text-xs">3 of 4 checks pass</span>
         </div>
-        <span className="label-mono text-ink-mute text-xs">14 pp · 3.2 MB</span>
+        <span className="label-mono text-ink-mute text-xs">Nothing sent until you approve</span>
       </div>
     </div>
   );
@@ -217,35 +216,35 @@ function HeroEvidencePacket() {
 const STEPS = [
   {
     idx: '01',
-    title: 'Connect Stripe.',
-    body: 'Secure OAuth. Verdact detects disputes and VAMP risk, then prepares the filing workflow.',
+    title: 'Connect Stripe, Gmail, and Slack.',
+    body: 'Secure OAuth. Verdact detects disputes and VAMP risk, then prepares the evidence workflow.',
   },
   {
     idx: '02',
-    title: 'We assemble source-linked evidence.',
-    body: 'Stripe data, usage logs, policies, support history, and selected communications are mapped to the claim.',
+    title: 'We build the source-linked record.',
+    body: 'Stripe data, communications, usage, and policies are mapped to the claim, and each item links back to where it came from so you can verify the proof yourself.',
   },
   {
     idx: '03',
-    title: 'Choose the filing mode.',
-    body: 'Paid plans unlock auto-file or review-then-submit. Without an active subscription, export the packet and file manually.',
+    title: 'See what is missing, then file.',
+    body: 'Verdact names the proof you do not have yet for the reason code. Paid plans unlock auto-file or review-then-submit; without a subscription, export the packet and file manually.',
   },
 ] as const;
 
 const QUIET_THINGS = [
   {
     num: 'i',
-    title: 'A warning before the bank gives you one.',
-    body: "We watch your dispute ratio across your settlement window. If it starts trending toward Visa's warning threshold, you'll know weeks in advance.",
+    title: 'See the whole case before you commit.',
+    body: 'Every item is laid out as a record you read, check, and approve. You know exactly what is going to the bank, because you decide what goes. Verdact never files behind your back.',
   },
   {
     num: 'ii',
-    title: 'Every packet checked against the latest rules.',
-    body: "Stripe's Compelling Evidence 3.0 has specific criteria. Each packet is pre-flighted against all of them in plain English.",
+    title: 'Every claim traces back to a source.',
+    body: 'Verdact assembles the record from the systems your delivery actually happens in, then links each item to where it came from. You verify the proof yourself rather than take it on faith.',
   },
   {
     num: 'iii',
-    title: 'Paid automation with guardrails.',
-    body: 'File-size limits, page counts, broken links, and missing fields are checked before auto-file or review-then-submit runs.',
+    title: 'Know what is missing before it costs you.',
+    body: 'For the specific reason code, Verdact names the proof you do not have yet, so a gap is something you can close before filing instead of a surprise you discover after you lose.',
   },
 ] as const;
