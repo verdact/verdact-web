@@ -9,6 +9,15 @@ import {
 import { createClient } from '@/lib/supabase/server';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
 import { DisputeSection } from './dispute-section';
+import {
+  AlertIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  DocIcon,
+  LockIcon,
+  PlugIcon,
+} from './dash-icons';
 
 export const metadata = {
   title: 'Overview · Verdact',
@@ -79,7 +88,7 @@ export default async function DashboardPage({
         key: 'stripe',
         label: 'Connect Stripe',
         status: 'next',
-        blurb: 'Standard OAuth — Verdact holds your connected account ID only, not your API keys.',
+        blurb: 'Standard OAuth. Verdact holds your connected account ID only, not your API keys.',
       } as const);
 
   const SETUP_STEPS = [
@@ -116,12 +125,12 @@ export default async function DashboardPage({
 
   const STRIPE_ERROR_MESSAGES: Record<string, string> = {
     denied: 'Stripe connection was cancelled.',
-    invalid_state: 'OAuth state mismatch — please try again.',
+    invalid_state: 'OAuth state mismatch. Please try again.',
     no_code: 'No authorization code received from Stripe.',
-    exchange_failed: 'Stripe token exchange failed — please try again.',
-    db_error: 'Connection was authorised but could not be saved — please try again.',
+    exchange_failed: 'Stripe token exchange failed. Please try again.',
+    db_error: 'Connection was authorised but could not be saved. Please try again.',
     account_in_use: 'That Stripe account is already connected to another workspace.',
-    no_merchant: 'Workspace not found — please sign out and back in.',
+    no_merchant: 'Workspace not found. Please sign out and back in.',
     not_configured: 'Stripe Connect is not configured on this deployment.',
   };
 
@@ -132,24 +141,32 @@ export default async function DashboardPage({
           <div>
             {justConnected && (
               <div
-                className="mb-6 rounded-lg border border-trust bg-trust/10 px-5 py-3 text-sm text-trust"
+                className="mb-6 flex items-start gap-3 rounded-md border border-trust-rule bg-trust-soft px-5 py-3.5 text-sm leading-6 text-trust"
                 role="status"
               >
-                Stripe connected successfully. Verdact saved the connected account ID; no API keys were stored.
+                <CheckIcon className="mt-0.5 h-4 w-4 flex-none" />
+                <span>
+                  Stripe connected successfully. Verdact saved the connected account ID; no API keys
+                  were stored.
+                </span>
               </div>
             )}
             {stripeError && (
-              <div className="mb-6 rounded-lg border border-ce bg-ce/10 px-5 py-3 text-sm text-ce">
-                {STRIPE_ERROR_MESSAGES[stripeError] ?? 'Something went wrong with Stripe — please try again.'}
+              <div className="notice-error mb-6 flex items-start gap-3" role="alert">
+                <AlertIcon className="mt-0.5 h-4 w-4 flex-none" />
+                <span>
+                  {STRIPE_ERROR_MESSAGES[stripeError] ??
+                    'Something went wrong with Stripe. Please try again.'}
+                </span>
               </div>
             )}
 
             <div className="reveal reveal-1">
-              <p className="label-mono">Overview</p>
-              <h1 className="font-display-light mt-5 text-[2.6rem] leading-[1.04] text-ink md:text-[3.5rem]">
+              <p className="eyebrow">Overview</p>
+              <h1 className="font-display-light mt-5 text-[2.6rem] leading-[1.04] tracking-[-0.01em] text-ink md:text-[3.5rem]">
                 Your evidence workspace is ready, {greetingName}.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-ink-soft">
+              <p className="section-dek mt-5 max-w-2xl">
                 {stripeConnection
                   ? 'Stripe is connected. Next, turn on dispute intake so new cases can become evidence records.'
                   : 'Your account is set up. Connecting Stripe comes next.'}
@@ -165,10 +182,10 @@ export default async function DashboardPage({
             )}
 
             <div className="reveal reveal-2 surface-card mt-10 overflow-hidden">
-              <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule-strong px-6 py-4">
+              <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule-strong bg-surface-3/60 px-6 py-4">
                 <div>
-                  <p className="label-mono">Setup</p>
-                  <p className="font-display mt-1 text-xl text-ink">
+                  <p className="eyebrow">Setup</p>
+                  <p className="font-display mt-1.5 text-xl text-ink">
                     {completed} of {SETUP_STEPS.length} complete
                   </p>
                 </div>
@@ -179,21 +196,21 @@ export default async function DashboardPage({
                 {SETUP_STEPS.map((step, idx) => (
                   <li
                     key={step.key}
-                    className="grid gap-4 border-b border-rule px-6 py-5 last:border-b-0 md:grid-cols-[2.25rem_1fr_auto] md:items-center"
+                    className="grid grid-cols-[1.75rem_1fr] gap-4 border-b border-rule px-6 py-5 last:border-b-0 md:grid-cols-[1.75rem_1fr_auto] md:items-center"
                   >
-                    <span className="label-mono text-ink-faint">
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-                    <div>
-                      <p className="text-base font-medium leading-snug text-ink">
-                        {step.label}
-                      </p>
+                    <StepSpine status={step.status} index={idx} />
+                    <div className="min-w-0">
+                      <p className="text-base font-medium leading-snug text-ink">{step.label}</p>
                       <p className="mt-1 text-sm leading-6 text-ink-mute">{step.blurb}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2.5 pl-[2.25rem] md:pl-0">
                       <StatusPill status={step.status} />
                       {step.key === 'stripe' && !stripeConnection && (
-                        <a href="/api/stripe/connect/start" className="btn-secondary py-1 text-sm">
+                        <a
+                          href="/api/stripe/connect/start"
+                          className="btn-secondary px-3.5 py-1.5 text-sm"
+                        >
+                          <PlugIcon className="h-3.5 w-3.5" />
                           Connect
                         </a>
                       )}
@@ -201,7 +218,7 @@ export default async function DashboardPage({
                         <form action={disconnectStripeAction}>
                           <button
                             type="submit"
-                            className="label-mono text-ink-mute underline underline-offset-4 hover:text-ce"
+                            className="label-mono text-ink-mute underline underline-offset-4 transition hover:text-accent"
                           >
                             Disconnect
                           </button>
@@ -214,12 +231,18 @@ export default async function DashboardPage({
             </div>
 
             <div className="reveal reveal-3 mt-10 grid gap-3 sm:grid-cols-3">
-              {WORKSPACE_NOTES.map((note) => (
-                <div className="surface-card-flat p-4" key={note.title}>
-                  <p className="label-mono text-ink">{note.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-soft">{note.body}</p>
-                </div>
-              ))}
+              {WORKSPACE_NOTES.map((note) => {
+                const Icon = note.icon;
+                return (
+                  <div className="surface-card-flat p-5" key={note.title}>
+                    <span className="status-dot h-8 w-8 ok mb-3" aria-hidden="true">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <p className="label-mono-strong">{note.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-ink-soft">{note.body}</p>
+                  </div>
+                );
+              })}
             </div>
 
             <DisputeSection
@@ -230,10 +253,10 @@ export default async function DashboardPage({
           </div>
 
           <aside className="reveal reveal-4 lg:sticky lg:top-10">
-            <div className="surface-card-flat overflow-hidden">
-              <header className="border-b border-rule-strong px-5 py-4">
-                <p className="label-mono">Workspace</p>
-                <p className="font-display mt-1 text-lg leading-tight text-ink">
+            <div className="surface-card overflow-hidden">
+              <header className="border-b border-rule-strong bg-surface-3/60 px-5 py-4">
+                <p className="eyebrow">Workspace</p>
+                <p className="font-display mt-1.5 text-lg leading-tight text-ink">
                   {businessName || 'Unnamed workspace'}
                 </p>
               </header>
@@ -260,8 +283,11 @@ export default async function DashboardPage({
                   label="Stripe"
                   value={
                     stripeConnection ? (
-                      <span className="flex flex-col items-start gap-1">
-                        <span className="pill-trust">Connected</span>
+                      <span className="flex flex-col items-start gap-1.5">
+                        <span className="pill-trust">
+                          <CheckIcon className="h-3 w-3" />
+                          Connected
+                        </span>
                         <span className="font-mono text-[0.72rem] text-ink-mute">
                           {stripeAccountLabel}
                         </span>
@@ -273,7 +299,15 @@ export default async function DashboardPage({
                 />
                 <Row label="Mode" value={stripeModeLabel ?? '-'} />
                 <Row label="Connected" value={connectedAtLabel ?? '-'} />
-                <Row label="Filing" value={<span className="pill-neutral">Not started</span>} />
+                <Row
+                  label="Filing"
+                  value={
+                    <span className="pill-neutral">
+                      <LockIcon className="h-3 w-3" />
+                      Not started
+                    </span>
+                  }
+                />
               </dl>
             </div>
 
@@ -314,9 +348,57 @@ function ProgressTrack({ total, completed }: { total: number; completed: number 
 }
 
 function StatusPill({ status }: { status: 'done' | 'next' | 'waiting' }) {
-  if (status === 'done') return <span className="pill-trust w-fit">Done</span>;
-  if (status === 'next') return <span className="pill-neutral w-fit">Next</span>;
-  return <span className="pill-neutral w-fit">Waiting</span>;
+  if (status === 'done')
+    return (
+      <span className="pill-trust w-fit">
+        <CheckIcon className="h-3 w-3" />
+        Done
+      </span>
+    );
+  if (status === 'next')
+    return (
+      <span className="pill-action w-fit">
+        <ChevronRightIcon className="h-3 w-3" />
+        Next
+      </span>
+    );
+  return (
+    <span className="pill-neutral w-fit">
+      <ClockIcon className="h-3 w-3" />
+      Waiting
+    </span>
+  );
+}
+
+// Numbered spine dot for each setup step. A done step reads as a confirmed
+// check; pending steps show the step number. Status is also carried by the
+// StatusPill text, so the dot never conveys state by color alone.
+function StepSpine({
+  status,
+  index,
+}: {
+  status: 'done' | 'next' | 'waiting';
+  index: number;
+}) {
+  if (status === 'done') {
+    return (
+      <span className="status-dot mt-0.5 h-7 w-7 ok" aria-hidden="true">
+        <CheckIcon className="h-3.5 w-3.5" />
+      </span>
+    );
+  }
+  const ring =
+    status === 'next'
+      ? 'border-action text-action bg-action-soft'
+      : 'border-rule-strong text-ink-faint bg-surface-2';
+  return (
+    <span
+      className={`mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-full border font-mono text-[0.7rem] font-semibold ${ring}`}
+      aria-hidden="true"
+    >
+      {String(index + 1).padStart(2, '0')}
+    </span>
+  );
 }
 
 function ConnectionMetric({
@@ -372,13 +454,16 @@ const WORKSPACE_NOTES = [
   {
     title: 'Filing controls',
     body: 'Manual filing by default. Paid plans unlock auto-file and review-then-submit, with edit, pause, add, and remove controls.',
+    icon: DocIcon,
   },
   {
     title: 'No stored API keys',
     body: 'Stripe is connected through Standard OAuth. Verdact holds the connected account ID, nothing else.',
+    icon: LockIcon,
   },
   {
     title: 'Reversible at any time',
     body: 'Disconnect Stripe, Gmail, or Slack any time. Revoking access removes future read.',
+    icon: PlugIcon,
   },
 ] as const;

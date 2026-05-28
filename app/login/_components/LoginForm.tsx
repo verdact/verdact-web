@@ -63,10 +63,10 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         </button>
       </form>
 
-      <p className="text-sm text-ink-soft">
+      <p className="rule-thin pt-5 text-center text-sm text-ink-soft">
         New to Verdact?{' '}
         <a
-          className="font-medium text-ink underline underline-offset-[5px] hover:text-accent"
+          className="font-medium text-action underline underline-offset-[5px] hover:text-action-deep"
           href="/signup"
         >
           Create a workspace

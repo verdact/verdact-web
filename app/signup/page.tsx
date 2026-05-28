@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AuthFrame } from '../_components/auth-chrome';
+import { CheckIcon } from '../_components/auth-icons';
 import { getUser } from '@/lib/dal';
 import { SignupForm } from './_components/SignupForm';
 
@@ -19,23 +20,24 @@ export default async function SignupPage() {
       <section className="mx-auto grid w-full max-w-[1040px] gap-12 py-10 md:py-16 lg:grid-cols-[1.05fr_minmax(360px,0.95fr)] lg:items-start">
         {/* LEFT - promise */}
         <div className="reveal reveal-1 lg:pt-2">
-          <p className="label-mono">Verdact · new workspace</p>
-          <h1 className="font-display-light mt-5 text-[2.6rem] leading-[1.02] text-ink md:text-[3.5rem]">
+          <span className="eyebrow">Verdact · new workspace</span>
+          <h1 className="section-heading mt-5 text-[2.6rem] md:text-[3.25rem]">
             Create your workspace.
           </h1>
-          <p className="mt-5 max-w-md text-base leading-7 text-ink-soft">
+          <p className="section-dek mt-5 max-w-md">
             One place to monitor dispute risk, assemble source-linked evidence,
             and choose how eligible Stripe filings run after subscription.
           </p>
 
-          <ul className="mt-10 space-y-4">
+          <ol className="surface-card mt-10 overflow-hidden">
             {WHAT_YOU_GET.map((item) => (
-              <li key={item.title} className="flex items-start gap-3.5">
-                <span className="label-mono mt-1 w-8 shrink-0 text-ink-faint">
-                  {item.idx}
-                </span>
+              <li
+                key={item.title}
+                className="grid grid-cols-[2rem_1fr] gap-3.5 border-b border-rule px-5 py-4 last:border-b-0"
+              >
+                <span className="label-mono mt-0.5 text-action">{item.idx}</span>
                 <div>
-                  <p className="text-[0.97rem] font-medium leading-snug text-ink">
+                  <p className="text-[0.97rem] font-semibold leading-snug text-ink">
                     {item.title}
                   </p>
                   <p className="mt-1 text-sm leading-6 text-ink-mute">
@@ -44,13 +46,28 @@ export default async function SignupPage() {
                 </div>
               </li>
             ))}
-          </ul>
+          </ol>
+
+          <p className="meta-mono mt-6 flex items-center gap-2 text-ink-mute">
+            <CheckIcon className="h-3.5 w-3.5 text-trust" />
+            Nothing is filed with the bank until you review and approve it.
+          </p>
         </div>
 
         {/* RIGHT - form */}
         <div className="reveal reveal-3">
-          <div className="surface-card p-6 md:p-7">
-            <SignupForm />
+          <div className="surface-card overflow-hidden">
+            <div
+              className="h-1.5 w-full"
+              aria-hidden="true"
+              style={{
+                background:
+                  'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
+              }}
+            />
+            <div className="p-6 md:p-7">
+              <SignupForm />
+            </div>
           </div>
         </div>
       </section>

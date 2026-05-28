@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AuthFrame } from '../_components/auth-chrome';
+import { LockIcon } from '../_components/auth-icons';
 import { getUser } from '@/lib/dal';
 import { LoginForm } from './_components/LoginForm';
 
@@ -28,25 +29,39 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <AuthFrame>
       <section className="mx-auto w-full max-w-md py-10 md:py-16">
-        <div className="reveal reveal-1">
-          <p className="label-mono">Verdact · sign in</p>
-          <h1 className="font-display-light mt-5 text-[2.6rem] leading-[1.02] text-ink md:text-[3.25rem]">
-            Welcome back.
-          </h1>
-          <p className="mt-4 text-base leading-7 text-ink-soft">
-            Continue organizing dispute evidence before deciding your next action.
+        <div className="reveal reveal-1 text-center">
+          <span className="eyebrow eyebrow-center">Verdact · sign in</span>
+          <h1 className="section-heading mt-5">Welcome back.</h1>
+          <p className="section-dek mt-4">
+            Pick up where you left off, organizing dispute evidence before you
+            decide your next action.
           </p>
         </div>
 
-        <div className="reveal reveal-2 mt-9">
-          {confirmed ? (
-            <div className="notice-info mb-5">
-              Email confirmed. Sign in below to continue.
-            </div>
-          ) : null}
+        <div className="reveal reveal-2 surface-card mt-9 overflow-hidden">
+          <div
+            className="h-1.5 w-full"
+            aria-hidden="true"
+            style={{
+              background:
+                'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
+            }}
+          />
+          <div className="p-6 md:p-7">
+            {confirmed ? (
+              <div className="notice-info mb-5">
+                Email confirmed. Sign in below to continue.
+              </div>
+            ) : null}
 
-          <LoginForm presetError={presetError} />
+            <LoginForm presetError={presetError} />
+          </div>
         </div>
+
+        <p className="reveal reveal-3 meta-mono mt-6 flex items-center justify-center gap-2 text-center text-ink-mute">
+          <LockIcon className="h-3.5 w-3.5 text-trust" />
+          Encrypted in transit. Verdact never trains AI on your data.
+        </p>
       </section>
     </AuthFrame>
   );
