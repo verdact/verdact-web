@@ -1,5 +1,7 @@
 import { AppShell } from '../_components/app-chrome';
 import { getMerchant, verifySession } from '@/lib/dal';
+import { createClient } from '@/lib/supabase/server';
+import { disconnectStripeAction } from '@/lib/stripe/actions';
 
 export const metadata = {
   title: 'Overview · Verdact',
@@ -8,54 +10,114 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const SETUP_STEPS = [
-  {
-    key: 'workspace',
-    label: 'Workspace created',
-    status: 'done',
-    blurb: 'Your Verdact account and merchant workspace are active.',
-  },
-  {
-    key: 'stripe',
-    label: 'Connect Stripe',
-    status: 'next',
-    blurb: 'Standard OAuth comes next. This build does not store API keys; paid filing controls come after connection.',
-  },
-  {
-    key: 'sources',
-    label: 'Add evidence sources',
-    status: 'waiting',
-    blurb: 'Gmail, Slack, and file evidence should be added only through explicit merchant action.',
-  },
-  {
-    key: 'record',
-    label: 'Review first evidence record',
-    status: 'waiting',
-    blurb: 'Verdact will organize proof, open questions, gaps, and the filing controls before action.',
-  },
-] as const;
+type StripeConnection = {
+  id: string;
+  processor_account_id: string;
+  livemode: boolean;
+} | null;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const justConnected = params.connected === 'stripe';
+  const stripeError = typeof params.stripe_error === 'string' ? params.stripe_error : null;
+
   const user = await verifySession();
   const membership = await getMerchant();
   const businessName = membership?.merchant?.business_name?.trim() || null;
   const greetingName = businessName || user.email?.split('@')[0] || 'there';
   const workspaceId = membership?.merchant?.id ?? null;
-  const completed = SETUP_STEPS.filter((step) => step.status === 'done').length;
+
+  let stripeConnection: StripeConnection = null;
+  if (membership) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('processor_connections')
+      .select('id, processor_account_id, livemode')
+      .eq('merchant_id', membership.merchant.id)
+      .eq('processor', 'stripe')
+      .eq('connection_status', 'connected')
+      .maybeSingle();
+    stripeConnection = data ?? null;
+  }
+
+  const stripeStep = stripeConnection
+    ? ({
+        key: 'stripe',
+        label: 'Connect Stripe',
+        status: 'done',
+        blurb: `Connected${stripeConnection.livemode ? '' : ' (test mode)'}. Account: ${stripeConnection.processor_account_id}`,
+      } as const)
+    : ({
+        key: 'stripe',
+        label: 'Connect Stripe',
+        status: 'next',
+        blurb: 'Standard OAuth — Verdact holds your connected account ID only, not your API keys.',
+      } as const);
+
+  const SETUP_STEPS = [
+    {
+      key: 'workspace',
+      label: 'Workspace created',
+      status: 'done',
+      blurb: 'Your Verdact account and merchant workspace are active.',
+    },
+    stripeStep,
+    {
+      key: 'sources',
+      label: 'Add evidence sources',
+      status: 'waiting',
+      blurb: 'Gmail, Slack, and file evidence should be added only through explicit merchant action.',
+    },
+    {
+      key: 'record',
+      label: 'Review first evidence record',
+      status: 'waiting',
+      blurb: 'Verdact will organize proof, open questions, gaps, and the filing controls before action.',
+    },
+  ] as const;
+
+  const completed = SETUP_STEPS.filter((s) => s.status === 'done').length;
+
+  const STRIPE_ERROR_MESSAGES: Record<string, string> = {
+    denied: 'Stripe connection was cancelled.',
+    invalid_state: 'OAuth state mismatch — please try again.',
+    no_code: 'No authorization code received from Stripe.',
+    exchange_failed: 'Stripe token exchange failed — please try again.',
+    db_error: 'Connection was authorised but could not be saved — please try again.',
+    account_in_use: 'That Stripe account is already connected to another workspace.',
+    no_merchant: 'Workspace not found — please sign out and back in.',
+    not_configured: 'Stripe Connect is not configured on this deployment.',
+  };
 
   return (
     <AppShell email={user.email} businessName={businessName} active="dashboard">
       <section className="px-6 pb-20 pt-12 md:px-10 md:pt-16">
         <div className="mx-auto grid w-full max-w-[1200px] gap-12 lg:grid-cols-[1.35fr_minmax(300px,0.65fr)] lg:items-start">
           <div>
+            {justConnected && (
+              <div className="mb-6 rounded-lg border border-trust bg-trust/10 px-5 py-3 text-sm text-trust">
+                Stripe connected successfully.
+              </div>
+            )}
+            {stripeError && (
+              <div className="mb-6 rounded-lg border border-ce bg-ce/10 px-5 py-3 text-sm text-ce">
+                {STRIPE_ERROR_MESSAGES[stripeError] ?? 'Something went wrong with Stripe — please try again.'}
+              </div>
+            )}
+
             <div className="reveal reveal-1">
               <p className="label-mono">Overview</p>
               <h1 className="font-display-light mt-5 text-[2.6rem] leading-[1.04] text-ink md:text-[3.5rem]">
                 Your evidence workspace is ready, {greetingName}.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-ink-soft">
-                Your account is set up. Connecting Stripe and adding evidence
-                sources come next.
+                {stripeConnection
+                  ? 'Stripe is connected. Add evidence sources to start building dispute records.'
+                  : 'Your account is set up. Connecting Stripe comes next.'}
               </p>
             </div>
 
@@ -83,11 +145,26 @@ export default async function DashboardPage() {
                       <p className="text-base font-medium leading-snug text-ink">
                         {step.label}
                       </p>
-                      <p className="mt-1 text-sm leading-6 text-ink-mute">
-                        {step.blurb}
-                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-mute">{step.blurb}</p>
                     </div>
-                    <StatusPill status={step.status} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusPill status={step.status} />
+                      {step.key === 'stripe' && !stripeConnection && (
+                        <a href="/api/stripe/connect/start" className="btn-secondary py-1 text-sm">
+                          Connect
+                        </a>
+                      )}
+                      {step.key === 'stripe' && stripeConnection && (
+                        <form action={disconnectStripeAction}>
+                          <button
+                            type="submit"
+                            className="label-mono text-ink-mute underline underline-offset-4 hover:text-ce"
+                          >
+                            Disconnect
+                          </button>
+                        </form>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -97,9 +174,7 @@ export default async function DashboardPage() {
               {WORKSPACE_NOTES.map((note) => (
                 <div className="surface-card-flat p-4" key={note.title}>
                   <p className="label-mono text-ink">{note.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-soft">
-                    {note.body}
-                  </p>
+                  <p className="mt-2 text-sm leading-6 text-ink-soft">{note.body}</p>
                 </div>
               ))}
             </div>
@@ -118,9 +193,7 @@ export default async function DashboardPage() {
                 <Row label="Email" value={user.email ?? '-'} />
                 <Row
                   label="Role"
-                  value={
-                    <span className="capitalize">{membership?.role ?? '-'}</span>
-                  }
+                  value={<span className="capitalize">{membership?.role ?? '-'}</span>}
                 />
                 <Row
                   label="Workspace ID"
@@ -131,6 +204,16 @@ export default async function DashboardPage() {
                       </span>
                     ) : (
                       '-'
+                    )
+                  }
+                />
+                <Row
+                  label="Stripe"
+                  value={
+                    stripeConnection ? (
+                      <span className="pill-trust">Connected</span>
+                    ) : (
+                      <span className="pill-neutral">Not connected</span>
                     )
                   }
                 />
@@ -155,13 +238,7 @@ export default async function DashboardPage() {
   );
 }
 
-function ProgressTrack({
-  total,
-  completed,
-}: {
-  total: number;
-  completed: number;
-}) {
+function ProgressTrack({ total, completed }: { total: number; completed: number }) {
   return (
     <div
       className="flex items-center gap-1"
@@ -173,28 +250,16 @@ function ProgressTrack({
       {Array.from({ length: total }).map((_, i) => (
         <span
           key={i}
-          className={`h-1 w-7 rounded-full ${
-            i < completed ? 'bg-trust' : 'bg-rule-strong'
-          }`}
+          className={`h-1 w-7 rounded-full ${i < completed ? 'bg-trust' : 'bg-rule-strong'}`}
         />
       ))}
     </div>
   );
 }
 
-function StatusPill({
-  status,
-}: {
-  status: (typeof SETUP_STEPS)[number]['status'];
-}) {
-  if (status === 'done') {
-    return <span className="pill-trust w-fit">Ready</span>;
-  }
-
-  if (status === 'next') {
-    return <span className="pill-neutral w-fit">Next</span>;
-  }
-
+function StatusPill({ status }: { status: 'done' | 'next' | 'waiting' }) {
+  if (status === 'done') return <span className="pill-trust w-fit">Ready</span>;
+  if (status === 'next') return <span className="pill-neutral w-fit">Next</span>;
   return <span className="pill-neutral w-fit">Waiting</span>;
 }
 
