@@ -1,4 +1,5 @@
 import { VerdactLogo } from './verdact-logo';
+import { ThemeToggle } from './theme-toggle';
 
 type SiteHeaderProps = {
   active?: 'home' | 'privacy' | 'signin' | 'connections' | 'evidence' | 'terms';
@@ -14,27 +15,31 @@ const navLinks = [
 
 export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
   return (
-    <header className="border-b border-[#d9e1dc] bg-white/95 px-5 py-4 text-[#172033] shadow-[0_1px_0_rgba(23,32,51,0.04)]">
+    <header className="sticky top-0 z-50 border-b border-rule bg-surface/85 px-5 py-4 text-ink backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <a className="flex w-fit items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-[#235f5c]/25" href="/">
+        <a
+          className="flex w-fit items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-action/30"
+          href="/"
+        >
           <VerdactLogo variant="mark" priority className="h-10 w-10" />
-          <div>
-            <p className="text-sm font-semibold leading-5 text-[#172033]">Verdact</p>
-            <p className="text-xs font-medium uppercase text-[#60717d]">
-              Dispute evidence
-            </p>
+          <div className="leading-none">
+            <p className="font-display text-lg font-semibold text-ink">Verdact</p>
+            <p className="label-mono mt-1">Dispute evidence</p>
           </div>
         </a>
 
-        <nav className="flex flex-wrap items-center gap-2 text-sm" aria-label="Primary navigation">
+        <nav
+          className="flex flex-wrap items-center gap-2 text-sm"
+          aria-label="Primary navigation"
+        >
           {navLinks.map((link) => {
             const isActive = active === link.key;
             return (
               <a
-                className={`rounded-md px-3 py-2 font-medium transition focus:outline-none focus:ring-2 focus:ring-[#235f5c]/25 ${
+                className={`rounded-md px-3 py-2 font-medium transition focus:outline-none focus:ring-2 focus:ring-action/30 ${
                   isActive
-                    ? 'bg-[#e5f1ee] text-[#174c49]'
-                    : 'text-[#4d5d69] hover:bg-[#f3f7f5] hover:text-[#172033]'
+                    ? 'bg-action-soft text-action'
+                    : 'text-ink-soft hover:bg-surface-3 hover:text-ink'
                 }`}
                 href={link.href}
                 key={link.key}
@@ -44,10 +49,10 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
             );
           })}
           {reviewer ? (
-            <span className="rounded-full border border-[#bdd9d3] bg-[#f2faf7] px-3 py-1.5 text-xs font-semibold uppercase text-[#235f5c]">
-              Review mode
-            </span>
+            <span className="pill-action">Review mode</span>
           ) : null}
+          <span className="mx-1 hidden h-5 w-px bg-rule sm:block" />
+          <ThemeToggle />
         </nav>
       </div>
     </header>
@@ -64,7 +69,7 @@ export function PageFrame({
   reviewer?: boolean;
 }>) {
   return (
-    <main className="min-h-screen bg-[#f7f9f6] text-[#172033]">
+    <main className="min-h-screen bg-surface text-ink">
       <SiteHeader active={active} reviewer={reviewer} />
       {children}
     </main>
@@ -83,7 +88,7 @@ export function TrustStrip() {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {trustPoints.map((point) => (
         <div
-          className="rounded-md border border-[#d9e1dc] bg-white px-4 py-3 text-sm font-medium text-[#344653]"
+          className="rounded-md border border-rule-strong bg-surface-2 px-4 py-3 text-sm font-medium text-ink-soft"
           key={point}
         >
           {point}
@@ -94,9 +99,5 @@ export function TrustStrip() {
 }
 
 export function SectionLabel({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <p className="text-xs font-semibold uppercase text-[#235f5c]">
-      {children}
-    </p>
-  );
+  return <p className="eyebrow">{children}</p>;
 }

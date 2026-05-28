@@ -36,34 +36,44 @@
 :root {
   color-scheme: light dark;
 
+  /* Light palette — matches approved "legal evidence workbench" wireframes */
   --surface: #f8fafc;
   --surface-2: #ffffff;
   --surface-3: #f1f5f9;
 
   --ink: #0f172a;
-  --ink-soft: #334155;
-  --ink-mute: #64748b;
-  --ink-faint: #94a3b8;
+  --ink-soft: #2c3a4d;
+  --ink-mute: #586577;
+  --ink-faint: #7b899b;
 
-  --rule: #d8e0eb;
-  --rule-strong: #a8b3c4;
+  --rule: #e2e8f0;
+  --rule-strong: #cbd5e1;
 
+  /* Action / cobalt command blue */
   --action: #1e40af;
   --action-soft: #eef2ff;
-  --action-deep: #172e75;
+  --action-rule: #c7d2fe;
+  --action-deep: #1b3a9e;
 
+  /* Accent / decision red (also the "missing proof" red) */
   --accent: #b42318;
-  --accent-soft: #fff1f0;
-  --accent-deep: #7a271a;
+  --accent-soft: #fdf2f1;
+  --accent-rule: #f1a8a2;
+  --accent-deep: #7a1d14;
 
-  --trust: #0e766e;
+  /* Trust / verified-evidence green */
+  --trust: #047857;
   --trust-soft: #ecfdf5;
+  --trust-rule: #6ee7b7;
 
-  --warning: #b54708;
+  /* Deadline amber */
+  --warning: #b45309;
   --warning-soft: #fffbeb;
+  --warning-rule: #fcd34d;
 
-  --danger: #b91c1c;
-  --danger-soft: #fef2f2;
+  /* System-error red (kept distinct from --accent for form errors) */
+  --danger: #b42318;
+  --danger-soft: #fdf2f1;
 
   --shadow-color: 15, 23, 42;
   --shadow-elev-1: 0 1px 2px 0 rgba(var(--shadow-color), 0.06), 0 8px 22px -10px rgba(var(--shadow-color), 0.10);
@@ -83,11 +93,14 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    /* Dark = same workbench theme, slate hue family. The wireframes use a
+       slate "showcase/appbar" surface (#0f172a) with cobalt + green/red
+       status; dark mode extends that into the full page. */
     --surface: #0a0e1a;
     --surface-2: #131a2e;
     --surface-3: #1c2540;
 
-    --ink: #e2e8f0;
+    --ink: #e7edf4;
     --ink-soft: #cbd5e1;
     --ink-mute: #94a3b8;
     --ink-faint: #64748b;
@@ -95,37 +108,42 @@
     --rule: #1e293b;
     --rule-strong: #334155;
 
-    --action: #4f7df9;
-    --action-soft: #1a2342;
-    --action-deep: #6c95ff;
+    --action: #6c95ff;
+    --action-soft: #16224a;
+    --action-rule: #2c3f7a;
+    --action-deep: #88aaff;
 
-    --accent: #fb7185;
-    --accent-soft: #2a1414;
-    --accent-deep: #fda4af;
+    --accent: #f1746a;
+    --accent-soft: #2a1411;
+    --accent-rule: #5c241e;
+    --accent-deep: #f8a39b;
 
-    --trust: #2dd4bf;
-    --trust-soft: #042f2a;
+    --trust: #34d399;
+    --trust-soft: #07271f;
+    --trust-rule: #1f5e49;
 
     --warning: #fbbf24;
     --warning-soft: #2a1d05;
+    --warning-rule: #5e4a12;
 
-    --danger: #ef4444;
-    --danger-soft: #2a1414;
+    --danger: #f1746a;
+    --danger-soft: #2a1411;
 
     --shadow-color: 0, 0, 0;
     --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
     --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
 
-    --focus: #4f7df9;
+    --focus: #6c95ff;
   }
 }
 
 :root[data-theme="dark"] {
+  /* Explicit dark override — mirrors the system-dark block above. */
   --surface: #0a0e1a;
   --surface-2: #131a2e;
   --surface-3: #1c2540;
 
-  --ink: #e2e8f0;
+  --ink: #e7edf4;
   --ink-soft: #cbd5e1;
   --ink-mute: #94a3b8;
   --ink-faint: #64748b;
@@ -133,28 +151,32 @@
   --rule: #1e293b;
   --rule-strong: #334155;
 
-  --action: #4f7df9;
-  --action-soft: #1a2342;
-  --action-deep: #6c95ff;
+  --action: #6c95ff;
+  --action-soft: #16224a;
+  --action-rule: #2c3f7a;
+  --action-deep: #88aaff;
 
-  --accent: #fb7185;
-  --accent-soft: #2a1414;
-  --accent-deep: #fda4af;
+  --accent: #f1746a;
+  --accent-soft: #2a1411;
+  --accent-rule: #5c241e;
+  --accent-deep: #f8a39b;
 
-  --trust: #2dd4bf;
-  --trust-soft: #042f2a;
+  --trust: #34d399;
+  --trust-soft: #07271f;
+  --trust-rule: #1f5e49;
 
   --warning: #fbbf24;
   --warning-soft: #2a1d05;
+  --warning-rule: #5e4a12;
 
-  --danger: #ef4444;
-  --danger-soft: #2a1414;
+  --danger: #f1746a;
+  --danger-soft: #2a1411;
 
   --shadow-color: 0, 0, 0;
   --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
   --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
 
-  --focus: #4f7df9;
+  --focus: #6c95ff;
 }
 @theme inline {
   --color-background: var(--background);
@@ -174,24 +196,28 @@
 
   --color-action: var(--action);
   --color-action-soft: var(--action-soft);
+  --color-action-rule: var(--action-rule);
   --color-action-deep: var(--action-deep);
 
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-rule: var(--accent-rule);
   --color-accent-deep: var(--accent-deep);
 
   --color-trust: var(--trust);
   --color-trust-soft: var(--trust-soft);
+  --color-trust-rule: var(--trust-rule);
 
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-warning-rule: var(--warning-rule);
 
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
 
   --font-display: var(--font-display, "Fraunces"), "Iowan Old Style", "Palatino", "Georgia", serif;
-  --font-body: var(--font-body, "Instrument Sans"), "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-mono, "JetBrains Mono"), "SFMono-Regular", "Menlo", monospace;
+  --font-body: var(--font-body, "Inter"), system-ui, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-mono, "IBM Plex Mono"), ui-monospace, "SFMono-Regular", "Menlo", monospace;
 
   --font-sans: var(--font-body);
 }
@@ -202,8 +228,7 @@
 body {
   background: var(--surface);
   color: var(--ink);
-  font-family: var(--font-body), "Helvetica Neue", Arial, sans-serif;
-  font-feature-settings: "ss01", "ss02", "cv11";
+  font-family: var(--font-body), system-ui, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -255,6 +280,47 @@ a {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--ink-soft);
+}
+
+/* Eyebrow — mono kicker with a leading hairline, as used above every
+   section heading in the wireframes. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+/* Centered eyebrow variant for final-CTA style sections. */
+.eyebrow-center {
+  justify-content: center;
+}
+
+/* Section heading — Fraunces display, tight tracking. */
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.section-dek {
+  font-size: 1.0625rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
 }
 
 /* ------------------------------------------------------------------ */
@@ -327,6 +393,61 @@ a {
   text-transform: uppercase;
   padding: 0.22rem 0.55rem;
   border-radius: 2px;
+}
+
+.pill-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--action-rule);
+  color: var(--action);
+  background: var(--action-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+/* Status pill for live deadlines ("Needs response"). Pill-shaped, amber,
+   with a small ping dot — matches the wireframe dispute strip. */
+.pill-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--warning-rule);
+  color: var(--warning);
+  background: var(--warning-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+
+.pill-warning::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Reason-code chip (e.g. "RC 13.1") — cobalt, square, mono. */
+.chip-rc {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--action);
+  border: 1px solid var(--action-rule);
+  background: var(--action-soft);
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
 }
 
 /* ------------------------------------------------------------------ */
@@ -582,6 +703,112 @@ a {
 .rule-strong {
   border-top: 1px solid var(--rule-strong);
 }
+
+/* ------------------------------------------------------------------ */
+/* Wireframe primitives                                                */
+/* Shared classes the page-port agents build on. Keep names stable.    */
+/* ------------------------------------------------------------------ */
+
+/* Blueprint grid background — hero and final-CTA bands. The radial
+   fade is applied by the page via ::after; this lays down the grid. */
+.grid-bg {
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 56px 56px, 56px 56px;
+}
+
+/* Slate "showcase" surface — dark band on a light page (product
+   showcase, footer, appbar). Self-contained dark context. */
+.surface-slate {
+  background: #0f172a;
+  color: #cbd5e1;
+}
+:root[data-theme="dark"] .surface-slate,
+.surface-slate {
+  /* In dark mode the page is already slate; keep the band one step
+     deeper so it still reads as a distinct panel. */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .surface-slate {
+    background: #070b14;
+  }
+}
+:root[data-theme="dark"] .surface-slate {
+  background: #070b14;
+}
+
+/* Source provenance tags. Brand-ish tints in light; neutralized to the
+   token system in dark so they don't glare. */
+.src-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.18rem 0.45rem;
+  border-radius: 3px;
+  border: 1px solid;
+}
+.src-tag.stripe { color: #4b38c4; background: #f1effb; border-color: #cfc6f1; }
+.src-tag.gmail  { color: #a82015; background: #fdf2f1; border-color: #f0c4bf; }
+.src-tag.slack  { color: #553c6e; background: #f6f1fa; border-color: #ddccea; }
+.src-tag.policy { color: var(--ink-soft); background: var(--surface-3); border-color: var(--rule-strong); }
+.src-tag.missing { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-rule); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .src-tag.stripe { color: #b3a6ff; background: #1b1740; border-color: #322a63; }
+  :root:not([data-theme="light"]) .src-tag.gmail  { color: #f1746a; background: #2a1411; border-color: #5c241e; }
+  :root:not([data-theme="light"]) .src-tag.slack  { color: #c9a8e8; background: #221833; border-color: #3d2c52; }
+}
+:root[data-theme="dark"] .src-tag.stripe { color: #b3a6ff; background: #1b1740; border-color: #322a63; }
+:root[data-theme="dark"] .src-tag.gmail  { color: #f1746a; background: #2a1411; border-color: #5c241e; }
+:root[data-theme="dark"] .src-tag.slack  { color: #c9a8e8; background: #221833; border-color: #3d2c52; }
+
+/* Confirmed-evidence surface — mint tint for verified rows/cards. */
+.surface-confirmed {
+  background: var(--trust-soft);
+  border: 1px solid var(--trust-rule);
+  border-radius: 4px;
+}
+
+/* Missing-proof surface — softened red diagonal hatch. Signals a gap
+   without relying on color alone (pair with a MISSING label). */
+.surface-missing {
+  background:
+    linear-gradient(rgba(180, 35, 24, 0.04), rgba(180, 35, 24, 0.04)),
+    repeating-linear-gradient(135deg, transparent 0 16px, rgba(180, 35, 24, 0.05) 16px 17px);
+  border: 1px solid var(--accent-rule);
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .surface-missing {
+    background:
+      linear-gradient(rgba(241, 116, 106, 0.07), rgba(241, 116, 106, 0.07)),
+      repeating-linear-gradient(135deg, transparent 0 16px, rgba(241, 116, 106, 0.08) 16px 17px);
+    border-color: var(--accent-rule);
+  }
+}
+:root[data-theme="dark"] .surface-missing {
+  background:
+    linear-gradient(rgba(241, 116, 106, 0.07), rgba(241, 116, 106, 0.07)),
+    repeating-linear-gradient(135deg, transparent 0 16px, rgba(241, 116, 106, 0.08) 16px 17px);
+  border-color: var(--accent-rule);
+}
+
+/* Status dot for evidence items: ok (green check) / miss (red alert). */
+.status-dot {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.status-dot.ok   { background: var(--trust-soft); border: 1.5px solid var(--trust); color: var(--trust); }
+.status-dot.miss { background: var(--accent-soft); border: 1.5px solid var(--accent); color: var(--accent); }
 
 /* ------------------------------------------------------------------ */
 /* Motion                                                              */

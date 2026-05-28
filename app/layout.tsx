@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
+// Display: Fraunces variable serif for headings (matches approved wireframes).
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
@@ -9,14 +10,17 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
-const instrumentSans = Instrument_Sans({
+// Body: Inter variable sans for all running text.
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+// Metadata / labels: IBM Plex Mono for ALL-CAPS eyebrows and record fields.
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   variable: "--font-mono",
   display: "swap",
 });
@@ -44,12 +48,15 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`h-full antialiased ${fraunces.variable} ${instrumentSans.variable} ${jetbrainsMono.variable}`}
+      className={`h-full antialiased ${fraunces.variable} ${inter.variable} ${ibmPlexMono.variable}`}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('verdact-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}`,
+            // FOUC guard: apply an explicit stored preference before paint.
+            // No stored value -> no data-theme attribute -> CSS follows the
+            // system prefers-color-scheme. Default is therefore "system".
+            __html: `try{var t=localStorage.getItem('verdact-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}else{document.documentElement.removeAttribute('data-theme');}}catch(e){}`,
           }}
         />
       </head>

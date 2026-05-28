@@ -1,4 +1,5 @@
 import { VerdactLogo } from './verdact-logo';
+import { ThemeToggle } from './theme-toggle';
 
 type AppHeaderProps = {
   email: string | null | undefined;
@@ -51,6 +52,8 @@ export function AppHeader({ email, businessName, active }: AppHeaderProps) {
           </nav>
 
           <span className="mx-2 hidden h-5 w-px bg-rule md:block" />
+
+          <ThemeToggle />
 
           {email ? (
             <span className="meta-mono hidden text-ink-mute md:inline">
