@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { VerdactLogo } from './verdact-logo';
 
 type SiteHeaderProps = {
   active?: 'home' | 'privacy' | 'signin' | 'connections' | 'evidence' | 'terms';
@@ -17,10 +17,10 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
     <header className="border-b border-[#d9e1dc] bg-white/95 px-5 py-4 text-[#172033] shadow-[0_1px_0_rgba(23,32,51,0.04)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <a className="flex w-fit items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-[#235f5c]/25" href="/">
-          <Image src="/verdact-logo.png" alt="Verdact" width={40} height={40} priority />
+          <VerdactLogo variant="mark" priority className="h-10 w-10" />
           <div>
             <p className="text-sm font-semibold leading-5 text-[#172033]">Verdact</p>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#60717d]">
+            <p className="text-xs font-medium uppercase text-[#60717d]">
               Dispute evidence
             </p>
           </div>
@@ -44,7 +44,7 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
             );
           })}
           {reviewer ? (
-            <span className="rounded-full border border-[#bdd9d3] bg-[#f2faf7] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#235f5c]">
+            <span className="rounded-full border border-[#bdd9d3] bg-[#f2faf7] px-3 py-1.5 text-xs font-semibold uppercase text-[#235f5c]">
               Review mode
             </span>
           ) : null}
@@ -95,7 +95,7 @@ export function TrustStrip() {
 
 export function SectionLabel({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#235f5c]">
+    <p className="text-xs font-semibold uppercase text-[#235f5c]">
       {children}
     </p>
   );

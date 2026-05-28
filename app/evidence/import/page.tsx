@@ -196,7 +196,7 @@ export default async function EvidenceImportPage({ searchParams }: ImportPagePro
             </div>
 
             <aside className="h-fit rounded-lg border border-[#d9e1dc] bg-white p-5 shadow-[0_18px_55px_rgba(23,32,51,0.08)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#235f5c]">
+              <p className="text-xs font-semibold uppercase text-[#235f5c]">
                 Selected message
               </p>
               {selectedMessage ? (

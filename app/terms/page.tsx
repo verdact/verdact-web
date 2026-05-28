@@ -6,8 +6,9 @@ export const metadata = {
 };
 
 const keyTerms = [
-  'Verdact is a dispute evidence preparation tool, not a legal service.',
+  'Verdact is a dispute evidence and filing workflow tool, not a legal service.',
   'We do not guarantee chargeback dispute win rates.',
+  'Automatic filing requires an active subscription and merchant-configured controls.',
   'Gmail and Slack connections are entirely merchant-initiated.',
   'Governed by the laws of the State of Delaware.',
 ] as const;
@@ -64,13 +65,16 @@ export default function TermsPage() {
 
             <TermsSection title="2. Description of Service">
               <p>
-                Verdact is a chargeback dispute evidence organization platform. We help merchants
-                monitor dispute rates and compile delivery, policy, and communication evidence from
-                sources like Stripe, Slack, and Gmail into a processor-ready dispute packet.
+                Verdact is a chargeback dispute evidence and filing workflow platform. We help
+                merchants monitor dispute rates, compile delivery, policy, and communication
+                evidence, and manage filing controls for eligible dispute responses.
               </p>
               <p className="mt-3">
-                Verdact does not file disputes automatically without your review and approval. We are
-                not a payment processor, bank, or legal service.
+                Non-subscribed accounts must file manually. Active subscribers may choose automatic
+                filing or review-then-submit for eligible Stripe dispute responses. When filing
+                automation is enabled, Verdact submits according to merchant-configured controls.
+                You are responsible for reviewing your settings and evidence records. We are not a
+                payment processor, bank, or legal service.
               </p>
             </TermsSection>
 
@@ -109,7 +113,7 @@ export default function TermsPage() {
                 any warranty of any kind, either express or implied.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
-                <li>We do not warrant or guarantee that any dispute compiled or filed using Verdact will be won or decided in your favor.</li>
+                <li>We do not warrant or guarantee that any dispute evidence prepared with Verdact will be won or decided in your favor.</li>
                 <li>Card network rules, chargeback decisions, and processor evaluations are governed entirely by third-party financial institutions and card networks.</li>
                 <li>Verdact shall not be liable for any direct, indirect, incidental, or consequential damages resulting from lost funds, account terminations, or dispute outcomes.</li>
               </ul>

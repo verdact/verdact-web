@@ -1,15 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1e3a8a" />
-      <stop offset="0.52" stop-color="#172554" />
-      <stop offset="1" stop-color="#0f172a" />
-    </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#60a5fa" />
-      <stop offset="1" stop-color="#22d3ee" />
-    </linearGradient>
-  </defs>
-  <path d="M14 6h36v23c0 15.8-9.6 24.2-18 28-8.4-3.8-18-12.2-18-28V6Z" fill="url(#shield)" stroke="url(#edge)" stroke-width="3" stroke-linejoin="round" />
-  <path d="m22 32 7.5 8.3L44 23" fill="none" stroke="#ffffff" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Verdact</title>
+  <rect x="4" y="4" width="56" height="56" rx="8" fill="#0F172A"/>
+  <path d="M18 15 32 49" fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M46 15 32 49" fill="none" stroke="#B42318" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M20 17.5h14M23 25h10" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-linecap="square"/>
+  <path d="M37 41h10" fill="none" stroke="#0E766E" stroke-width="3" stroke-linecap="square"/>
 </svg>
