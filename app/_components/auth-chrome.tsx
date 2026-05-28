@@ -20,13 +20,19 @@ function AuthHeader() {
   return (
     <header className="border-b border-rule">
       <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between gap-4 px-6 py-5 md:px-10">
-        <a href="/" className="flex items-center">
-          <VerdactLogo variant="lockup" priority className="h-10 w-auto" />
+        <a
+          href="/"
+          className="flex w-fit items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+        >
+          <VerdactLogo variant="lockup" priority className="h-9 w-auto" />
         </a>
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <a href="/" className="label-mono hover:text-ink">
+          <a
+            href="/"
+            className="label-mono rounded-sm px-1 py-0.5 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+          >
             ← Home
           </a>
         </div>
@@ -42,14 +48,23 @@ function AuthFooter() {
         <p className="label-mono">
           Verdact · Stripe dispute defense
         </p>
-        <div className="flex flex-wrap items-center gap-5 text-sm text-ink-mute">
-          <a className="hover:text-ink" href="/privacy">
+        <div className="flex flex-wrap items-center gap-1 text-sm text-ink-mute">
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="/privacy"
+          >
             Privacy
           </a>
-          <a className="hover:text-ink" href="/terms">
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="/terms"
+          >
             Terms
           </a>
-          <a className="hover:text-ink" href="mailto:admin@verdact.io">
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="mailto:admin@verdact.io"
+          >
             admin@verdact.io
           </a>
         </div>

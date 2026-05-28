@@ -46,24 +46,28 @@ function Header() {
         </a>
 
         <nav
-          className="ml-2 hidden items-center gap-6 text-sm md:flex"
+          className="ml-2 hidden items-center gap-1 text-sm md:flex"
           aria-label="Primary"
         >
-          <a className="text-ink-soft transition hover:text-ink" href="#who">
-            Who it is for
-          </a>
-          <a className="text-ink-soft transition hover:text-ink" href="#how">
-            How it works
-          </a>
-          <a className="text-ink-soft transition hover:text-ink" href="#vamp">
-            VAMP
-          </a>
+          {[
+            { href: '#who', label: 'Who it is for' },
+            { href: '#how', label: 'How it works' },
+            { href: '#vamp', label: 'VAMP' },
+          ].map((link) => (
+            <a
+              key={link.href}
+              className="rounded-md px-2.5 py-2 text-ink-soft transition-colors hover:bg-surface-3 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+              href={link.href}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
 
         <span className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <ThemeToggle className="hidden sm:inline-flex" />
+          <ThemeToggle />
           <a className="btn-ghost hidden px-3 py-2 text-sm sm:inline-flex" href="/login">
             Log in
           </a>
@@ -664,7 +668,7 @@ function VampBand() {
             <em style={{ fontStyle: 'italic', color: '#93c5fd' }}>ratio event.</em>
           </h2>
           <a
-            className="mt-5 inline-flex items-center gap-2.5 pb-1"
+            className="mt-5 inline-flex items-center gap-2.5 rounded-sm pb-1 transition-colors hover:text-[#bfdbfe] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/50"
             href="/tools/vamp-check"
             style={{
               fontFamily: 'var(--font-mono)',
@@ -880,27 +884,22 @@ function Footer() {
         >
           You see every piece of evidence before it goes to the bank.
         </span>
-        <nav className="flex flex-wrap gap-5 text-[12.5px]" aria-label="Footer">
-          <a className="transition hover:text-[#fff]" style={{ color: '#cbd5e1' }} href="#who">
-            Who it is for
-          </a>
-          <a className="transition hover:text-[#fff]" style={{ color: '#cbd5e1' }} href="#how">
-            How it works
-          </a>
-          <a
-            className="transition hover:text-[#fff]"
-            style={{ color: '#cbd5e1' }}
-            href="/tools/vamp-check"
-          >
-            VAMP check
-          </a>
-          <a
-            className="transition hover:text-[#fff]"
-            style={{ color: '#cbd5e1' }}
-            href="/login"
-          >
-            Reviewer sign-in
-          </a>
+        <nav className="flex flex-wrap gap-1 text-[12.5px]" aria-label="Footer">
+          {[
+            { href: '#who', label: 'Who it is for' },
+            { href: '#how', label: 'How it works' },
+            { href: '/tools/vamp-check', label: 'VAMP check' },
+            { href: '/login', label: 'Sign in' },
+          ].map((link) => (
+            <a
+              key={link.label}
+              className="rounded-sm px-2 py-1 transition-colors hover:text-[#fff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]/50"
+              style={{ color: '#cbd5e1' }}
+              href={link.href}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
       </div>
     </footer>

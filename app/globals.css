@@ -44,7 +44,9 @@
   --ink: #0f172a;
   --ink-soft: #2c3a4d;
   --ink-mute: #586577;
-  --ink-faint: #7b899b;
+  /* Tertiary metadata. Darkened from #7b899b to clear WCAG AA (~4.5:1) for the
+     small mono timestamps/labels it carries. */
+  --ink-faint: #6b7889;
 
   --rule: #e2e8f0;
   --rule-strong: #cbd5e1;
@@ -235,6 +237,55 @@ body {
 
 a {
   text-underline-offset: 3px;
+}
+
+/* Theme-aware keyboard focus for any interactive element that doesn't set its
+   own ring. Mouse clicks won't trigger it (:focus-visible only), so it stays
+   out of the way until you tab. */
+:where(a, button, [role="radio"], summary):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Smooth in-page anchor scrolling, plus scroll-margin so the sticky header
+   never covers a section heading when you jump to it. Disabled under
+   reduced-motion. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* Theme-token transition on the page chrome so toggling System/Light/Dark
+   eases rather than snaps. Limited to color properties to avoid layout jank. */
+body,
+.surface-card,
+.surface-card-flat,
+.field-input,
+.btn-secondary {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .surface-card,
+  .surface-card-flat,
+  .field-input,
+  .btn-secondary {
+    transition: none;
+  }
 }
 
 ::selection {

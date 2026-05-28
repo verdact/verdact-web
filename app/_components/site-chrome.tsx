@@ -18,12 +18,14 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
     <header className="sticky top-0 z-50 border-b border-rule bg-surface/85 px-5 py-4 text-ink backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <a
-          className="flex w-fit items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-action/30"
+          className="flex w-fit items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
           href="/"
         >
           <VerdactLogo variant="mark" priority className="h-10 w-10" />
           <div className="leading-none">
-            <p className="font-display text-lg font-semibold text-ink">Verdact</p>
+            <p className="font-display text-lg font-semibold tracking-[-0.01em] text-ink">
+              Verdact<span className="text-action">.</span>
+            </p>
             <p className="label-mono mt-1">Dispute evidence</p>
           </div>
         </a>
@@ -36,11 +38,12 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
             const isActive = active === link.key;
             return (
               <a
-                className={`rounded-md px-3 py-2 font-medium transition focus:outline-none focus:ring-2 focus:ring-action/30 ${
+                className={`rounded-md px-3 py-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40 ${
                   isActive
                     ? 'bg-action-soft text-action'
                     : 'text-ink-soft hover:bg-surface-3 hover:text-ink'
                 }`}
+                aria-current={isActive ? 'page' : undefined}
                 href={link.href}
                 key={link.key}
               >

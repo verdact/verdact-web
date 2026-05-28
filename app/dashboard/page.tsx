@@ -218,7 +218,7 @@ export default async function DashboardPage({
                         <form action={disconnectStripeAction}>
                           <button
                             type="submit"
-                            className="label-mono text-ink-mute underline underline-offset-4 transition hover:text-accent"
+                            className="label-mono rounded-sm px-1 py-0.5 text-ink-mute underline underline-offset-4 transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                           >
                             Disconnect
                           </button>
@@ -235,7 +235,10 @@ export default async function DashboardPage({
                 const Icon = note.icon;
                 return (
                   <div className="surface-card-flat p-5" key={note.title}>
-                    <span className="status-dot h-8 w-8 ok mb-3" aria-hidden="true">
+                    <span
+                      className="mb-3 grid h-8 w-8 place-items-center rounded-lg border border-action-rule bg-action-soft text-action"
+                      aria-hidden="true"
+                    >
                       <Icon className="h-4 w-4" />
                     </span>
                     <p className="label-mono-strong">{note.title}</p>

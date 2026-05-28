@@ -18,7 +18,10 @@ export function AppHeader({ email, businessName, active }: AppHeaderProps) {
   return (
     <header className="border-b border-rule">
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between md:px-10">
-        <a className="flex items-center gap-3" href="/dashboard">
+        <a
+          className="flex w-fit items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
+          href="/dashboard"
+        >
           <VerdactLogo variant="mark" priority className="h-10 w-10" />
           <div className="leading-none">
             <p className="label-mono">Verdact workspace</p>
@@ -37,11 +40,12 @@ export function AppHeader({ email, businessName, active }: AppHeaderProps) {
               const isActive = active === link.key;
               return (
                 <a
-                  className={`label-mono-strong rounded-sm px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-ink/30 ${
+                  className={`label-mono-strong rounded-sm px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 ${
                     isActive
                       ? 'bg-ink text-surface'
                       : 'text-ink-mute hover:text-ink hover:bg-surface-3'
                   }`}
+                  aria-current={isActive ? 'page' : undefined}
                   href={link.href}
                   key={link.key}
                 >
@@ -84,9 +88,40 @@ export function AppShell({
   active?: AppHeaderProps['active'];
 }) {
   return (
-    <main className="surface-paper min-h-screen text-ink">
+    <main className="surface-paper flex min-h-screen flex-col text-ink">
       <AppHeader email={email} businessName={businessName} active={active} />
-      {children}
+      <div className="flex-1">{children}</div>
+      <AppFooter />
     </main>
+  );
+}
+
+function AppFooter() {
+  return (
+    <footer className="border-t border-rule">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-3 px-6 py-5 md:px-10">
+        <p className="label-mono">Verdact · Stripe dispute defense</p>
+        <div className="flex flex-wrap items-center gap-1 text-sm text-ink-mute">
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="/privacy"
+          >
+            Privacy
+          </a>
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="/terms"
+          >
+            Terms
+          </a>
+          <a
+            className="rounded-sm px-2 py-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+            href="mailto:admin@verdact.io"
+          >
+            admin@verdact.io
+          </a>
+        </div>
+      </div>
+    </footer>
   );
 }
