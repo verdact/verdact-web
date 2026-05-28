@@ -14,6 +14,7 @@ type StripeConnection = {
   id: string;
   processor_account_id: string;
   livemode: boolean;
+  connected_at: string | null;
 } | null;
 
 export default async function DashboardPage({
@@ -36,7 +37,7 @@ export default async function DashboardPage({
     const supabase = await createClient();
     const { data } = await supabase
       .from('processor_connections')
-      .select('id, processor_account_id, livemode')
+      .select('id, processor_account_id, livemode, connected_at')
       .eq('merchant_id', membership.merchant.id)
       .eq('processor', 'stripe')
       .eq('connection_status', 'connected')
@@ -44,12 +45,24 @@ export default async function DashboardPage({
     stripeConnection = data ?? null;
   }
 
+  const stripeAccountLabel = stripeConnection
+    ? formatStripeAccountId(stripeConnection.processor_account_id)
+    : null;
+  const stripeModeLabel = stripeConnection
+    ? stripeConnection.livemode
+      ? 'Live mode'
+      : 'Test mode'
+    : null;
+  const connectedAtLabel = stripeConnection?.connected_at
+    ? formatDateTime(stripeConnection.connected_at)
+    : null;
+
   const stripeStep = stripeConnection
     ? ({
         key: 'stripe',
         label: 'Connect Stripe',
         status: 'done',
-        blurb: `Connected${stripeConnection.livemode ? '' : ' (test mode)'}. Account: ${stripeConnection.processor_account_id}`,
+        blurb: `${stripeModeLabel}. Account ${stripeAccountLabel}. Verdact stores the connected account ID only.`,
       } as const)
     : ({
         key: 'stripe',
@@ -67,10 +80,18 @@ export default async function DashboardPage({
     },
     stripeStep,
     {
+      key: 'intake',
+      label: 'Turn on dispute intake',
+      status: stripeConnection ? 'next' : 'waiting',
+      blurb: stripeConnection
+        ? 'Stripe is ready. Webhook intake comes next so disputes and early fraud warnings can appear here automatically.'
+        : 'Connect Stripe first, then Verdact can listen for disputes and early fraud warnings.',
+    },
+    {
       key: 'sources',
       label: 'Add evidence sources',
       status: 'waiting',
-      blurb: 'Gmail, Slack, and file evidence should be added only through explicit merchant action.',
+      blurb: 'Gmail, Slack, and file evidence stay off until you explicitly connect or upload them.',
     },
     {
       key: 'record',
@@ -99,8 +120,11 @@ export default async function DashboardPage({
         <div className="mx-auto grid w-full max-w-[1200px] gap-12 lg:grid-cols-[1.35fr_minmax(300px,0.65fr)] lg:items-start">
           <div>
             {justConnected && (
-              <div className="mb-6 rounded-lg border border-trust bg-trust/10 px-5 py-3 text-sm text-trust">
-                Stripe connected successfully.
+              <div
+                className="mb-6 rounded-lg border border-trust bg-trust/10 px-5 py-3 text-sm text-trust"
+                role="status"
+              >
+                Stripe connected successfully. Verdact saved the connected account ID; no API keys were stored.
               </div>
             )}
             {stripeError && (
@@ -116,10 +140,18 @@ export default async function DashboardPage({
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-ink-soft">
                 {stripeConnection
-                  ? 'Stripe is connected. Add evidence sources to start building dispute records.'
+                  ? 'Stripe is connected. Next, turn on dispute intake so new cases can become evidence records.'
                   : 'Your account is set up. Connecting Stripe comes next.'}
               </p>
             </div>
+
+            {stripeConnection && (
+              <div className="reveal reveal-2 mt-10 grid gap-3 sm:grid-cols-3">
+                <ConnectionMetric label="Stripe" value="Connected" tone="trust" />
+                <ConnectionMetric label="Mode" value={stripeModeLabel ?? '-'} />
+                <ConnectionMetric label="Account" value={stripeAccountLabel ?? '-'} mono />
+              </div>
+            )}
 
             <div className="reveal reveal-2 surface-card mt-10 overflow-hidden">
               <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule-strong px-6 py-4">
@@ -211,12 +243,19 @@ export default async function DashboardPage({
                   label="Stripe"
                   value={
                     stripeConnection ? (
-                      <span className="pill-trust">Connected</span>
+                      <span className="flex flex-col items-start gap-1">
+                        <span className="pill-trust">Connected</span>
+                        <span className="font-mono text-[0.72rem] text-ink-mute">
+                          {stripeAccountLabel}
+                        </span>
+                      </span>
                     ) : (
                       <span className="pill-neutral">Not connected</span>
                     )
                   }
                 />
+                <Row label="Mode" value={stripeModeLabel ?? '-'} />
+                <Row label="Connected" value={connectedAtLabel ?? '-'} />
                 <Row label="Filing" value={<span className="pill-neutral">Not started</span>} />
               </dl>
             </div>
@@ -258,9 +297,34 @@ function ProgressTrack({ total, completed }: { total: number; completed: number 
 }
 
 function StatusPill({ status }: { status: 'done' | 'next' | 'waiting' }) {
-  if (status === 'done') return <span className="pill-trust w-fit">Ready</span>;
+  if (status === 'done') return <span className="pill-trust w-fit">Done</span>;
   if (status === 'next') return <span className="pill-neutral w-fit">Next</span>;
   return <span className="pill-neutral w-fit">Waiting</span>;
+}
+
+function ConnectionMetric({
+  label,
+  value,
+  mono = false,
+  tone,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  tone?: 'trust';
+}) {
+  return (
+    <div className="surface-card-flat p-4">
+      <p className="label-mono text-ink-mute">{label}</p>
+      <p
+        className={`mt-2 text-base font-medium leading-snug ${
+          mono ? 'font-mono text-sm' : ''
+        } ${tone === 'trust' ? 'text-trust' : 'text-ink'}`}
+      >
+        {value}
+      </p>
+    </div>
+  );
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -270,6 +334,21 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <dd className="text-sm leading-6 text-ink">{value}</dd>
     </div>
   );
+}
+
+function formatStripeAccountId(accountId: string) {
+  if (accountId.length <= 12) return accountId;
+  return `${accountId.slice(0, 8)}...${accountId.slice(-4)}`;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(new Date(value));
 }
 
 const WORKSPACE_NOTES = [
