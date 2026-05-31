@@ -6,6 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 // unnecessary renders and provides UX-level redirects.
 
 const AUTHED_REDIRECTS_AWAY_FROM = ['/login', '/signup'];
+const REVIEWER_COOKIE_NAME = 'verdact_reviewer_session';
 
 function isProtectedPath(pathname: string): boolean {
   return (
@@ -22,11 +23,22 @@ function isAuthRoute(pathname: string): boolean {
   );
 }
 
+function isReviewerProtectedPath(pathname: string): boolean {
+  return pathname === '/settings/connections';
+}
+
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
 
   if (isProtectedPath(pathname) && !user) {
+    if (
+      isReviewerProtectedPath(pathname) &&
+      request.cookies.get(REVIEWER_COOKIE_NAME)?.value === '1'
+    ) {
+      return response;
+    }
+
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
