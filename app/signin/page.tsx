@@ -8,8 +8,8 @@ type SignInPageProps = {
 };
 
 export const metadata = {
-  title: 'Sign in - Verdact',
-  description: 'Reviewer sign-in for Verdact Gmail OAuth verification.',
+  title: 'Google OAuth reviewer access - Verdact',
+  description: 'Temporary reviewer access for Verdact Gmail OAuth verification.',
 };
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
@@ -33,6 +33,19 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
                 This path lets Google reviewers reach Verdact&apos;s
                 user-initiated Gmail connection flow without a separate account
                 setup or two-factor authentication step.
+              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[#52616d]">
+                This is not the public merchant sign-in. The public website is
+                {' '}
+                <a className="font-semibold text-[#235f5c] underline" href="/">
+                  verdact.io
+                </a>
+                , and merchant login lives at
+                {' '}
+                <a className="font-semibold text-[#235f5c] underline" href="/login">
+                  /login
+                </a>
+                .
               </p>
             </div>
 
@@ -65,8 +78,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-[#172033]">Continue to Verdact</h2>
               <p className="mt-2 text-sm leading-6 text-[#52616d]">
-                The next screen shows the Gmail connection card and the exact
-                consent flow under review.
+                Google reviewers should use this temporary path only for OAuth
+                verification. No Verdact mailbox account is required.
               </p>
             </div>
 
