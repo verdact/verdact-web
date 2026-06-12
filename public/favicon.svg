@@ -2,10 +2,10 @@
   <title id="title">Verdact</title>
   <rect x="0" y="0" width="64" height="64" rx="16" fill="#0A5C44"/>
   
-  <!-- Left stroke: The solid evidence (White/Paper) -->
+  <!-- Left stroke -->
   <path d="M18 22 L32 46" fill="none" stroke="#FAFAF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   
-  <!-- Right stroke top: The missing gap (Gap Red) -->
-  <path d="M32 46 L38 36" fill="none" stroke="#FAFAF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M42 29 L46 22" fill="none" stroke="#D14418" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Right stroke with an empty gap -->
+  <path d="M32 46 L36 39" fill="none" stroke="#FAFAF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42 29 L46 22" fill="none" stroke="#FAFAF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
