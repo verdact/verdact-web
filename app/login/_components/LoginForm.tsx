@@ -37,8 +37,9 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         ) : null}
 
         <div className="field">
-          <label>Work email</label>
+          <label htmlFor="login-email">Work email</label>
           <input
+            id="login-email"
             className={`inp ${errorMessage ? 'inp--error' : ''}`}
             name="email"
             type="email"
@@ -50,8 +51,9 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         </div>
 
         <div className="field">
-          <label>Password</label>
+          <label htmlFor="login-password">Password</label>
           <input
+            id="login-password"
             className={`inp ${errorMessage ? 'inp--error' : ''}`}
             name="password"
             type="password"

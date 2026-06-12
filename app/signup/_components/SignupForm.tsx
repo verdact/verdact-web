@@ -36,8 +36,9 @@ export function SignupForm() {
         ) : null}
 
         <div className="field">
-          <label>Work email</label>
+          <label htmlFor="signup-email">Work email</label>
           <input
+            id="signup-email"
             className={`inp ${state?.error ? 'inp--error' : ''}`}
             name="email"
             type="email"
@@ -49,11 +50,12 @@ export function SignupForm() {
         </div>
 
         <div className="field">
-          <label className="flex items-center justify-between w-full">
-            <span>Password</span>
-            <span className="font-normal text-ink-3">Min. 8 characters</span>
-          </label>
+          <div className="lblrow">
+            <label htmlFor="signup-password">Password</label>
+            <span className="hint">Min. 8 characters</span>
+          </div>
           <input
+            id="signup-password"
             className={`inp ${state?.error ? 'inp--error' : ''}`}
             name="password"
             type="password"
@@ -65,11 +67,12 @@ export function SignupForm() {
         </div>
 
         <div className="field">
-          <label className="flex items-center justify-between w-full">
-            <span>Business name</span>
-            <span className="font-normal text-ink-3">Optional</span>
-          </label>
+          <div className="lblrow">
+            <label htmlFor="signup-business">Business name</label>
+            <span className="hint">Optional</span>
+          </div>
           <input
+            id="signup-business"
             className="inp"
             name="businessName"
             type="text"

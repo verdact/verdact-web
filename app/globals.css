@@ -1104,6 +1104,25 @@ html.js .rv-row.in {
   line-height: 1.4;
 }
 
+.field .lblrow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.field .lblrow label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.field .lblrow .hint {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
 .auth-trust svg {
   flex-shrink: 0;
   width: 14px;
