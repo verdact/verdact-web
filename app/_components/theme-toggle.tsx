@@ -3,52 +3,54 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Theme selector — segmented [System | Light | Dark].
+ * Theme selector, segmented [System | Light | Dark].
  *
- * - "system" is the default / unset state: no `verdact-theme` in
- *   localStorage and no `data-theme` attribute, so CSS follows the OS
- *   `prefers-color-scheme`.
- * - "light" / "dark" are explicit overrides persisted to localStorage and
- *   reflected as `data-theme` on <html>. The inline script in the root
- *   layout applies the stored value before paint to avoid a flash.
+ * Storage contract (shared with the FOUC script in the root layout):
+ * - "system": no `verdact-theme` key, no `data-theme` attribute; CSS follows
+ *   the OS `prefers-color-scheme`.
+ * - "light" / "dark": persisted to localStorage and mirrored as `data-theme`
+ *   on <html>.
  *
- * Safe to mount in any chrome (public nav, app header, auth shell). Takes
- * no required props.
+ * Accessibility (Stage 8 addendum 7.3): buttons are an aria-pressed group;
+ * the System button's accessible name includes the resolved theme.
  */
 
 type Mode = 'system' | 'light' | 'dark';
+type Resolved = 'light' | 'dark';
 
 const STORAGE_KEY = 'verdact-theme';
 
-const MODES: { value: Mode; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-];
-
 function readStoredMode(): Mode {
-  if (typeof document === 'undefined') return 'system';
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
   } catch {
-    /* ignore storage failures */
+    /* storage unavailable: fall through to system */
   }
-  // Fall back to whatever the FOUC script may have set on <html>.
-  const attr = document.documentElement.getAttribute('data-theme');
-  if (attr === 'light' || attr === 'dark') return attr;
   return 'system';
 }
 
+function readSystemTheme(): Resolved {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
 export function ThemeToggle({ className }: { className?: string }) {
-  // Render the system default until mounted so SSR and first paint agree;
-  // the real value is read in the effect below.
+  // SSR and first client paint agree on the default; the effect syncs truth.
   const [mode, setMode] = useState<Mode>('system');
+  const [systemTheme, setSystemTheme] = useState<Resolved>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMode(readStoredMode());
+    setSystemTheme(readSystemTheme());
     setMounted(true);
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setSystemTheme(mq.matches ? 'dark' : 'light');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
 
   function apply(next: Mode) {
@@ -60,7 +62,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         localStorage.setItem(STORAGE_KEY, next);
       }
     } catch {
-      /* ignore storage failures */
+      /* storage unavailable: attribute still applies for this page view */
     }
 
     const root = document.documentElement;
@@ -71,35 +73,29 @@ export function ThemeToggle({ className }: { className?: string }) {
     }
   }
 
+  const systemLabel = mounted
+    ? `System, currently ${systemTheme}`
+    : 'System';
+
+  const modes: { value: Mode; label: string; ariaLabel?: string }[] = [
+    { value: 'system', label: 'System', ariaLabel: systemLabel },
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+  ];
+
   return (
-    <div
-      role="radiogroup"
-      aria-label="Color theme"
-      className={`inline-flex items-center gap-0.5 rounded border border-rule bg-surface-2 p-0.5 ${className ?? ''}`}
-    >
-      {MODES.map(({ value, label }) => {
-        const active = mounted && mode === value;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => apply(value)}
-            className="rounded-sm px-2.5 py-1 transition-colors"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.6875rem',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              background: active ? 'var(--surface-3)' : 'transparent',
-              color: active ? 'var(--ink)' : 'var(--ink-mute)',
-            }}
-          >
-            {label}
-          </button>
-        );
-      })}
+    <div role="group" aria-label="Color theme" className={`themeseg ${className ?? ''}`}>
+      {modes.map(({ value, label, ariaLabel }) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={mounted && mode === value}
+          aria-label={ariaLabel}
+          onClick={() => apply(value)}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

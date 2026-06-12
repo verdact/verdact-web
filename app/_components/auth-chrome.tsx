@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { VerdactLogo } from './verdact-logo';
-import { ThemeToggle } from './theme-toggle';
 
 type AuthFrameProps = {
   children: ReactNode;
@@ -28,7 +27,6 @@ function AuthHeader() {
         </a>
 
         <div className="flex items-center gap-4">
-          <ThemeToggle />
           <a
             href="/"
             className="label-mono rounded-sm px-1 py-0.5 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"

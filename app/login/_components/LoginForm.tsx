@@ -22,13 +22,13 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         </button>
       </form>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <span className="h-px flex-1 bg-rule" />
-        <span className="label-mono">or</span>
+        <span className="label-mono text-ink-mute">or continue with email</span>
         <span className="h-px flex-1 bg-rule" />
       </div>
 
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} className="space-y-5" suppressHydrationWarning>
         {errorMessage ? (
           <div className="notice-error">{errorMessage}</div>
         ) : null}

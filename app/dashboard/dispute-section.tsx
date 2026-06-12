@@ -1,4 +1,5 @@
 import type { Dispute, EfwAlert, VampSnapshot } from '@/lib/dal';
+import Link from 'next/link';
 import {
   AlertIcon,
   CheckIcon,
@@ -168,6 +169,12 @@ function DisputeRow({ dispute }: { dispute: Dispute }) {
         ) : (
           <span className="meta-mono text-ink-faint">No deadline</span>
         )}
+        <Link
+          className="label-mono mt-2 rounded-sm px-1 py-0.5 text-action underline underline-offset-4 transition-colors hover:text-action-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+          href={`/dashboard/disputes/${dispute.id}`}
+        >
+          Open record
+        </Link>
       </div>
     </li>
   );

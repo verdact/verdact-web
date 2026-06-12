@@ -70,11 +70,14 @@ export default function TermsPage() {
                 evidence, and manage filing controls for eligible dispute responses.
               </p>
               <p className="mt-3">
-                Non-subscribed accounts must file manually. Active subscribers may choose automatic
-                filing or review-then-submit for eligible Stripe dispute responses. When filing
-                automation is enabled, Verdact submits according to merchant-configured controls.
-                You are responsible for reviewing your settings and evidence records. We are not a
-                payment processor, bank, or legal service.
+                Free tier accounts may view generated packets and evidence assembly, but
+                download, export, and filing require an active Paid tier subscription. During the beta period,
+                the Paid tier is free for all users (no separate Founding tier).
+                Active subscribers may choose automatic filing or review-then-submit for eligible
+                Stripe dispute responses. When filing automation is enabled, Verdact submits
+                according to merchant-configured controls. You are responsible for reviewing your
+                settings and evidence records. We are not a payment processor, bank, or legal
+                service.
               </p>
             </TermsSection>
 

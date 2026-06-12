@@ -29,7 +29,7 @@ export default async function SignupPage() {
             and choose how eligible Stripe filings run after subscription.
           </p>
 
-          <ol className="surface-card mt-10 overflow-hidden">
+          <ol className="surface-card mt-10 overflow-hidden rounded-[12px] shadow-sm">
             {WHAT_YOU_GET.map((item) => (
               <li
                 key={item.title}
@@ -56,7 +56,7 @@ export default async function SignupPage() {
 
         {/* RIGHT - form */}
         <div className="reveal reveal-3">
-          <div className="surface-card overflow-hidden">
+          <div className="surface-card overflow-hidden rounded-[12px] shadow-[var(--shadow-record)]">
             <div
               className="h-1.5 w-full"
               aria-hidden="true"
@@ -65,7 +65,7 @@ export default async function SignupPage() {
                   'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
               }}
             />
-            <div className="p-6 md:p-7">
+            <div className="p-8 md:p-10">
               <SignupForm />
             </div>
           </div>
@@ -89,6 +89,6 @@ const WHAT_YOU_GET = [
   {
     idx: '03',
     title: 'Choose filing controls',
-    body: 'Paid plans unlock auto-file or review-then-submit. Non-subscribed workspaces prepare evidence and file manually.',
+    body: 'Paid tier unlocks auto-file or review-then-submit. Free workspaces can view the packet, while download, export, and filing are subscribe-gated. During beta, Paid tier features are free for all.',
   },
 ];

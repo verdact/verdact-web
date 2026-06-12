@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { VerdactLogo } from '../../_components/verdact-logo';
-import { ThemeToggle } from '../../_components/theme-toggle';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +106,6 @@ function PageHeader() {
           <VerdactLogo variant="lockup" className="h-10 w-auto" />
         </a>
         <nav className="flex min-w-0 items-center gap-2 text-sm sm:gap-3" aria-label="Primary">
-          <ThemeToggle />
           <a className="btn-ghost whitespace-nowrap px-2 py-2 text-sm sm:px-3" href="/login">Sign in</a>
           <a href="/signup" className="btn-primary hidden whitespace-nowrap px-4 py-2 text-sm sm:inline-flex">Create workspace</a>
         </nav>

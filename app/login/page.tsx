@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </p>
         </div>
 
-        <div className="reveal reveal-2 surface-card mt-9 overflow-hidden">
+        <div className="reveal reveal-2 surface-card mt-9 overflow-hidden rounded-[12px] shadow-[var(--shadow-record)]">
           <div
             className="h-1.5 w-full"
             aria-hidden="true"
@@ -47,7 +47,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
             }}
           />
-          <div className="p-6 md:p-7">
+          <div className="p-8 md:p-10">
             {confirmed ? (
               <div className="notice-info mb-5">
                 Email confirmed. Sign in below to continue.

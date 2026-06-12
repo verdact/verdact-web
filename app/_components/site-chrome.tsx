@@ -1,5 +1,4 @@
 import { VerdactLogo } from './verdact-logo';
-import { ThemeToggle } from './theme-toggle';
 
 type SiteHeaderProps = {
   active?: 'home' | 'privacy' | 'signin' | 'connections' | 'evidence' | 'terms';
@@ -54,8 +53,6 @@ export function SiteHeader({ active, reviewer = false }: SiteHeaderProps) {
           {reviewer ? (
             <span className="pill-action">Review mode</span>
           ) : null}
-          <span className="mx-1 hidden h-5 w-px bg-rule sm:block" />
-          <ThemeToggle />
         </nav>
       </div>
     </header>
