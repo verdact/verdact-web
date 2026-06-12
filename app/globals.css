@@ -52,8 +52,8 @@
   --band-mute: #9AA6BC;
   --band-rule: #272C38;
   --ink-soft: var(--ink-2);
-  --ink-mute: var(--ink-3);
-  --ink-faint: var(--ink-3);
+  --ink-mute: var(--ink-2);
+  --ink-faint: var(--ink-2);
   --on-solid: var(--paper);
 
   /* Action → verdict green */
@@ -538,7 +538,7 @@ section[id],
 
 .field .help {
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--ink-2);
   margin-top: 6px;
 }
 
@@ -636,7 +636,7 @@ section[id],
 .pill--trust { color: var(--action-deep); background: var(--verdict-tint); border-color: var(--action-rule); }
 .pill--warning { color: var(--warning-deep); background: var(--warning-soft); border-color: var(--warning-rule); }
 .pill--accent { color: var(--gap); background: var(--gap-2); border-color: var(--accent-rule); }
-.pill--neutral { color: var(--ink-3); background: var(--panel); border-color: var(--rule-strong); }
+.pill--neutral { color: var(--ink-2); background: var(--panel); border-color: var(--rule-strong); }
 
 .pill .ping {
   width: 7px;
@@ -685,7 +685,7 @@ section[id],
 .tag--stripe { color: var(--tag-stripe-ink); background: var(--tag-stripe-fill); border-color: var(--tag-stripe-rule); }
 .tag--slack { color: var(--tag-slack-ink); background: var(--tag-slack-fill); border-color: var(--tag-slack-rule); }
 .tag--email,
-.tag--policy { color: var(--ink-3); background: var(--panel); border-color: var(--rule-strong); }
+.tag--policy { color: var(--ink-2); background: var(--panel); border-color: var(--rule-strong); }
 .tag--missing { color: var(--gap); background: var(--gap-2); border-color: var(--accent-rule); }
 
 .dot {
@@ -806,7 +806,7 @@ section[id],
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-2);
   margin-top: 5px;
 }
 
@@ -938,7 +938,7 @@ section[id],
 }
 
 .statecard.won .sl { color: var(--action-deep); }
-.statecard.lost .sl { color: var(--ink-3); }
+.statecard.lost .sl { color: var(--ink-2); }
 .statecard.await .sl { color: var(--warning-deep); }
 
 .statecard p {
@@ -1322,7 +1322,7 @@ html.js .rv-row.in {
   margin-left: auto;
   font-weight: 500;
   letter-spacing: 0.05em;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .wsprev-row {
