@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   description:
     "Dispute-ready evidence records for Stripe merchants. Build bulletproof chargebacks before they arrive.",
   icons: {
-    icon: [{ url: "/favicon.svg?v=20260612verdact", type: "image/svg+xml" }],
-    shortcut: "/favicon.svg?v=20260612verdact",
+    icon: [{ url: "/favicon.svg?v=20260612verdact-gap", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg?v=20260612verdact-gap",
   },
 };
 
