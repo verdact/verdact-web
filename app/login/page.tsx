@@ -36,8 +36,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthFrame>
-      <div className="auth-center">
-        <div className="auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
+      <div className="auth-split">
+        <div className="auth-promise auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
           <p className="eyebrow auth-eyebrow-row">Merchant sign-in</p>
           <h1 className="auth-h1">
             Welcome back<span className="auth-dot">.</span>
@@ -50,7 +50,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         <div
           className="auth-card auth-rise"
-          style={{ '--i': 1, marginTop: 'var(--space-6)' } as React.CSSProperties}
+          style={{ '--i': 1 } as React.CSSProperties}
         >
           {confirmed ? (
             <div className="notice notice--info" style={{ marginBottom: 'var(--space-5)' }}>
@@ -59,16 +59,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           ) : null}
 
           <LoginForm presetError={presetError} />
-        </div>
 
-        <p className="auth-trust auth-rise" style={{ '--i': 2 } as React.CSSProperties}>
-          <CheckIcon />
-          Your workspace opens to the dashboard after sign-in.
-        </p>
+          <p className="auth-trust" style={{ marginTop: 'var(--space-6)' }}>
+            <CheckIcon />
+            Your workspace opens to the dashboard after sign-in.
+          </p>
+        </div>
 
         <aside
           className="wsprev auth-rise"
-          style={{ '--i': 3, marginTop: 'var(--space-6)' } as React.CSSProperties}
+          style={{ '--i': 2 } as React.CSSProperties}
           aria-label="Example workspace preview with sample data"
         >
           <p className="wsprev-label">

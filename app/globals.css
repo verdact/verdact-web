@@ -139,12 +139,12 @@
   --radius-pill: 9999px;
 
   /* Motion */
-  --duration-instant: 80ms;
+  --duration-instant: 160ms;
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
   --duration-narrative: 550ms;
-  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
@@ -429,6 +429,7 @@ section[id],
   letter-spacing: 0.01em;
   line-height: 20px;
   padding: var(--space-3) var(--space-5);
+  min-height: 44px;
   border-radius: var(--radius-input);
   border: 1px solid transparent;
   cursor: pointer;
@@ -568,6 +569,7 @@ section[id],
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-input);
   padding: var(--space-3) var(--space-4);
+  min-height: 44px;
   transition:
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
@@ -970,7 +972,7 @@ section[id],
 /* ============================================================ MOTION */
 
 @keyframes v-rise {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: none; }
 }
 
