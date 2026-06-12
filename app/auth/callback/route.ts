@@ -1,11 +1,27 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+const PASSWORD_RECOVERY_COOKIE = 'verdact_password_recovery';
+
 function isSafeNext(next: string | null): string {
   if (!next) return '/dashboard';
   if (!next.startsWith('/')) return '/dashboard';
   if (next.startsWith('//')) return '/dashboard';
   return next;
+}
+
+function redirectAfterAuth(origin: string, next: string, isRecoveryFlow: boolean) {
+  const response = NextResponse.redirect(`${origin}${next}`);
+  if (next === '/reset-password' && isRecoveryFlow) {
+    response.cookies.set(PASSWORD_RECOVERY_COOKIE, '1', {
+      httpOnly: true,
+      maxAge: 15 * 60,
+      path: '/',
+      sameSite: 'lax',
+      secure: origin.startsWith('https://'),
+    });
+  }
+  return response;
 }
 
 export async function GET(request: NextRequest) {
@@ -14,6 +30,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type');
   const next = isSafeNext(searchParams.get('next'));
+  const isRecoveryFlow = searchParams.get('flow') === 'recovery' || type === 'recovery';
 
   const supabase = await createClient();
 
@@ -24,7 +41,7 @@ export async function GET(request: NextRequest) {
         `${origin}/login?error=${encodeURIComponent(error.message)}`,
       );
     }
-    return NextResponse.redirect(`${origin}${next}`);
+    return redirectAfterAuth(origin, next, isRecoveryFlow);
   }
 
   if (tokenHash && type) {
@@ -37,7 +54,7 @@ export async function GET(request: NextRequest) {
         `${origin}/login?error=${encodeURIComponent(error.message)}`,
       );
     }
-    return NextResponse.redirect(`${origin}${next}`);
+    return redirectAfterAuth(origin, next, isRecoveryFlow);
   }
 
   return NextResponse.redirect(`${origin}/login?error=missing_auth_code`);

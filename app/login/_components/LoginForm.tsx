@@ -82,7 +82,12 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         </div>
 
         <div className="field">
-          <label htmlFor="login-password">Password</label>
+          <div className="lblrow">
+            <label htmlFor="login-password">Password</label>
+            <a className="hint underline underline-offset-[4px] hover:text-action" href="/forgot-password">
+              Forgot password?
+            </a>
+          </div>
           <div className="pwwrap">
             <input
               id="login-password"

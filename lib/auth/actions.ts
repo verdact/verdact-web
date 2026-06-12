@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
@@ -11,6 +12,18 @@ export type AuthFormState =
       businessName?: string;
     }
   | undefined;
+
+export type PasswordResetState =
+  | {
+      error?: string;
+      email?: string;
+      sent?: boolean;
+      updated?: boolean;
+    }
+  | undefined;
+
+const EMAIL_SHAPE = /^\S+@\S+\.\S+$/;
+const PASSWORD_RECOVERY_COOKIE = 'verdact_password_recovery';
 
 function getOrigin(): string {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
@@ -110,6 +123,82 @@ export async function signInWithGoogleAction(): Promise<void> {
   }
 
   redirect('/login?error=oauth_failed');
+}
+
+export async function requestPasswordResetAction(
+  _previousState: PasswordResetState,
+  formData: FormData,
+): Promise<PasswordResetState> {
+  const email = ((formData.get('email') as string | null) ?? '').trim();
+
+  if (!email) {
+    return { error: 'Enter your email address.', email };
+  }
+  if (!EMAIL_SHAPE.test(email)) {
+    return {
+      error: 'That email does not look right. Check for typos.',
+      email,
+    };
+  }
+
+  const supabase = await createClient();
+  const origin = getOrigin();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset-password&flow=recovery`,
+  });
+
+  if (error) {
+    return { error: error.message, email };
+  }
+
+  return { sent: true, email };
+}
+
+export async function updatePasswordAction(
+  _previousState: PasswordResetState,
+  formData: FormData,
+): Promise<PasswordResetState> {
+  const password = (formData.get('password') as string | null) ?? '';
+  const confirmPassword = (formData.get('confirmPassword') as string | null) ?? '';
+
+  if (!password || !confirmPassword) {
+    return { error: 'Enter and confirm your new password.' };
+  }
+  if (password.length < 8) {
+    return { error: 'Use at least 8 characters.' };
+  }
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match.' };
+  }
+
+  const cookieStore = await cookies();
+  const canRecover = cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value === '1';
+  if (!canRecover) {
+    return {
+      error: 'This reset link has expired. Request a new link to continue.',
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      error: 'This reset link has expired. Request a new link to continue.',
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    return { error: error.message };
+  }
+
+  cookieStore.delete(PASSWORD_RECOVERY_COOKIE);
+  revalidatePath('/', 'layout');
+  return { updated: true };
 }
 
 export async function signOutAction(): Promise<void> {
