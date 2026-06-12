@@ -15,7 +15,7 @@ export function SignupForm() {
   return (
     <div className="space-y-6">
       <form action={signInWithGoogleAction}>
-        <button type="submit" className="btn-secondary w-full">
+        <button type="submit" className="btn btn--secondary w-full">
           <GoogleMark />
           <span>Continue with Google</span>
         </button>
@@ -23,19 +23,22 @@ export function SignupForm() {
 
       <div className="flex items-center gap-4">
         <span className="h-px flex-1 bg-rule" />
-        <span className="label-mono text-ink-mute">or continue with email</span>
+        <span className="t-label-mono text-ink-mute">or continue with email</span>
         <span className="h-px flex-1 bg-rule" />
       </div>
 
       <form action={formAction} className="space-y-5" suppressHydrationWarning>
         {state?.error ? (
-          <div className="notice-error">{state.error}</div>
+          <div className="notice notice--error">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V4zm1 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
+            <span>{state.error}</span>
+          </div>
         ) : null}
 
-        <label className="block">
-          <span className="field-label">Work email</span>
+        <div className="field">
+          <label>Work email</label>
           <input
-            className="field-input"
+            className={`inp ${state?.error ? 'inp--error' : ''}`}
             name="email"
             type="email"
             autoComplete="email"
@@ -43,15 +46,15 @@ export function SignupForm() {
             placeholder="founder@company.com"
             required
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="field-label flex items-center justify-between">
+        <div className="field">
+          <label className="flex items-center justify-between w-full">
             <span>Password</span>
-            <span className="text-ink-faint">Min. 8 characters</span>
-          </span>
+            <span className="font-normal text-ink-3">Min. 8 characters</span>
+          </label>
           <input
-            className="field-input"
+            className={`inp ${state?.error ? 'inp--error' : ''}`}
             name="password"
             type="password"
             autoComplete="new-password"
@@ -59,29 +62,29 @@ export function SignupForm() {
             placeholder="••••••••"
             required
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="field-label flex items-center justify-between">
+        <div className="field">
+          <label className="flex items-center justify-between w-full">
             <span>Business name</span>
-            <span className="text-ink-faint">Optional</span>
-          </span>
+            <span className="font-normal text-ink-3">Optional</span>
+          </label>
           <input
-            className="field-input"
+            className="inp"
             name="businessName"
             type="text"
             autoComplete="organization"
             defaultValue={state?.businessName ?? ''}
             placeholder="Acme SaaS"
           />
-        </label>
+        </div>
 
-        <button type="submit" disabled={pending} className="btn-primary w-full">
+        <button type="submit" disabled={pending} className={`btn btn--primary w-full ${pending ? 'btn--loading' : ''}`}>
           {pending ? 'Creating workspace…' : 'Create workspace'}
         </button>
       </form>
 
-      <p className="rule-thin pt-5 text-center text-sm text-ink-soft">
+      <div className="pt-5 text-center text-sm text-ink-soft border-t border-rule">
         Already have a workspace?{' '}
         <a
           className="font-medium text-action underline underline-offset-[5px] hover:text-action-deep"
@@ -89,7 +92,7 @@ export function SignupForm() {
         >
           Sign in
         </a>
-      </p>
+      </div>
 
       <p className="text-xs leading-relaxed text-ink-mute">
         By creating a workspace you accept the{' '}

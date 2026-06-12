@@ -16,7 +16,7 @@ export function LoginForm({ presetError }: { presetError?: string }) {
   return (
     <div className="space-y-6">
       <form action={signInWithGoogleAction}>
-        <button type="submit" className="btn-secondary w-full">
+        <button type="submit" className="btn btn--secondary w-full">
           <GoogleMark />
           <span>Continue with Google</span>
         </button>
@@ -24,19 +24,22 @@ export function LoginForm({ presetError }: { presetError?: string }) {
 
       <div className="flex items-center gap-4">
         <span className="h-px flex-1 bg-rule" />
-        <span className="label-mono text-ink-mute">or continue with email</span>
+        <span className="t-label-mono text-ink-mute">or continue with email</span>
         <span className="h-px flex-1 bg-rule" />
       </div>
 
       <form action={formAction} className="space-y-5" suppressHydrationWarning>
         {errorMessage ? (
-          <div className="notice-error">{errorMessage}</div>
+          <div className="notice notice--error">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V4zm1 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
+            <span>{errorMessage}</span>
+          </div>
         ) : null}
 
-        <label className="block">
-          <span className="field-label">Work email</span>
+        <div className="field">
+          <label>Work email</label>
           <input
-            className="field-input"
+            className={`inp ${errorMessage ? 'inp--error' : ''}`}
             name="email"
             type="email"
             autoComplete="email"
@@ -44,26 +47,26 @@ export function LoginForm({ presetError }: { presetError?: string }) {
             placeholder="founder@company.com"
             required
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="field-label">Password</span>
+        <div className="field">
+          <label>Password</label>
           <input
-            className="field-input"
+            className={`inp ${errorMessage ? 'inp--error' : ''}`}
             name="password"
             type="password"
             autoComplete="current-password"
             placeholder="••••••••"
             required
           />
-        </label>
+        </div>
 
-        <button type="submit" disabled={pending} className="btn-primary w-full">
+        <button type="submit" disabled={pending} className={`btn btn--primary w-full ${pending ? 'btn--loading' : ''}`}>
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="rule-thin pt-5 text-center text-sm text-ink-soft">
+      <div className="pt-5 text-center text-sm text-ink-soft border-t border-rule">
         New to Verdact?{' '}
         <a
           className="font-medium text-action underline underline-offset-[5px] hover:text-action-deep"
@@ -71,7 +74,7 @@ export function LoginForm({ presetError }: { presetError?: string }) {
         >
           Create a workspace
         </a>
-      </p>
+      </div>
     </div>
   );
 }
