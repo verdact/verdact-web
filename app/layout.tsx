@@ -1,27 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// Display: Fraunces variable serif for headings (matches approved wireframes).
-const fraunces = Fraunces({
+const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
-  variable: "--font-display",
-  axes: ["SOFT", "WONK", "opsz"],
-  display: "swap",
-});
-
-// Body: Inter variable sans for all running text.
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
-
-// Metadata / labels: IBM Plex Mono for ALL-CAPS eyebrows and record fields.
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -30,12 +15,11 @@ export const metadata: Metadata = {
     default: "Verdact",
     template: "%s | Verdact",
   },
-  description: "Dispute-ready evidence records for Stripe merchants.",
+  description:
+    "Dispute-ready evidence records for Stripe merchants. Build bulletproof chargebacks before they arrive.",
   icons: {
-    icon: [
-      { url: "/favicon.svg?v=20260527record", type: "image/svg+xml" },
-    ],
-    shortcut: "/favicon.svg?v=20260527record",
+    icon: [{ url: "/favicon.svg?v=20260612verdact", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg?v=20260612verdact",
   },
 };
 
@@ -45,22 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`h-full antialiased ${fraunces.variable} ${inter.variable} ${ibmPlexMono.variable}`}
-    >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            // FOUC guard: apply an explicit stored preference before paint.
-            // No stored value -> no data-theme attribute -> CSS follows the
-            // system prefers-color-scheme. Default is therefore "system".
-            __html: `try{var t=localStorage.getItem('verdact-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}else{document.documentElement.removeAttribute('data-theme');}}catch(e){}`,
-          }}
-        />
-      </head>
-      <body className="min-h-full flex flex-col font-body">{children}</body>
+    <html lang="en" className={`h-full antialiased ${schibsted.variable}`}>
+      <body className="min-h-full flex flex-col">
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }
