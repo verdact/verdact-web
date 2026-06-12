@@ -57,5 +57,9 @@ export async function GET(request: NextRequest) {
     return redirectAfterAuth(origin, next, isRecoveryFlow);
   }
 
+  if (isRecoveryFlow && next === '/reset-password') {
+    return NextResponse.redirect(`${origin}${next}`);
+  }
+
   return NextResponse.redirect(`${origin}/login?error=missing_auth_code`);
 }

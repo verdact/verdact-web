@@ -1,13 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
-import {
-  updatePasswordAction,
-  type PasswordResetState,
-} from '@/lib/auth/actions';
+import { FormEvent, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { CheckIcon } from '../../_components/auth-icons';
-
-const initialState: PasswordResetState = undefined;
 
 function validatePassword(value: string): string | undefined {
   if (!value) return 'Enter your new password.';
@@ -15,14 +10,70 @@ function validatePassword(value: string): string | undefined {
   return undefined;
 }
 
+type FormState =
+  | {
+      error?: string;
+      updated?: boolean;
+    }
+  | undefined;
+
 export function ResetPasswordForm() {
-  const [state, formAction, pending] = useActionState(
-    updatePasswordAction,
-    initialState,
-  );
+  const [state, setState] = useState<FormState>(undefined);
+  const [pending, setPending] = useState(false);
   const [passwordErr, setPasswordErr] = useState<string | undefined>(undefined);
   const [confirmErr, setConfirmErr] = useState<string | undefined>(undefined);
   const [showPw, setShowPw] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const password = (formData.get('password') as string | null) ?? '';
+    const confirmPassword = (formData.get('confirmPassword') as string | null) ?? '';
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setPasswordErr(passwordError);
+      setState(undefined);
+      return;
+    }
+    if (!confirmPassword) {
+      setConfirmErr('Confirm your new password.');
+      setState(undefined);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setState({ error: 'Passwords do not match.' });
+      return;
+    }
+
+    setPending(true);
+    setState(undefined);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      setPending(false);
+      setState({
+        error: 'This reset link has expired. Request a new link to continue.',
+      });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    setPending(false);
+
+    if (error) {
+      setState({ error: error.message });
+      return;
+    }
+
+    setState({ updated: true });
+  }
 
   if (state?.updated) {
     return (
@@ -40,7 +91,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-5" suppressHydrationWarning>
+    <form onSubmit={onSubmit} className="space-y-5" suppressHydrationWarning>
       {state?.error ? (
         <div className="notice notice--error" role="alert">
           <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">

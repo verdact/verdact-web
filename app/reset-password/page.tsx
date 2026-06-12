@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { AuthFrame } from '../_components/auth-chrome';
-import { LockIcon } from '../_components/auth-icons';
 import { createClient } from '@/lib/supabase/server';
-import { ResetPasswordForm } from './_components/ResetPasswordForm';
+import { ResetPasswordRecoveryGate } from './_components/ResetPasswordRecoveryGate';
 
 const PASSWORD_RECOVERY_COOKIE = 'verdact_password_recovery';
 
@@ -45,22 +43,7 @@ export default async function ResetPasswordPage() {
           className="auth-card auth-rise"
           style={{ '--i': 1, marginTop: 'var(--space-6)' } as React.CSSProperties}
         >
-          {canReset ? (
-            <ResetPasswordForm />
-          ) : (
-            <div className="space-y-5">
-              <div className="notice notice--error" role="alert">
-                <LockIcon />
-                <span>
-                  This reset link has expired. Request a new link to continue.
-                </span>
-              </div>
-
-              <Link className="btn btn--primary w-full" href="/forgot-password">
-                Request a new link
-              </Link>
-            </div>
-          )}
+          <ResetPasswordRecoveryGate serverCanReset={canReset} />
         </div>
       </div>
     </AuthFrame>
