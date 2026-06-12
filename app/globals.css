@@ -1128,7 +1128,7 @@ html.js .rv-row.in {
     "promise card"
     "artifact card";
   align-content: start;
-  column-gap: var(--space-20);
+  column-gap: var(--space-10);
   row-gap: var(--space-8);
 }
 

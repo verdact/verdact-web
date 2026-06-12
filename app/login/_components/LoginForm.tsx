@@ -29,14 +29,12 @@ export function LoginForm({ presetError }: { presetError?: string }) {
       <div className="auth-divider">or</div>
 
       <form action={formAction} className="space-y-5" suppressHydrationWarning>
-        <div className="min-h-[58px] flex items-end">
-          {errorMessage ? (
-            <div className="notice notice--error w-full" role="alert">
-              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V4zm1 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
-              <span>{errorMessage}</span>
-            </div>
-          ) : null}
-        </div>
+        {errorMessage ? (
+          <div className="notice notice--error" role="alert">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V4zm1 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
+            <span>{errorMessage}</span>
+          </div>
+        ) : null}
 
         <div className="field">
           <label htmlFor="login-email">Work email</label>
