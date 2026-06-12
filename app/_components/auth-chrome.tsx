@@ -1,41 +1,26 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { VerdactLogo } from './verdact-logo';
 
-type AuthFrameProps = {
-  children: ReactNode;
-};
-
-export function AuthFrame({ children }: AuthFrameProps) {
+export function AuthFrame({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-6 sm:p-12">
-      <div className="w-full max-w-[440px] casefile bg-panel mb-8">
-        <div className="casefile__top" />
-        <div className="casefile__head">
-          <VerdactLogo variant="lockup" priority className="h-6 w-auto text-ink" />
-          <a
-            href="/"
-            className="text-sm font-medium text-ink-mute hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verdict rounded-sm px-1 transition-colors"
-          >
-            ← Back
-          </a>
+    <main className="auth-page">
+      <div className="auth-card">
+        <div className="auth-card-hd">
+          <VerdactLogo variant="lockup" className="h-7 w-auto" />
+          <Link href="/" className="auth-back">← Back</Link>
         </div>
-        <div className="p-8 sm:p-10">
+        <div className="auth-card-body">
           {children}
         </div>
       </div>
-      <AuthFooter />
+      <footer className="auth-foot">
+        <span className="t-meta-mono">© 2026 Verdact</span>
+        <nav className="auth-foot-links">
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+        </nav>
+      </footer>
     </main>
-  );
-}
-
-function AuthFooter() {
-  return (
-    <footer className="w-full max-w-[440px] flex items-center justify-between text-sm text-ink-mute">
-      <p className="t-meta-mono">© {new Date().getFullYear()} Verdact</p>
-      <div className="flex items-center gap-4 font-medium">
-        <a className="transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verdict rounded-sm" href="/privacy">Privacy</a>
-        <a className="transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verdict rounded-sm" href="/terms">Terms</a>
-      </div>
-    </footer>
   );
 }

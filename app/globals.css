@@ -1030,3 +1030,127 @@ html.js .rv-row.in {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ============================================================ AUTH PAGES */
+
+.auth-page {
+  min-height: 100dvh;
+  background: var(--paper-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  gap: var(--space-5);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 0 1px var(--hairline), 0 8px 28px -6px rgba(10, 22, 18, .10);
+  overflow: hidden;
+}
+
+.auth-card-hd {
+  padding: 18px 32px 16px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-back {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.auth-back:hover { color: var(--ink); }
+
+.auth-card-body {
+  padding: 32px;
+}
+
+.auth-card-body h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.auth-sub {
+  font-size: 14px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0 0 28px 0;
+}
+
+.auth-trust {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+  line-height: 1.4;
+}
+
+.auth-trust svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--verdict);
+}
+
+.auth-foot {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink-3);
+}
+
+.auth-foot-links {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-foot-links a {
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.auth-foot-links a:hover { color: var(--ink); }
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .auth-card-hd {
+    padding: 14px 20px 12px;
+  }
+
+  .auth-card-body {
+    padding: 24px 20px;
+  }
+
+  .auth-card-body h1 {
+    font-size: 24px;
+  }
+}

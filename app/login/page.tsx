@@ -28,29 +28,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthFrame>
-      <section className="w-full">
-        <div className="reveal reveal-1">
-          <h1 className="t-h2">Sign in to Verdact</h1>
-          <p className="t-dek mt-3">
-            Pick up where you left off, organizing dispute evidence before you decide your next action.
-          </p>
+      <h1>Sign in.</h1>
+      <p className="auth-sub">Your dispute evidence workspace for Stripe.</p>
+
+      {confirmed ? (
+        <div className="notice notice--info" style={{ marginBottom: '20px' }}>
+          Email confirmed. Sign in below to continue.
         </div>
+      ) : null}
 
-        <div className="reveal reveal-2 mt-10">
-          {confirmed ? (
-            <div className="notice notice--info mb-6">
-              Email confirmed. Sign in below to continue.
-            </div>
-          ) : null}
+      <LoginForm presetError={presetError} />
 
-          <LoginForm presetError={presetError} />
-        </div>
-
-        <p className="reveal reveal-3 mt-8 flex items-center gap-2 text-sm text-ink-mute">
-          <LockIcon className="h-4 w-4 text-verdict" />
-          Encrypted in transit. We never train AI on your data.
-        </p>
-      </section>
+      <p className="auth-trust">
+        <LockIcon />
+        Encrypted in transit. We never train AI on your data.
+      </p>
     </AuthFrame>
   );
 }
