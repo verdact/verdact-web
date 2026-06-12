@@ -1,23 +1,15 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import {
   signupAction,
   signInWithGoogleAction,
   type AuthFormState,
 } from '@/lib/auth/actions';
 import { GoogleButton } from '../../_components/auth-google';
+import { suggestEmail, validateEmail } from '../../_components/auth-email';
 
 const initialState: AuthFormState = undefined;
-
-const EMAIL_SHAPE = /^\S+@\S+\.\S+$/;
-
-// Field-level validation copy approved 2026-06-09 (auth wireframe §errors).
-function validateEmail(value: string): string | undefined {
-  if (!value) return 'Enter your email address.';
-  if (!EMAIL_SHAPE.test(value)) return 'That email does not look right. Check for typos.';
-  return undefined;
-}
 
 function validatePassword(value: string): string | undefined {
   if (!value) return 'Enter your password.';
@@ -28,8 +20,10 @@ function validatePassword(value: string): string | undefined {
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signupAction, initialState);
   const [emailErr, setEmailErr] = useState<string | undefined>(undefined);
+  const [emailSugg, setEmailSugg] = useState<string | undefined>(undefined);
   const [passwordErr, setPasswordErr] = useState<string | undefined>(undefined);
   const [showPw, setShowPw] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="space-y-6">
@@ -51,6 +45,7 @@ export function SignupForm() {
           <label htmlFor="signup-email">Work email</label>
           <input
             id="signup-email"
+            ref={emailRef}
             className={`inp ${emailErr || state?.error ? 'inp--error' : ''}`}
             name="email"
             type="email"
@@ -60,11 +55,34 @@ export function SignupForm() {
             required
             aria-invalid={emailErr ? true : undefined}
             aria-describedby={emailErr ? 'signup-email-err' : undefined}
-            onBlur={(e) => setEmailErr(validateEmail(e.target.value.trim()))}
-            onChange={() => setEmailErr(undefined)}
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              setEmailErr(validateEmail(value));
+              setEmailSugg(suggestEmail(value));
+            }}
+            onChange={() => {
+              setEmailErr(undefined);
+              setEmailSugg(undefined);
+            }}
           />
           {emailErr ? (
             <p className="err" id="signup-email-err" aria-live="polite">{emailErr}</p>
+          ) : null}
+          {emailSugg ? (
+            <p className="didu" aria-live="polite">
+              Did you mean{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  if (emailRef.current) emailRef.current.value = emailSugg;
+                  setEmailSugg(undefined);
+                  setEmailErr(undefined);
+                }}
+              >
+                {emailSugg}
+              </button>
+              ?
+            </p>
           ) : null}
         </div>
 

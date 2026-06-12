@@ -1219,6 +1219,28 @@ html.js .rv-row.in {
   color: var(--ink-2);
 }
 
+.field .didu {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 6px;
+}
+
+.field .didu button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--verdict);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.field .didu button:hover {
+  color: var(--verdict-press);
+}
+
 .pwwrap {
   position: relative;
 }
