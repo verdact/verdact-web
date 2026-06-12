@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import { HomepageClient } from './_components/home/homepage-client';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Verdact | Fight chargebacks for services you delivered' },
+  title: { absolute: 'Verdact' },
   description:
     'Verdact reads your Stripe dispute, organizes your proof of scope, delivery, and approval into a submission-ready response, and flags what is missing before you file. For service businesses on Stripe.',
   openGraph: {
-    title: 'Verdact | Fight chargebacks for services you delivered',
+    title: 'Verdact',
     description:
       'Verdact reads your Stripe dispute, organizes your proof of scope, delivery, and approval into a submission-ready response, and flags what is missing before you file. For service businesses on Stripe.',
     url: 'https://www.verdact.io/',
