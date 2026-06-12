@@ -28,39 +28,27 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthFrame>
-      <section className="mx-auto w-full max-w-md py-10 md:py-16">
-        <div className="reveal reveal-1 text-center">
-          <span className="eyebrow eyebrow-center">Verdact · sign in</span>
-          <h1 className="section-heading mt-5">Welcome back.</h1>
-          <p className="section-dek mt-4">
-            Pick up where you left off, organizing dispute evidence before you
-            decide your next action.
+      <section className="w-full">
+        <div className="reveal reveal-1">
+          <h1 className="t-h2">Sign in to Verdact</h1>
+          <p className="t-dek mt-3">
+            Pick up where you left off, organizing dispute evidence before you decide your next action.
           </p>
         </div>
 
-        <div className="reveal reveal-2 surface-card mt-9 overflow-hidden rounded-[12px] shadow-[var(--shadow-record)]">
-          <div
-            className="h-1.5 w-full"
-            aria-hidden="true"
-            style={{
-              background:
-                'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
-            }}
-          />
-          <div className="p-8 md:p-10">
-            {confirmed ? (
-              <div className="notice-info mb-5">
-                Email confirmed. Sign in below to continue.
-              </div>
-            ) : null}
+        <div className="reveal reveal-2 mt-10">
+          {confirmed ? (
+            <div className="notice notice--info mb-6">
+              Email confirmed. Sign in below to continue.
+            </div>
+          ) : null}
 
-            <LoginForm presetError={presetError} />
-          </div>
+          <LoginForm presetError={presetError} />
         </div>
 
-        <p className="reveal reveal-3 meta-mono mt-6 flex items-center justify-center gap-2 text-center text-ink-mute">
-          <LockIcon className="h-3.5 w-3.5 text-trust" />
-          Encrypted in transit. Verdact never trains AI on your data.
+        <p className="reveal reveal-3 mt-8 flex items-center gap-2 text-sm text-ink-mute">
+          <LockIcon className="h-4 w-4 text-verdict" />
+          Encrypted in transit. We never train AI on your data.
         </p>
       </section>
     </AuthFrame>
