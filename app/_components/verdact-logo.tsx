@@ -20,17 +20,15 @@ export function VerdactLogo({ variant = 'lockup', className }: VerdactLogoProps)
   if (variant === 'mark') {
     return (
       <svg
-        viewBox="0 0 56 56"
+        viewBox="0 0 26 26"
+        fill="none"
         role="img"
         aria-labelledby="verdact-mark-title"
         className={className}
       >
         <title id="verdact-mark-title">Verdact</title>
-        <rect x="4" y="4" width="48" height="48" rx="8" fill="var(--ink)" />
-        <path d="M17 15 29 44" fill="none" stroke="var(--surface)" strokeWidth="6.5" strokeLinecap="square" strokeLinejoin="miter" />
-        <path d="M43 15 29 44" fill="none" stroke="var(--accent)" strokeWidth="6.5" strokeLinecap="square" strokeLinejoin="miter" />
-        <path d="M19 17h12M21 23h10" fill="none" stroke="var(--ink-faint)" strokeWidth="1.7" strokeLinecap="square" />
-        <path d="M34 38h8" fill="none" stroke="var(--trust)" strokeWidth="2.5" strokeLinecap="square" />
+        <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="var(--verdict)" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
+        <path d="M19.52 6.35 L20.5 4.7" stroke="var(--verdict)" strokeWidth="4.4" strokeLinecap="square" />
       </svg>
     );
   }
@@ -59,30 +57,28 @@ export function VerdactLogo({ variant = 'lockup', className }: VerdactLogoProps)
     );
   }
 
-  // Lockup: mark + serif wordmark on one baseline.
+  // Lockup: mark + wordmark on one baseline.
   return (
     <svg
-      viewBox="0 0 264 64"
+      viewBox="0 0 188 26"
+      fill="none"
       role="img"
       aria-labelledby="verdact-lockup-title"
       className={className}
     >
       <title id="verdact-lockup-title">Verdact</title>
-      <rect x="4" y="8" width="48" height="48" rx="8" fill="var(--ink)" />
-      <path d="M17 19 29 48" fill="none" stroke="var(--surface)" strokeWidth="6.5" strokeLinecap="square" strokeLinejoin="miter" />
-      <path d="M43 19 29 48" fill="none" stroke="var(--accent)" strokeWidth="6.5" strokeLinecap="square" strokeLinejoin="miter" />
-      <path d="M19 21h12M21 27h10" fill="none" stroke="var(--ink-faint)" strokeWidth="1.7" strokeLinecap="square" />
-      <path d="M34 42h8" fill="none" stroke="var(--trust)" strokeWidth="2.5" strokeLinecap="square" />
+      <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="var(--verdict)" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
+      <path d="M19.52 6.35 L20.5 4.7" stroke="var(--verdict)" strokeWidth="4.4" strokeLinecap="square" />
       <text
-        x="68"
-        y="46"
+        x="32"
+        y="20"
         fill="var(--ink)"
         style={{ fontFamily: DISPLAY_FONT }}
-        fontSize="42"
-        fontWeight="600"
-        letterSpacing="-0.5"
+        fontSize="20"
+        fontWeight="700"
+        letterSpacing="-0.3"
       >
-        Verdact<tspan fill="var(--action)">.</tspan>
+        Verdact
       </text>
     </svg>
   );

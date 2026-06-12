@@ -1,236 +1,248 @@
 @import "tailwindcss";
+@import "./legacy.css";
 
 /*
- * Verdact design system v3
+ * VERDACT — DESIGN TOKENS v2 (Stage 8 VERDICT visual system)
  *
- * Evidence Record / Payments Workbench identity. The palette is intentionally
- * light, exact, and operational: slate record surfaces, blue for commands,
- * red for decision pressure, teal for verified evidence, amber for deadlines.
- *
- * Tokens:
- *   --surface     page background
- *   --surface-2   card / panel
- *   --surface-3   recessed (hover, table stripes)
- *   --ink         primary text
- *   --ink-soft    body text
- *   --ink-mute    secondary
- *   --ink-faint   tertiary / metadata
- *   --rule        hairline border
- *   --rule-strong defined border
- *   --action      primary command blue
- *   --accent      Verdact decision red
- *   --trust       verified evidence teal
- *   --warning     deadline amber
- *   --accent-soft tinted accent background
- *   --danger      system-error red (separate from accent)
- *   --danger-soft error background
- *   --shadow      elevation color
- *   --focus       focus ring color (ink, not accent)
- *
- * Legacy reviewer pages (/signin, /privacy, /terms, /evidence/import,
- * /settings/connections) inline their original hex codes and are
- * unaffected by these tokens. They will be migrated after Google OAuth
- * verification closes.
+ * Source of truth: Verdact_Hifi_Tokens_v2.md + Verdact_Hifi_App_Extension_v1.md
+ * §13 errata (Verdact_Stage8_Prebuild_Design_Addendum_v1.md) governs:
+ *   — Light-only. No dark mode, no data-theme, no prefers-color-scheme dark.
+ *   — Single typeface: Schibsted Grotesk (loaded via --font-sans in layout.tsx).
+ *   — Two-color chromatic law: verdict green = action/verified, gap red = missing only.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  /* Light palette — matches approved "legal evidence workbench" wireframes */
-  --surface: #f8fafc;
-  --surface-2: #ffffff;
-  --surface-3: #f1f5f9;
+  /* ─── VERDICT v2 base palette (ratified Verdact_Hifi_Tokens_v2.md) ─── */
+  --paper: #FAFAF8;
+  --paper-2: #EDF2ED;
+  --panel: #FFFFFF;
+  --panel-wash: #F2F6F3;
+  --ink: #11181A;
+  --ink-2: #45524E;
+  --ink-3: #74807B;
+  --hairline: #DDE3DE;
+  --edge-green: #D7E3DA;
+  --verdict: #0A5C44;
+  --verdict-press: #07452F;
+  --verdict-deep: #07392B;
+  --verdict-abyss: #062F24;
+  --verdict-tint: #E6F0EA;
+  --mint: #BFE3D2;
+  --gap: #D14418;
+  --gap-text: #B23A0F;
+  --gap-tint: #FBEDE7;
+  --gap-2: var(--gap-tint);
+  --panel-2: var(--paper-2);
+  --panel-3: #E1E8E2;
+  --rule: var(--hairline);
+  --rule-strong: #C5D1C9;
+  --mark: #F5F0AA;
 
-  --ink: #0f172a;
-  --ink-soft: #2c3a4d;
-  --ink-mute: #586577;
-  /* Tertiary metadata. Darkened from #7b899b to clear WCAG AA (~4.5:1) for the
-     small mono timestamps/labels it carries. */
-  --ink-faint: #6b7889;
+  /* ─── Legacy compat aliases ───
+     Maps v1 token names → v2 equivalents. App routes still render
+     while they are rebuilt screen-by-screen. Remove when last legacy
+     screen ships. */
+  --surface: var(--paper);
+  --surface-2: var(--paper-2);
+  --surface-3: var(--panel);
+  --band: #0B0D13;
+  --band-ink: #E7EAF2;
+  --band-mute: #9AA6BC;
+  --band-rule: #272C38;
+  --ink-soft: var(--ink-2);
+  --ink-mute: var(--ink-3);
+  --ink-faint: var(--ink-3);
+  --on-solid: var(--paper);
 
-  --rule: #e2e8f0;
-  --rule-strong: #cbd5e1;
+  /* Action → verdict green */
+  --action: var(--verdict);
+  --action-soft: var(--verdict-tint);
+  --action-rule: var(--mint);
+  --action-deep: var(--verdict-press);
+  --action-solid: var(--verdict);
+  --action-solid-hover: var(--verdict-press);
 
-  /* Action / cobalt command blue */
-  --action: #1e40af;
-  --action-soft: #eef2ff;
-  --action-rule: #c7d2fe;
-  --action-deep: #1b3a9e;
+  /* Accent → gap red */
+  --accent: var(--gap);
+  --accent-soft: var(--gap-tint);
+  --accent-rule: #F2C4AC;
+  --accent-deep: var(--gap-text);
+  --accent-solid: var(--gap);
+  --accent-solid-hover: var(--gap-text);
 
-  /* Accent / decision red (also the "missing proof" red) */
-  --accent: #b42318;
-  --accent-soft: #fdf2f1;
-  --accent-rule: #f1a8a2;
-  --accent-deep: #7a1d14;
+  /* Trust → verdict green */
+  --trust: var(--verdict);
+  --trust-soft: var(--verdict-tint);
+  --trust-rule: var(--mint);
+  --trust-deep: var(--verdict-press);
 
-  /* Trust / verified-evidence green */
-  --trust: #047857;
-  --trust-soft: #ecfdf5;
-  --trust-rule: #6ee7b7;
+  /* Warning — amber (not in v2 but kept for app routes) */
+  --warning: #A06C00;
+  --warning-soft: #FFF8EC;
+  --warning-rule: #F0D090;
+  --warning-deep: #7A5100;
 
-  /* Deadline amber */
-  --warning: #b45309;
-  --warning-soft: #fffbeb;
-  --warning-rule: #fcd34d;
+  /* Danger = gap */
+  --danger: var(--gap);
+  --danger-soft: var(--gap-tint);
+  --danger-rule: #F2C4AC;
+  --danger-deep: var(--gap-text);
 
-  /* System-error red (kept distinct from --accent for form errors) */
-  --danger: #b42318;
-  --danger-soft: #fdf2f1;
+  /* Source tags (legacy app routes) */
+  --tag-stripe-ink: #4D57A0;
+  --tag-stripe-rule: #BAC1E2;
+  --tag-stripe-fill: #ECEFFB;
+  --tag-slack-ink: #6B4F88;
+  --tag-slack-rule: #D2C5E1;
+  --tag-slack-fill: #F2EBF8;
+  --tag-neutral-ink: var(--ink-3);
 
-  --shadow-color: 15, 23, 42;
-  --shadow-elev-1: 0 1px 2px 0 rgba(var(--shadow-color), 0.06), 0 8px 22px -10px rgba(var(--shadow-color), 0.10);
-  --shadow-elev-2: 0 4px 6px -1px rgba(var(--shadow-color), 0.10), 0 18px 32px -12px rgba(var(--shadow-color), 0.14);
+  /* Focus + elevation */
+  --focus-ring-color: var(--verdict);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --shadow-elev-1: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px -1px rgba(0, 0, 0, .05);
+  --shadow-elev-2: 0 4px 12px -2px rgba(0, 0, 0, .10), 0 2px 4px -2px rgba(0, 0, 0, .06);
+  --shadow-record: 0 8px 32px -4px rgba(0, 0, 0, .12), 0 0 0 1px rgba(10, 92, 68, .10);
 
-  --focus: #1e40af;
+  /* Font families — single-stack (Schibsted Grotesk via --font-sans from layout.tsx) */
+  --font-display: var(--font-sans, "Schibsted Grotesk"), system-ui, sans-serif;
+  --font-body: var(--font-sans, "Schibsted Grotesk"), system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", monospace;
 
-  /* Compatibility aliases */
+  /* Spacing (base 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --space-section-gap: clamp(64px, 8vw, 120px);
+  --space-content-width: 1200px;
+  --space-prose-width: 640px;
+  --space-header-height: var(--space-14);
+
+  /* Radius */
+  --radius-chip: 4px;
+  --radius-input: 6px;
+  --radius-card: 8px;
+  --radius-pill: 9999px;
+
+  /* Motion */
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-narrative: 550ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-scale */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 20;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 100;
+
+  --grid-line: var(--rule);
   --background: var(--surface);
   --foreground: var(--ink);
+  --focus: var(--focus-ring-color);
+  --shadow-color: 21, 16, 13;
 }
 
-/*
- * Dark theme tokens. Applied either by system preference (when no manual
- * override is set) or by an explicit data-theme="dark" attribute on the html
- * element. Manual data-theme="light" wins over system dark preference.
- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    /* Dark = same workbench theme, slate hue family. The wireframes use a
-       slate "showcase/appbar" surface (#0f172a) with cobalt + green/red
-       status; dark mode extends that into the full page. */
-    --surface: #0a0e1a;
-    --surface-2: #131a2e;
-    --surface-3: #1c2540;
-
-    --ink: #e7edf4;
-    --ink-soft: #cbd5e1;
-    --ink-mute: #94a3b8;
-    --ink-faint: #64748b;
-
-    --rule: #1e293b;
-    --rule-strong: #334155;
-
-    --action: #6c95ff;
-    --action-soft: #16224a;
-    --action-rule: #2c3f7a;
-    --action-deep: #88aaff;
-
-    --accent: #f1746a;
-    --accent-soft: #2a1411;
-    --accent-rule: #5c241e;
-    --accent-deep: #f8a39b;
-
-    --trust: #34d399;
-    --trust-soft: #07271f;
-    --trust-rule: #1f5e49;
-
-    --warning: #fbbf24;
-    --warning-soft: #2a1d05;
-    --warning-rule: #5e4a12;
-
-    --danger: #f1746a;
-    --danger-soft: #2a1411;
-
-    --shadow-color: 0, 0, 0;
-    --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
-    --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-
-    --focus: #6c95ff;
-  }
-}
-
-:root[data-theme="dark"] {
-  /* Explicit dark override — mirrors the system-dark block above. */
-  --surface: #0a0e1a;
-  --surface-2: #131a2e;
-  --surface-3: #1c2540;
-
-  --ink: #e7edf4;
-  --ink-soft: #cbd5e1;
-  --ink-mute: #94a3b8;
-  --ink-faint: #64748b;
-
-  --rule: #1e293b;
-  --rule-strong: #334155;
-
-  --action: #6c95ff;
-  --action-soft: #16224a;
-  --action-rule: #2c3f7a;
-  --action-deep: #88aaff;
-
-  --accent: #f1746a;
-  --accent-soft: #2a1411;
-  --accent-rule: #5c241e;
-  --accent-deep: #f8a39b;
-
-  --trust: #34d399;
-  --trust-soft: #07271f;
-  --trust-rule: #1f5e49;
-
-  --warning: #fbbf24;
-  --warning-soft: #2a1d05;
-  --warning-rule: #5e4a12;
-
-  --danger: #f1746a;
-  --danger-soft: #2a1411;
-
-  --shadow-color: 0, 0, 0;
-  --shadow-elev-1: 0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
-  --shadow-elev-2: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-
-  --focus: #6c95ff;
-}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
+  /* v2 tokens */
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-verdict: var(--verdict);
+  --color-edge-green: var(--edge-green);
+  --color-gap: var(--gap);
+  --color-gap-2: var(--gap-2);
+  --color-mint: var(--mint);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-mark: var(--mark);
+
+  /* Legacy compat names (existing Tailwind utilities keep working) */
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
-
-  --color-ink: var(--ink);
+  --color-band: var(--band);
+  --color-band-ink: var(--band-ink);
+  --color-band-mute: var(--band-mute);
+  --color-band-rule: var(--band-rule);
+  --color-on-solid: var(--on-solid);
   --color-ink-soft: var(--ink-soft);
   --color-ink-mute: var(--ink-mute);
   --color-ink-faint: var(--ink-faint);
-
-  --color-rule: var(--rule);
-  --color-rule-strong: var(--rule-strong);
 
   --color-action: var(--action);
   --color-action-soft: var(--action-soft);
   --color-action-rule: var(--action-rule);
   --color-action-deep: var(--action-deep);
+  --color-action-solid: var(--action-solid);
 
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-rule: var(--accent-rule);
   --color-accent-deep: var(--accent-deep);
+  --color-accent-solid: var(--accent-solid);
 
   --color-trust: var(--trust);
   --color-trust-soft: var(--trust-soft);
   --color-trust-rule: var(--trust-rule);
+  --color-trust-deep: var(--trust-deep);
 
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-warning-rule: var(--warning-rule);
+  --color-warning-deep: var(--warning-deep);
 
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-danger-rule: var(--danger-rule);
+  --color-danger-deep: var(--danger-deep);
 
-  --font-display: var(--font-display, "Fraunces"), "Iowan Old Style", "Palatino", "Georgia", serif;
-  --font-body: var(--font-body, "Inter"), system-ui, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-mono, "IBM Plex Mono"), ui-monospace, "SFMono-Regular", "Menlo", monospace;
-
-  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-sans, "Schibsted Grotesk"), system-ui, sans-serif;
 }
+
+/* ============================================================ BASE */
+
 * {
   border-color: var(--rule);
 }
 
 body {
-  background: var(--surface);
+  background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-body), system-ui, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans, "Schibsted Grotesk"), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -239,657 +251,780 @@ a {
   text-underline-offset: 3px;
 }
 
-/* Theme-aware keyboard focus for any interactive element that doesn't set its
-   own ring. Mouse clicks won't trigger it (:focus-visible only), so it stays
-   out of the way until you tab. */
-:where(a, button, [role="radio"], summary):focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* Smooth in-page anchor scrolling, plus scroll-margin so the sticky header
-   never covers a section heading when you jump to it. Disabled under
-   reduced-motion. */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--space-header-height) + var(--space-4));
+}
+
+section[id],
+[id].anchor-target {
+  scroll-margin-top: calc(var(--space-header-height) + var(--space-4));
+}
+
+:where(a, button, input, select, textarea, summary, [role="radio"], [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+::selection {
+  background: var(--verdict);
+  color: #fff;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: calc(var(--z-toast) + 1);
+  background: var(--verdict);
+  color: var(--paper);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-input);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.skip-link:focus {
+  left: var(--space-4);
+  top: var(--space-3);
+}
+
+.mono,
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.wrap {
+  max-width: var(--space-content-width);
+  margin: 0 auto;
+  padding: 0 var(--space-8);
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    padding: 0 var(--space-5);
+  }
+}
+
+/* ============================================================ TYPE ROLES */
+
+.t-eyebrow {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.t-figure {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-hero {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(44px, 6vw, 84px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.t-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.t-h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(18px, 1.5vw, 22px);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.t-dek {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.t-body-sm {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.t-label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.t-label-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.t-meta-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.t-code {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+/* Eyebrow kicker with leading hairline */
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: var(--verdict);
+  flex-shrink: 0;
+}
+
+.eyebrow-center {
+  justify-content: center;
+}
+
+/* ============================================================ BUTTONS */
+
+.btn {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 20px;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-input);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    transform var(--duration-instant) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn--primary {
+  background: var(--action-solid);
+  color: var(--paper);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--action-solid-hover);
+}
+
+.btn--secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--verdict);
+  color: var(--verdict);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--rule);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.btn--destructive {
+  background: var(--accent-solid);
+  color: var(--paper);
+}
+
+.btn--destructive:hover:not(:disabled) {
+  background: var(--accent-solid-hover);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.btn--loading::after {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  border-top-color: var(--paper);
+  border-radius: var(--radius-pill);
+  animation: v-spin 0.7s linear infinite;
+}
+
+@keyframes v-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================ FIELDS */
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field > label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.field .req {
+  color: var(--gap);
+}
+
+.field .help {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+
+.field .err {
+  font-size: 13px;
+  color: var(--gap);
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.field .ok {
+  font-size: 13px;
+  color: var(--action-deep);
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.inp {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-input);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.inp::placeholder {
+  color: var(--ink-3);
+}
+
+.inp:focus {
+  outline: none;
+  border-color: var(--verdict);
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+}
+
+.inp--error {
+  border-color: var(--gap);
+  animation: v-shake var(--duration-normal) var(--ease-out);
+}
+
+.inp--error:focus {
+  box-shadow: 0 0 0 3px var(--gap-2);
+}
+
+.inp--success {
+  border-color: var(--verdict);
+}
+
+.inp:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inp--readonly {
+  background: transparent;
+  border-style: dashed;
+  color: var(--ink-2);
+}
+
+@keyframes v-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+
+/* ============================================================ PILLS / CHIPS / TAGS / DOTS */
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-transform: uppercase;
+}
+
+.pill--action { color: var(--action-deep); background: var(--verdict-tint); border-color: var(--action-rule); }
+.pill--trust { color: var(--action-deep); background: var(--verdict-tint); border-color: var(--action-rule); }
+.pill--warning { color: var(--warning-deep); background: var(--warning-soft); border-color: var(--warning-rule); }
+.pill--accent { color: var(--gap); background: var(--gap-2); border-color: var(--accent-rule); }
+.pill--neutral { color: var(--ink-3); background: var(--panel); border-color: var(--rule-strong); }
+
+.pill .ping {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
+.pill--warning .ping {
+  animation: v-ping 1.6s var(--ease-out) 1;
+}
+
+@keyframes v-ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warning) 55%, transparent); }
+  100% { box-shadow: 0 0 0 7px transparent; }
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: var(--radius-chip);
+  border: 1px solid;
+}
+
+.chip--rc {
+  color: var(--action-deep);
+  background: var(--verdict-tint);
+  border-color: var(--action-rule);
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  padding: 3px 7px;
+  border-radius: var(--radius-chip);
+  border: 1px solid;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.tag--stripe { color: var(--tag-stripe-ink); background: var(--tag-stripe-fill); border-color: var(--tag-stripe-rule); }
+.tag--slack { color: var(--tag-slack-ink); background: var(--tag-slack-fill); border-color: var(--tag-slack-rule); }
+.tag--email,
+.tag--policy { color: var(--ink-3); background: var(--panel); border-color: var(--rule-strong); }
+.tag--missing { color: var(--gap); background: var(--gap-2); border-color: var(--accent-rule); }
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.dot svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dot--ok {
+  background: var(--verdict-tint);
+  border: 1.5px solid var(--verdict);
+  color: var(--action-deep);
+}
+
+.dot--miss {
+  background: var(--gap-2);
+  border: 1.5px solid var(--gap);
+  color: var(--gap);
+}
+
+/* ============================================================ NOTICES / SKELETON / EMPTY */
+
+.notice {
+  border: 1px solid;
+  border-radius: var(--radius-input);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.notice svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.notice--error {
+  background: var(--gap-2);
+  border-color: var(--accent-rule);
+  color: var(--gap);
+}
+
+.notice--info {
+  background: var(--verdict-tint);
+  border-color: var(--action-rule);
+  color: var(--action-deep);
+}
+
+.skel {
+  background: linear-gradient(
+    90deg,
+    var(--panel) 25%,
+    color-mix(in srgb, var(--rule) 60%, var(--panel)) 37%,
+    var(--panel) 63%
+  );
+  background-size: 400% 100%;
+  animation: v-shimmer 1.4s ease infinite;
+  border-radius: var(--radius-chip);
+  height: 14px;
+}
+
+@keyframes v-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+.empty {
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius-card);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+/* ============================================================ CASE FILE */
+
+.casefile {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-record);
+  overflow: hidden;
+}
+
+.casefile__top {
+  height: 5px;
+  background: linear-gradient(90deg, var(--verdict) 0 62%, var(--action-rule) 62% 100%);
+}
+
+.casefile__head {
+  padding: 15px 18px 13px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.casefile__head .t {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.casefile__head .s {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 5px;
+}
+
+.casefile__list {
+  padding: 4px 18px 14px;
+}
+
+.eritem {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.eritem:last-child {
+  border-bottom: 0;
+}
+
+.erbody {
+  min-width: 0;
+}
+
+.erbody .ertxt {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 5px;
+}
+
+.miss-zone {
+  margin: 8px -18px -14px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--accent-rule);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background:
+    linear-gradient(var(--gap-2), var(--gap-2)),
+    repeating-linear-gradient(135deg, transparent 0 15px, color-mix(in srgb, var(--gap) 7%, transparent) 15px 16px);
+}
+
+.miss-zone .ic {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--gap);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.miss-zone .ic svg {
+  width: 12px;
+  height: 12px;
+}
+
+.miss-zone .wt {
+  font-size: 12.5px;
+  color: var(--gap);
+  line-height: 1.45;
+}
+
+.miss-zone .wt b {
+  font-weight: 600;
+}
+
+/* ============================================================ SLATE BAND (legacy dark sections) */
+
+.band {
+  background: var(--band);
+  color: var(--band-ink);
+}
+
+.band .eyebrow {
+  color: var(--band-mute);
+}
+
+.band .eyebrow::before {
+  background: var(--band-rule);
+}
+
+.blueprint {
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    var(--paper);
+  background-size: 48px 48px, 48px 48px, auto;
+}
+
+/* ============================================================ HEALTH / STATE CARDS */
+
+.health-band-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--action-deep);
+  background: var(--verdict-tint);
+  border: 1px solid var(--action-rule);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.statecard {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  background: var(--paper-2);
+}
+
+.statecard .sl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.statecard.won {
+  border-color: var(--action-rule);
+  background: var(--verdict-tint);
+}
+
+.statecard.won .sl { color: var(--action-deep); }
+.statecard.lost .sl { color: var(--ink-3); }
+.statecard.await .sl { color: var(--warning-deep); }
+
+.statecard p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-top: var(--space-2);
+  line-height: 1.5;
+}
+
+/* ============================================================ STAGE (dark grid panels) */
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  padding: var(--space-8);
+  background:
+    linear-gradient(color-mix(in srgb, var(--band-rule) 38%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--band-rule) 38%, transparent) 1px, transparent 1px),
+    var(--band);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+
+@media (max-width: 640px) {
+  .stage {
+    padding: var(--space-4);
+  }
+}
+
+/* ============================================================ MOTION */
+
+@keyframes v-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.rise {
+  animation: v-rise var(--duration-slow) var(--ease-out) both;
+}
+
+/* Legacy scroll reveal (.reveal-view — kept for non-homepage pages) */
+html.reveals-armed .reveal-view {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+html.reveals-armed .reveal-view.is-in {
+  animation: v-rise var(--duration-slow) var(--ease-out) both;
+}
+
+/* VERDICT scroll reveals (.rv / .in — homepage and future pages) */
+html.js .rv {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+html.js .rv.in {
+  opacity: 1;
+  transform: none;
+}
+
+html.js .rv-row {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 300ms var(--ease-out) calc(var(--i, 0) * 50ms),
+    transform 300ms var(--ease-out) calc(var(--i, 0) * 50ms);
+}
+
+html.js .in .rv-row,
+html.js .in > .rv-row,
+html.js .rv-row.in {
+  opacity: 1;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-}
 
-section[id] {
-  scroll-margin-top: 72px;
-}
-
-/* Theme-token transition on the page chrome so toggling System/Light/Dark
-   eases rather than snaps. Limited to color properties to avoid layout jank. */
-body,
-.surface-card,
-.surface-card-flat,
-.field-input,
-.btn-secondary {
-  transition:
-    background-color 200ms ease,
-    border-color 200ms ease,
-    color 200ms ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body,
-  .surface-card,
-  .surface-card-flat,
-  .field-input,
-  .btn-secondary {
-    transition: none;
-  }
-}
-
-::selection {
-  background: color-mix(in oklab, var(--action) 18%, white);
-  color: var(--ink);
-}
-
-/* ------------------------------------------------------------------ */
-/* Typography                                                          */
-/* ------------------------------------------------------------------ */
-.font-display {
-  font-family: var(--font-display);
-  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
-  letter-spacing: 0;
-}
-
-.font-display-light {
-  font-family: var(--font-display);
-  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
-  font-weight: 300;
-  letter-spacing: 0;
-}
-
-.label-mono {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ink-mute);
-}
-
-.label-mono-strong {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.meta-mono {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-}
-
-/* Eyebrow — mono kicker with a leading hairline, as used above every
-   section heading in the wireframes. */
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.625rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-
-.eyebrow::before {
-  content: "";
-  width: 24px;
-  height: 1px;
-  background: var(--rule-strong);
-}
-
-/* Centered eyebrow variant for final-CTA style sections. */
-.eyebrow-center {
-  justify-content: center;
-}
-
-/* Section heading — Fraunces display, tight tracking. */
-.section-heading {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink);
-}
-
-.section-dek {
-  font-size: 1.0625rem;
-  color: var(--ink-soft);
-  line-height: 1.6;
-}
-
-/* ------------------------------------------------------------------ */
-/* Pills                                                               */
-/* ------------------------------------------------------------------ */
-.pill-accent {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.55rem;
-  border-radius: 2px;
-}
-
-.pill-accent::before {
-  content: "";
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.pill-neutral {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--rule-strong);
-  color: var(--ink-mute);
-  background: var(--surface-2);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.55rem;
-  border-radius: 2px;
-}
-
-.pill-ink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--ink);
-  color: var(--ink);
-  background: transparent;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.55rem;
-  border-radius: 2px;
-}
-
-.pill-trust {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--trust);
-  color: var(--trust);
-  background: var(--trust-soft);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.55rem;
-  border-radius: 2px;
-}
-
-.pill-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid var(--action-rule);
-  color: var(--action);
-  background: var(--action-soft);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.55rem;
-  border-radius: 2px;
-}
-
-/* Status pill for live deadlines ("Needs response"). Pill-shaped, amber,
-   with a small ping dot — matches the wireframe dispute strip. */
-.pill-warning {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  border: 1px solid var(--warning-rule);
-  color: var(--warning);
-  background: var(--warning-soft);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-}
-
-.pill-warning::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-/* Reason-code chip (e.g. "RC 13.1") — cobalt, square, mono. */
-.chip-rc {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  color: var(--action);
-  border: 1px solid var(--action-rule);
-  background: var(--action-soft);
-  border-radius: 3px;
-  padding: 0.15rem 0.45rem;
-}
-
-/* ------------------------------------------------------------------ */
-/* Inputs                                                              */
-/* ------------------------------------------------------------------ */
-.field-input {
-  width: 100%;
-  background: var(--surface-2);
-  border: 1px solid var(--rule-strong);
-  padding: 0.7rem 0.85rem;
-  font-family: var(--font-body);
-  font-size: 0.97rem;
-  color: var(--ink);
-  border-radius: 3px;
-  transition:
-    border-color 150ms ease,
-    background 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.field-input:focus {
-  outline: none;
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ink) 12%, transparent);
-  background: var(--surface-2);
-}
-
-.field-input::placeholder {
-  color: var(--ink-faint);
-}
-
-.field-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-  margin-bottom: 0.4rem;
-}
-
-/* ------------------------------------------------------------------ */
-/* Buttons                                                             */
-/* ------------------------------------------------------------------ */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  background: var(--action);
-  color: #ffffff;
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 0.78rem 1.2rem;
-  border-radius: 3px;
-  border: 1px solid var(--action);
-  transition:
-    transform 140ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--action-deep);
-  border-color: var(--action-deep);
-  box-shadow: 0 12px 28px -16px rgba(30, 64, 175, 0.65);
-  transform: translateY(-1px);
-}
-
-.btn-primary:focus-visible {
-  outline: 2px solid var(--action);
-  outline-offset: 3px;
-}
-
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  background: var(--action);
-  border-color: var(--action);
-  box-shadow: none;
-  transform: none;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: var(--surface-2);
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 0.72rem 1.15rem;
-  border-radius: 3px;
-  border: 1px solid var(--rule-strong);
-  transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.btn-secondary:hover {
-  border-color: var(--ink);
-  background: var(--surface-3);
-}
-
-.btn-secondary:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 3px;
-}
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.93rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 3px;
-  border: 1px solid transparent;
-  transition:
-    background 140ms ease,
-    border-color 140ms ease;
-}
-
-.btn-ghost:hover {
-  background: var(--surface-3);
-  border-color: var(--rule-strong);
-}
-
-/* ------------------------------------------------------------------ */
-/* Surfaces                                                            */
-/* ------------------------------------------------------------------ */
-.surface-card {
-  background: var(--surface-2);
-  border: 1px solid var(--rule-strong);
-  border-radius: 6px;
-  box-shadow: var(--shadow-elev-1);
-}
-
-.surface-card-flat {
-  background: var(--surface-2);
-  border: 1px solid var(--rule-strong);
-  border-radius: 6px;
-}
-
-.surface-paper {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.92)),
-    radial-gradient(circle at 16px 16px, rgba(203, 213, 225, 0.56) 1px, transparent 1.5px);
-  background-color: var(--surface);
-  background-size: auto, 32px 32px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .surface-paper {
-    background:
-      linear-gradient(180deg, rgba(11, 18, 32, 0.7), rgba(10, 14, 26, 0.92)),
-      radial-gradient(circle at 16px 16px, rgba(51, 65, 85, 0.42) 1px, transparent 1.5px);
-    background-color: var(--surface);
-    background-size: auto, 32px 32px;
-  }
-
-  :root:not([data-theme="light"]) .record-field {
-    background:
-      linear-gradient(90deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
-      linear-gradient(180deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
-      linear-gradient(135deg, rgba(79, 125, 249, 0.08), transparent 42%),
-      linear-gradient(315deg, rgba(251, 113, 133, 0.06), transparent 38%);
-    background-size: 56px 56px, 56px 56px, auto, auto;
-  }
-
-  :root:not([data-theme="light"]) ::selection {
-    background: color-mix(in oklab, var(--action) 30%, transparent);
-    color: var(--ink);
-  }
-}
-
-:root[data-theme="dark"] .surface-paper {
-  background:
-    linear-gradient(180deg, rgba(11, 18, 32, 0.7), rgba(10, 14, 26, 0.92)),
-    radial-gradient(circle at 16px 16px, rgba(51, 65, 85, 0.42) 1px, transparent 1.5px);
-  background-color: var(--surface);
-  background-size: auto, 32px 32px;
-}
-
-:root[data-theme="dark"] .record-field {
-  background:
-    linear-gradient(90deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(51, 65, 85, 0.32) 1px, transparent 1px),
-    linear-gradient(135deg, rgba(79, 125, 249, 0.08), transparent 42%),
-    linear-gradient(315deg, rgba(251, 113, 133, 0.06), transparent 38%);
-  background-size: 56px 56px, 56px 56px, auto, auto;
-}
-
-:root[data-theme="dark"] ::selection {
-  background: color-mix(in oklab, var(--action) 30%, transparent);
-  color: var(--ink);
-}
-
-.record-field {
-  background:
-    linear-gradient(90deg, rgba(168, 179, 196, 0.18) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(168, 179, 196, 0.18) 1px, transparent 1px),
-    linear-gradient(135deg, rgba(30, 64, 175, 0.07), transparent 42%),
-    linear-gradient(315deg, rgba(180, 35, 24, 0.05), transparent 38%);
-  background-size: 64px 64px, 64px 64px, auto, auto;
-}
-
-.record-slat {
-  background: color-mix(in oklab, var(--surface-2) 92%, var(--action-soft));
-  border: 1px solid var(--rule-strong);
-  border-radius: 6px;
-  box-shadow:
-    0 2px 6px -2px rgba(15, 23, 42, 0.10),
-    0 24px 48px -24px rgba(15, 23, 42, 0.22),
-    0 40px 80px -40px rgba(30, 64, 175, 0.16);
-}
-
-/* ------------------------------------------------------------------ */
-/* Notices                                                             */
-/* ------------------------------------------------------------------ */
-.notice-error {
-  border: 1px solid var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-radius: 3px;
-  padding: 0.75rem 0.9rem;
-  font-size: 0.88rem;
-}
-
-.notice-info {
-  border: 1px solid var(--rule-strong);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  border-radius: 3px;
-  padding: 0.75rem 0.9rem;
-  font-size: 0.88rem;
-}
-
-/* ------------------------------------------------------------------ */
-/* Editorial rules                                                     */
-/* ------------------------------------------------------------------ */
-.rule-thin {
-  border-top: 1px solid var(--rule);
-}
-
-.rule-strong {
-  border-top: 1px solid var(--rule-strong);
-}
-
-/* ------------------------------------------------------------------ */
-/* Wireframe primitives                                                */
-/* Shared classes the page-port agents build on. Keep names stable.    */
-/* ------------------------------------------------------------------ */
-
-/* Blueprint grid background — hero and final-CTA bands. The radial
-   fade is applied by the page via ::after; this lays down the grid. */
-.grid-bg {
-  background-color: var(--surface);
-  background-image:
-    linear-gradient(var(--rule) 1px, transparent 1px),
-    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
-  background-size: 56px 56px, 56px 56px;
-}
-
-/* Slate "showcase" surface — dark band on a light page (product
-   showcase, footer, appbar). Self-contained dark context. */
-.surface-slate {
-  background: #0f172a;
-  color: #cbd5e1;
-}
-:root[data-theme="dark"] .surface-slate,
-.surface-slate {
-  /* In dark mode the page is already slate; keep the band one step
-     deeper so it still reads as a distinct panel. */
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .surface-slate {
-    background: #070b14;
-  }
-}
-:root[data-theme="dark"] .surface-slate {
-  background: #070b14;
-}
-
-/* Source provenance tags. Brand-ish tints in light; neutralized to the
-   token system in dark so they don't glare. */
-.src-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  padding: 0.18rem 0.45rem;
-  border-radius: 3px;
-  border: 1px solid;
-}
-.src-tag.stripe { color: #4b38c4; background: #f1effb; border-color: #cfc6f1; }
-.src-tag.gmail  { color: #a82015; background: #fdf2f1; border-color: #f0c4bf; }
-.src-tag.slack  { color: #553c6e; background: #f6f1fa; border-color: #ddccea; }
-.src-tag.policy { color: var(--ink-soft); background: var(--surface-3); border-color: var(--rule-strong); }
-.src-tag.missing { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-rule); }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .src-tag.stripe { color: #b3a6ff; background: #1b1740; border-color: #322a63; }
-  :root:not([data-theme="light"]) .src-tag.gmail  { color: #f1746a; background: #2a1411; border-color: #5c241e; }
-  :root:not([data-theme="light"]) .src-tag.slack  { color: #c9a8e8; background: #221833; border-color: #3d2c52; }
-}
-:root[data-theme="dark"] .src-tag.stripe { color: #b3a6ff; background: #1b1740; border-color: #322a63; }
-:root[data-theme="dark"] .src-tag.gmail  { color: #f1746a; background: #2a1411; border-color: #5c241e; }
-:root[data-theme="dark"] .src-tag.slack  { color: #c9a8e8; background: #221833; border-color: #3d2c52; }
-
-/* Confirmed-evidence surface — mint tint for verified rows/cards. */
-.surface-confirmed {
-  background: var(--trust-soft);
-  border: 1px solid var(--trust-rule);
-  border-radius: 4px;
-}
-
-/* Missing-proof surface — softened red diagonal hatch. Signals a gap
-   without relying on color alone (pair with a MISSING label). */
-.surface-missing {
-  background:
-    linear-gradient(rgba(180, 35, 24, 0.04), rgba(180, 35, 24, 0.04)),
-    repeating-linear-gradient(135deg, transparent 0 16px, rgba(180, 35, 24, 0.05) 16px 17px);
-  border: 1px solid var(--accent-rule);
-  border-radius: 4px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .surface-missing {
-    background:
-      linear-gradient(rgba(241, 116, 106, 0.07), rgba(241, 116, 106, 0.07)),
-      repeating-linear-gradient(135deg, transparent 0 16px, rgba(241, 116, 106, 0.08) 16px 17px);
-    border-color: var(--accent-rule);
-  }
-}
-:root[data-theme="dark"] .surface-missing {
-  background:
-    linear-gradient(rgba(241, 116, 106, 0.07), rgba(241, 116, 106, 0.07)),
-    repeating-linear-gradient(135deg, transparent 0 16px, rgba(241, 116, 106, 0.08) 16px 17px);
-  border-color: var(--accent-rule);
-}
-
-/* Status dot for evidence items: ok (green check) / miss (red alert). */
-.status-dot {
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-.status-dot.ok   { background: var(--trust-soft); border: 1.5px solid var(--trust); color: var(--trust); }
-.status-dot.miss { background: var(--accent-soft); border: 1.5px solid var(--accent); color: var(--accent); }
-
-/* ------------------------------------------------------------------ */
-/* Motion                                                              */
-/* ------------------------------------------------------------------ */
-@keyframes verdact-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.reveal {
-  animation: verdact-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.reveal-1 { animation-delay: 40ms; }
-.reveal-2 { animation-delay: 120ms; }
-.reveal-3 { animation-delay: 220ms; }
-.reveal-4 { animation-delay: 340ms; }
-
-@media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .reveal-1,
-  .reveal-2,
-  .reveal-3,
-  .reveal-4 {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
