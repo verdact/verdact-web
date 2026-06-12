@@ -12,6 +12,27 @@ type ResetPasswordRecoveryGateProps = {
   serverCanReset: boolean;
 };
 
+function readRecoverySessionFromHash() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+  const type = hashParams.get('type');
+
+  if (type !== 'recovery' || !accessToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  };
+}
+
+function hasRecoveryIntentInHash() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  return hashParams.get('type') === 'recovery';
+}
+
 export function ResetPasswordRecoveryGate({
   serverCanReset,
 }: ResetPasswordRecoveryGateProps) {
@@ -25,10 +46,7 @@ export function ResetPasswordRecoveryGate({
     let active = true;
     let resolved = false;
     const supabase = createClient();
-    const hash = window.location.hash;
-    const hasRecoveryHash =
-      hash.includes('type=recovery') || hash.includes('access_token=');
-
+    const hasRecoveryIntent = hasRecoveryIntentInHash();
     function markReady() {
       if (!active || resolved) return;
       resolved = true;
@@ -45,18 +63,28 @@ export function ResetPasswordRecoveryGate({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!hasRecoveryHash || !session) return;
+      if (!hasRecoveryIntent || !session) return;
       if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
         markReady();
       }
     });
 
     const timer = window.setTimeout(async () => {
+      const recoverySession = readRecoverySessionFromHash();
+
+      if (recoverySession) {
+        const { error } = await supabase.auth.setSession(recoverySession);
+        if (!error) {
+          markReady();
+          return;
+        }
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (session && hasRecoveryHash) {
+      if (session && hasRecoveryIntent) {
         markReady();
       } else {
         markExpired();
