@@ -5,7 +5,7 @@ import { getUser } from '@/lib/dal';
 import { SignupForm } from './_components/SignupForm';
 
 export const metadata = {
-  title: 'Create your workspace · Verdact',
+  title: 'Create your workspace',
   description: 'Create a Verdact evidence workspace for Stripe disputes.',
 };
 

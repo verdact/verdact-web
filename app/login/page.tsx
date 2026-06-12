@@ -12,7 +12,7 @@ type LoginPageProps = {
 };
 
 export const metadata = {
-  title: 'Sign in · Verdact',
+  title: 'Sign in',
   description: 'Sign in to your Verdact evidence workspace.',
 };
 
