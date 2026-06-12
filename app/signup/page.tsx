@@ -17,7 +17,8 @@ export default async function SignupPage() {
 
   return (
     <AuthFrame>
-      <h1>Create workspace.</h1>
+      <p className="eyebrow">Start free</p>
+      <h1>Create workspace<span className="auth-dot">.</span></h1>
       <p className="auth-sub">Monitor risk. Build evidence. File when ready.</p>
 
       <SignupForm />

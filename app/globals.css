@@ -1049,6 +1049,7 @@ html.js .rv-row.in {
   max-width: 440px;
   background: var(--panel);
   border: 1px solid var(--hairline);
+  border-top: 3px solid var(--verdict);
   border-radius: var(--radius-card);
   box-shadow: 0 0 0 1px var(--hairline), 0 8px 28px -6px rgba(10, 22, 18, .10);
   overflow: hidden;
@@ -1076,6 +1077,10 @@ html.js .rv-row.in {
   padding: 32px;
 }
 
+.auth-card-body .eyebrow {
+  margin-bottom: 12px;
+}
+
 .auth-card-body h1 {
   font-size: 28px;
   font-weight: 800;
@@ -1083,6 +1088,10 @@ html.js .rv-row.in {
   line-height: 1.1;
   color: var(--ink);
   margin: 0 0 var(--space-1) 0;
+}
+
+.auth-card-body h1 .auth-dot {
+  color: var(--verdict);
 }
 
 .auth-sub {

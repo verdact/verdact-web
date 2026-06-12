@@ -28,7 +28,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthFrame>
-      <h1>Sign in.</h1>
+      <p className="eyebrow">Merchant workspace</p>
+      <h1>Sign in<span className="auth-dot">.</span></h1>
       <p className="auth-sub">Your dispute evidence workspace for Stripe.</p>
 
       {confirmed ? (
