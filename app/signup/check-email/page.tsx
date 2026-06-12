@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AuthFrame } from '../../_components/auth-chrome';
 import { MailIcon } from '../../_components/auth-icons';
 
@@ -6,8 +7,8 @@ type CheckEmailPageProps = {
 };
 
 export const metadata = {
-  title: 'Confirm your email · Verdact',
-  description: 'Click the verification link to finish creating your workspace.',
+  title: 'Confirm your email',
+  description: 'Open the confirmation link to finish creating your workspace.',
 };
 
 export default async function CheckEmailPage({
@@ -18,67 +19,49 @@ export default async function CheckEmailPage({
 
   return (
     <AuthFrame>
-      <section className="mx-auto w-full max-w-lg py-12 md:py-20">
-        <div className="reveal reveal-1 text-center">
-          <span className="eyebrow eyebrow-center">
-            Verdact · awaiting confirmation
-          </span>
-          <h1 className="section-heading mt-5">Confirm your email.</h1>
+      <div className="auth-center">
+        <div className="auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
+          <p className="eyebrow auth-eyebrow-row">Check your email</p>
+          <h1 className="auth-h1">
+            Confirm your Verdact account<span className="auth-dot">.</span>
+          </h1>
+          <p className="auth-sub">
+            We sent a confirmation link to{' '}
+            {email ? <strong>{email}</strong> : 'your email'}. Open it to finish
+            creating your workspace.
+          </p>
         </div>
 
-        <div className="reveal reveal-2 surface-card mt-9 overflow-hidden">
-          <div
-            className="h-1.5 w-full"
-            aria-hidden="true"
-            style={{
-              background:
-                'linear-gradient(90deg, var(--action) 0 60%, var(--trust) 60% 100%)',
-            }}
-          />
-          <div className="p-6 md:p-8">
-            <div className="flex items-start gap-4">
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-action-rule bg-action-soft text-action"
-                aria-hidden="true"
-              >
-                <MailIcon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="label-mono-strong">Verification link sent</p>
-                <p className="mt-2 text-base leading-7 text-ink-soft">
-                  We sent a verification link to{' '}
-                  {email ? (
-                    <span className="font-mono text-ink">{email}</span>
-                  ) : (
-                    <span className="text-ink">the address you provided</span>
-                  )}
-                  . Click it to finish setting up your workspace.
-                </p>
-              </div>
-            </div>
+        <div
+          className="auth-card auth-rise"
+          style={{ '--i': 1, marginTop: 'var(--space-6)' } as React.CSSProperties}
+        >
+          <div className="notice notice--info">
+            <MailIcon className="h-4 w-4" />
+            <span>
+              After confirmation, you will return to sign in and continue to
+              your dashboard.
+            </span>
+          </div>
 
-            <div className="mt-7 space-y-3">
-              <a className="btn-primary w-full" href="/login">
-                I&apos;ve confirmed - sign in
-              </a>
-              <a className="btn-ghost w-full justify-center" href="/signup">
-                Use a different email
-              </a>
-            </div>
+          <div className="space-y-3" style={{ marginTop: 'var(--space-5)' }}>
+            <Link className="btn btn--primary w-full" href="/login">
+              Back to sign in
+            </Link>
+            <Link className="btn btn--ghost w-full" href="/signup">
+              Use a different email
+            </Link>
           </div>
         </div>
 
-        <p className="reveal reveal-3 mt-8 text-center text-sm text-ink-mute">
+        <p className="auth-trust auth-rise" style={{ '--i': 2 } as React.CSSProperties}>
           Link not arriving? Check your spam folder, or write to{' '}
-          <a
-            className="font-medium text-action underline underline-offset-[5px] hover:text-action-deep"
-            href="mailto:admin@verdact.io"
-          >
-            admin@verdact.io
+          <a className="underline hover:text-ink" href="mailto:support@verdact.io">
+            support@verdact.io
           </a>
           .
         </p>
-      </section>
+      </div>
     </AuthFrame>
   );
 }

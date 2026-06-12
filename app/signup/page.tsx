@@ -9,6 +9,13 @@ export const metadata = {
   description: 'Create a Verdact evidence workspace for Stripe disputes.',
 };
 
+// Workspace Preview artifact per wireframe — a product preview, not bullets.
+const PREVIEW_ROWS = [
+  { num: '1', label: 'Account risk', desc: 'Connect Stripe to see disputes and dispute-rate pressure' },
+  { num: '2', label: 'Evidence record', desc: 'Add delivery, approval, policy, Slack, email, and files' },
+  { num: '3', label: 'Review packet', desc: 'Check sources and approve before submission' },
+];
+
 export default async function SignupPage() {
   const user = await getUser();
   if (user) {
@@ -17,16 +24,48 @@ export default async function SignupPage() {
 
   return (
     <AuthFrame>
-      <p className="eyebrow">Start free</p>
-      <h1>Create workspace<span className="auth-dot">.</span></h1>
-      <p className="auth-sub">Monitor risk. Build evidence. File when ready.</p>
+      <div className="auth-split">
+        <div className="auth-promise auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
+          <p className="eyebrow auth-eyebrow-row">New workspace</p>
+          <h1 className="auth-h1">
+            Create your evidence workspace<span className="auth-dot">.</span>
+          </h1>
+          <p className="auth-sub">
+            Build source-traced dispute evidence, check account risk, and review
+            the response before anything is submitted to Stripe.
+          </p>
+          <p className="auth-micro">
+            You can create the workspace before connecting Stripe. Stripe is
+            needed before Verdact can read disputes or account-risk data.
+          </p>
+        </div>
 
-      <SignupForm />
+        <div className="auth-card auth-rise" style={{ '--i': 1 } as React.CSSProperties}>
+          <SignupForm />
+          <p className="auth-trust">
+            <CheckIcon />
+            Nothing is filed without your review and authorization.
+          </p>
+        </div>
 
-      <p className="auth-trust">
-        <CheckIcon />
-        Nothing is filed with the bank until you review and approve it.
-      </p>
+        <aside
+          className="wsprev auth-rise"
+          style={{ '--i': 2 } as React.CSSProperties}
+          aria-label="Workspace preview"
+        >
+          <p className="wsprev-label">Workspace preview</p>
+          {PREVIEW_ROWS.map((row) => (
+            <div className="wsprev-row" key={row.num}>
+              <span className="wsprev-num">{row.num}</span>
+              <b>{row.label}</b>
+              <span>{row.desc}</span>
+            </div>
+          ))}
+          <p className="wsprev-foot">
+            Workspace created first. Stripe can connect after signup.
+          </p>
+        </aside>
+      </div>
     </AuthFrame>
   );
 }
