@@ -97,7 +97,7 @@ export function SignupForm() {
         </a>
       </div>
 
-      <p className="text-xs leading-relaxed text-ink-mute">
+      <p className="text-xs leading-relaxed text-ink-soft">
         By creating a workspace you accept the{' '}
         <a className="underline hover:text-ink" href="/terms">
           Terms

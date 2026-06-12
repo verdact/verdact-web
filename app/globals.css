@@ -735,7 +735,7 @@ section[id],
 .notice--error {
   background: var(--gap-2);
   border-color: var(--accent-rule);
-  color: var(--gap);
+  color: var(--gap-text);
 }
 
 .notice--info {
@@ -1065,7 +1065,7 @@ html.js .rv-row.in {
 .auth-back {
   font-size: 13px;
   font-weight: 500;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-decoration: none;
   transition: color var(--duration-fast) var(--ease-out);
 }
@@ -1087,7 +1087,7 @@ html.js .rv-row.in {
 
 .auth-sub {
   font-size: 14px;
-  color: var(--ink-3);
+  color: var(--ink-2);
   line-height: 1.5;
   margin: 0 0 28px 0;
 }
@@ -1097,7 +1097,7 @@ html.js .rv-row.in {
   align-items: flex-start;
   gap: var(--space-2);
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--ink-2);
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid var(--hairline);
@@ -1137,7 +1137,7 @@ html.js .rv-row.in {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .auth-foot-links {
@@ -1148,7 +1148,7 @@ html.js .rv-row.in {
 }
 
 .auth-foot-links a {
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-decoration: none;
   transition: color var(--duration-fast) var(--ease-out);
 }
