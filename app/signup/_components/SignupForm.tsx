@@ -21,11 +21,7 @@ export function SignupForm() {
         </button>
       </form>
 
-      <div className="flex items-center gap-4">
-        <span className="h-px flex-1 bg-rule" />
-        <span className="t-label-mono text-ink-mute">or continue with email</span>
-        <span className="h-px flex-1 bg-rule" />
-      </div>
+      <div className="auth-divider">or continue with email</div>
 
       <form action={formAction} className="space-y-5" suppressHydrationWarning>
         {state?.error ? (

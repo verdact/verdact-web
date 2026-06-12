@@ -15,7 +15,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
         </div>
       </div>
       <footer className="auth-foot">
-        <span className="t-meta-mono">© 2026 Verdact</span>
+        <span>© 2026 Verdact</span>
         <nav className="auth-foot-links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

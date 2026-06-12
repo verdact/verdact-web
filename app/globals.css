@@ -1123,6 +1123,25 @@ html.js .rv-row.in {
   color: var(--ink-2);
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--hairline);
+}
+
 .auth-trust svg {
   flex-shrink: 0;
   width: 14px;
@@ -1137,6 +1156,7 @@ html.js .rv-row.in {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-size: 13px;
   color: var(--ink-2);
 }
 
