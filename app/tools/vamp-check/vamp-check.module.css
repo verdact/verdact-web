@@ -1,12 +1,12 @@
 /*
- * VAMP / Dispute-rate checker — VERDICT v2 (Stage 8)
- * Public, client-side, no-auth, no-storage calculator.
+ * VAMP / Dispute-rate checker — VERDICT v2 (Stage 8) — full-page design pass.
+ * Composition: one framed INSTRUMENT (inputs | read-out, full-width gauge footer)
+ * mirroring the homepage bench/gauge grammar, then a reference band, a deep-green
+ * statement poster, band-keyed recommendations, and the conversion plate.
  * Structure/copy/IA: 06_Build/Wireframes/Marketing/marketing-vamp-checker-wireframe-v1.md
- * Visual system: globals.css (Verdact_Hifi_Tokens_v2.md) + the homepage gauge grammar
- *   (page.module.css §7). Single typeface (Schibsted), light-only, tabular-nums for
- *   figures (no mono), two-color law: verdict green = healthy/you; gap red = at-risk;
- *   amber kept for the getting-close caution band only. Bands are dot + label +
- *   position, never color-alone.
+ * Visual: globals.css (Verdact_Hifi_Tokens_v2.md) + page.module.css §6/§7.
+ * Single typeface, light-only. Bands = dot + label + position, never color alone;
+ * verdict green = healthy/you, gap red = at-risk, amber = the getting-close caution band.
  */
 
 .page {
@@ -15,35 +15,33 @@
   color: var(--ink);
 }
 
-.page section {
-  padding: clamp(48px, 6vw, 80px) 0;
-}
-
 /* ============================================================ HERO */
 
 .hero {
-  padding: clamp(48px, 7vw, 84px) 0 clamp(36px, 5vw, 56px);
+  position: relative;
+  padding: clamp(52px, 7vw, 88px) 0 clamp(92px, 11vw, 150px);
   isolation: isolate;
   background-image: radial-gradient(rgba(17, 24, 26, 0.05) 1px, transparent 1.1px);
   background-size: 26px 26px;
   border-bottom: 1px solid var(--hairline);
 }
 
+.heroInner { max-width: 760px; }
+
 .coverage {
   margin: 16px 0 0;
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink-2);
-  max-width: 60ch;
 }
 
 .heroHeadline {
   margin: 14px 0 0;
-  font-size: clamp(38px, 5vw, 62px);
+  font-size: clamp(40px, 5.4vw, 66px);
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1.04;
-  max-width: 16ch;
+  line-height: 1.03;
+  max-width: 15ch;
   color: var(--ink);
 }
 
@@ -68,47 +66,97 @@
   font-size: clamp(17px, 1.4vw, 19px);
   line-height: 1.55;
   color: var(--ink-2);
-  max-width: 56ch;
+  max-width: 54ch;
 }
 
-.bridge {
-  margin: 20px 0 0;
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--ink-2);
-  max-width: 58ch;
-}
-
-.hook {
-  margin: 16px 0 0;
-  padding: 14px 18px;
-  border-left: 3px solid var(--verdict);
-  background: var(--verdict-tint);
-  border-radius: 0 var(--radius-input) var(--radius-input) 0;
-  font-size: 15px;
-  line-height: 1.5;
-  font-weight: 500;
-  color: var(--verdict-deep);
-  max-width: 64ch;
-}
-
-/* ============================================================ CALCULATOR */
-
-.calcWrap { padding-top: clamp(40px, 5vw, 64px); }
-
-.autoStrip {
+.heroAside {
+  margin: 26px 0 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin-bottom: clamp(28px, 3.5vw, 40px);
-  padding: 11px 16px;
-  border: 1px solid var(--edge-green);
-  background: var(--panel-wash);
-  border-radius: var(--radius-input);
+  gap: 14px 28px;
 }
 
-.autoStrip .dotPulse {
+.bridge,
+.hook {
+  font-size: 14.5px;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+.bridge { color: var(--ink-2); }
+
+.hook {
+  flex: 1 1 320px;
+  padding-left: 16px;
+  border-left: 3px solid var(--verdict);
+  font-weight: 500;
+  color: var(--verdict-deep);
+}
+
+/* ============================================================ INSTRUMENT (the centerpiece) */
+
+/* the panel straddles the hero / band boundary like the homepage ledger */
+.instrumentBand {
+  background: var(--paper-2);
+  padding: 0 0 clamp(56px, 7vw, 96px);
+}
+
+.instrumentWrap { margin-top: clamp(-130px, -13vw, -88px); }
+
+.instrument {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--edge-green);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(7, 57, 43, 0.05), 0 30px 70px -34px rgba(7, 57, 43, 0.32);
+  overflow: hidden;
+}
+
+.instrument::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: var(--verdict);
+}
+
+.instrument.atRisk::before { background: var(--gap); }
+.instrument.close::before { background: var(--warning); }
+
+/* header bar */
+.instrumentBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+  flex-wrap: wrap;
+  padding: 15px 26px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--panel-wash);
+}
+
+.instrumentTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.autoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 14px 6px 11px;
+  border-radius: 999px;
+  background: var(--verdict-tint);
+  border: 1px solid var(--mint);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--verdict-deep);
+  max-width: 480px;
+}
+
+.autoPill .dotPulse {
   width: 8px;
   height: 8px;
   border-radius: 999px;
@@ -116,28 +164,28 @@
   flex-shrink: 0;
 }
 
-.autoStrip .lead {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--verdict);
-}
+.autoPill b { font-weight: 700; }
 
-.autoStrip .txt {
-  font-size: 14.5px;
-  color: var(--ink-2);
-}
-
-.calcGrid {
+/* top: inputs | read-out */
+.instrumentCols {
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-  gap: clamp(28px, 4vw, 56px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
 }
 
-@media (max-width: 900px) {
-  .calcGrid { grid-template-columns: 1fr; gap: 36px; }
+@media (max-width: 820px) {
+  .instrumentCols { grid-template-columns: 1fr; }
+}
+
+.calcCol { padding: 26px; }
+
+.readCol {
+  padding: 26px;
+  border-left: 1px solid var(--hairline);
+  background: var(--paper);
+}
+
+@media (max-width: 820px) {
+  .readCol { border-left: 0; border-top: 1px solid var(--hairline); }
 }
 
 .colLabel {
@@ -152,61 +200,18 @@
 .inputs {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4px;
+  gap: 2px;
 }
 
-/* ============================================================ RESULT CARD */
-
-.result {
-  position: sticky;
-  top: calc(60px + 16px);
-  background: var(--panel);
-  border: 1px solid var(--edge-green);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(7, 57, 43, 0.05), 0 24px 64px -32px rgba(7, 57, 43, 0.28);
-  overflow: hidden;
-}
-
-@media (max-width: 900px) {
-  .result { position: static; }
-}
-
-.result::before {
-  content: "";
-  display: block;
-  height: 3px;
-  background: var(--verdict);
-}
-
-.result.atRisk::before { background: var(--gap); }
-.result.close::before { background: var(--warning); }
-
-.resultBody { padding: 24px 26px 22px; }
-
-/* D1 — the number */
-.figureRow {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.figureLabel {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  width: 100%;
-  margin-bottom: 2px;
-}
+/* ── read-out (right) ── */
 
 .figure {
-  font-size: clamp(54px, 8vw, 76px);
+  font-size: clamp(52px, 7vw, 72px);
   font-weight: 300;
   letter-spacing: -0.03em;
   line-height: 0.95;
   color: var(--ink);
+  display: block;
 }
 
 .figure.atRisk { color: var(--gap-text); }
@@ -219,9 +224,9 @@
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink-2);
+  max-width: 42ch;
 }
 
-/* D2 — verdict band (dot + label + position, never color alone) */
 .verdict {
   display: inline-flex;
   align-items: center;
@@ -257,11 +262,11 @@
   font-size: 14px;
   line-height: 1.55;
   color: var(--ink-2);
+  max-width: 46ch;
 }
 
 .verdictMsg strong { color: var(--ink); font-weight: 600; }
 
-/* D3 — operative line read */
 .operative {
   margin-top: 16px;
   padding-top: 16px;
@@ -269,11 +274,11 @@
   font-size: 13.5px;
   line-height: 1.55;
   color: var(--ink-2);
+  max-width: 50ch;
 }
 
 .operative + .operative { margin-top: 12px; padding-top: 0; border-top: 0; }
 
-/* D5 — buffer */
 .buffer {
   margin-top: 16px;
   padding: 13px 15px;
@@ -282,20 +287,16 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
+  max-width: 50ch;
 }
 
 .buffer .bnum {
   font-weight: 800;
   color: var(--verdict-deep);
-  font-variant-numeric: tabular-nums;
 }
 
-.buffer.atRisk {
-  background: var(--gap-tint);
-  color: var(--gap-text);
-}
+.buffer.atRisk { background: var(--gap-tint); color: var(--gap-text); }
 
-/* invalid input notice */
 .invalid {
   margin-top: 18px;
   display: flex;
@@ -308,16 +309,17 @@
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--gap-text);
+  max-width: 50ch;
 }
 
 .invalid svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
 
-/* ============================================================ D4 — REFERENCE SCALE (live gauge) */
+/* ============================================================ GAUGE (full-width footer of the instrument) */
 
-.scale {
-  margin-top: 24px;
-  padding-top: 22px;
+.gaugeFooter {
+  padding: 22px 26px 26px;
   border-top: 1px solid var(--hairline);
+  background: var(--panel-wash);
 }
 
 .scaleLabel {
@@ -326,14 +328,14 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--ink-2);
-  margin: 0 0 38px;
+  margin: 0 0 40px;
 }
 
 .gauge {
   position: relative;
-  height: 18px;
-  border-radius: 9px;
-  background: var(--paper-2);
+  height: 20px;
+  border-radius: 10px;
+  background: var(--panel);
   overflow: visible;
 }
 
@@ -349,7 +351,7 @@
   background: var(--verdict-tint);
   border: 1px solid var(--mint);
   border-right: 0;
-  border-radius: 9px 0 0 9px;
+  border-radius: 10px 0 0 10px;
 }
 
 .gaugeZone.close {
@@ -366,16 +368,16 @@
   background: var(--gap-tint);
   border: 1px solid var(--accent-rule);
   border-left: 0;
-  border-radius: 0 9px 9px 0;
+  border-radius: 0 10px 10px 0;
 }
 
-/* graduation ruler beneath (echoes homepage gauge) */
+/* graduation ruler beneath */
 .gauge::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 5px);
+  top: calc(100% + 6px);
   height: 8px;
   pointer-events: none;
   background-image:
@@ -385,7 +387,6 @@
   background-repeat: no-repeat;
 }
 
-/* Stripe 0.75% threshold tick at 50% */
 .gaugeTick {
   position: absolute;
   left: 50%;
@@ -403,7 +404,7 @@
   transform: translateX(-50%);
   bottom: calc(100% + 14px);
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -420,33 +421,32 @@
   margin-top: 1px;
 }
 
-/* the merchant marker — travels along the track; color set inline per band */
 .gaugeYou {
   position: absolute;
   top: 50%;
   width: 3px;
-  height: 28px;
+  height: 30px;
   border-radius: 2px;
   background: var(--verdict);
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 2px rgba(250, 250, 248, 0.9);
+  box-shadow: 0 0 0 2px rgba(242, 246, 243, 0.95);
   transition: left var(--duration-slow) var(--ease-out);
 }
 
 .gaugeYouDot {
   position: absolute;
   left: 50%;
-  top: -9px;
+  top: -10px;
   transform: translateX(-50%);
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--verdict);
   border: 2px solid #fff;
 }
 
 .gaugeEnds {
-  margin-top: 16px;
+  margin-top: 18px;
   display: flex;
   justify-content: space-between;
   font-size: 12.5px;
@@ -454,10 +454,56 @@
   font-weight: 500;
 }
 
-/* network programs reference list */
-.netList {
-  margin-top: 22px;
-  border-top: 1px solid var(--hairline);
+/* ============================================================ REFERENCE BAND (networks + explainer) */
+
+.refSection { padding: clamp(56px, 7vw, 88px) 0; }
+
+.refHead { margin-bottom: clamp(28px, 4vw, 40px); max-width: 620px; }
+
+.refHead h2 {
+  font-size: clamp(28px, 3.6vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.refHead p {
+  margin: 14px 0 0;
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 56ch;
+}
+
+.refGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+}
+
+@media (max-width: 880px) {
+  .refGrid { grid-template-columns: 1fr; gap: 32px; }
+}
+
+.netCard {
+  background: var(--panel);
+  border: 1px solid var(--edge-green);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(7, 57, 43, 0.05);
+}
+
+.netCardHead {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--panel-wash);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
 }
 
 .netRow {
@@ -465,24 +511,20 @@
   gap: 14px;
   align-items: baseline;
   justify-content: space-between;
-  padding: 9px 0;
+  padding: 13px 20px;
   border-bottom: 1px solid var(--hairline);
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
 .netRow:last-child { border-bottom: 0; }
+.netRow.primary { background: var(--verdict-tint); }
 .netRow .nName { font-weight: 600; color: var(--ink); flex-shrink: 0; }
-.netRow .nName.primary { color: var(--verdict-deep); }
+.netRow.primary .nName { color: var(--verdict-deep); }
 .netRow .nDesc { color: var(--ink-2); text-align: right; line-height: 1.45; }
 
-/* ============================================================ EXPLAINER */
-
-.explainerWrap { background: var(--paper-2); }
-
 .explainer {
-  max-width: 760px;
   border: 1px solid var(--edge-green);
-  border-radius: var(--radius-card);
+  border-radius: 14px;
   background: var(--panel);
   overflow: hidden;
 }
@@ -537,11 +579,7 @@
 
 .explainerBody p strong { color: var(--ink); font-weight: 600; }
 
-.explainerBody ul {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-}
+.explainerBody ul { list-style: none; margin: 6px 0 0; padding: 0; }
 
 .explainerBody li {
   position: relative;
@@ -593,15 +631,83 @@
 
 .sources a:hover { border-bottom-color: var(--verdict); }
 
+/* ============================================================ DEEP-GREEN STATEMENT POSTER */
+
+.poster {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 7.5vw, 104px) 0;
+  background: var(--verdict-deep);
+  color: #fff;
+}
+
+.poster :global(.wrap) { position: relative; z-index: 1; }
+
+.posterRule {
+  display: flex;
+  align-items: center;
+  height: 4px;
+  margin-bottom: clamp(22px, 3vw, 34px);
+}
+
+.posterRule i { display: block; height: 1px; background: rgba(191, 227, 210, 0.4); }
+.posterRule .g1 { flex: 1; }
+.posterRule .gx { width: 36px; }
+.posterRule .g2 { width: 72px; }
+
+.posterP {
+  font-size: clamp(26px, 3.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.032em;
+  line-height: 1.16;
+  color: #fff;
+  max-width: 24ch;
+}
+
+.posterSub {
+  display: block;
+  color: var(--mint);
+  font-weight: 600;
+  font-size: 0.5em;
+  letter-spacing: -0.01em;
+  margin-top: 16px;
+  max-width: 40ch;
+}
+
+.posterSeal {
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  height: 280px;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+@media (max-width: 600px) {
+  .posterSeal { width: 180px; right: -64px; }
+}
+
 /* ============================================================ RECOMMENDATIONS */
 
+.recsSection { padding: clamp(56px, 7vw, 88px) 0; }
+
 .recsHead {
-  font-size: clamp(24px, 3vw, 32px);
+  font-size: clamp(26px, 3.4vw, 40px);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
   color: var(--ink);
-  margin: 0 0 26px;
+  margin: 0 0 8px;
+}
+
+.recsSub {
+  margin: 0 0 28px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 56ch;
 }
 
 .recsList {
@@ -609,17 +715,19 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  max-width: 820px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 clamp(32px, 5vw, 72px);
+  max-width: 940px;
   border-top: 1px solid var(--hairline);
 }
+
+@media (max-width: 720px) { .recsList { grid-template-columns: 1fr; } }
 
 .recItem {
   display: flex;
   gap: 16px;
   align-items: flex-start;
-  padding: 16px 0;
+  padding: 18px 0;
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -628,42 +736,57 @@
   font-size: 14px;
   font-weight: 800;
   color: var(--verdict);
-  font-variant-numeric: tabular-nums;
   width: 24px;
-  padding-top: 1px;
+  padding-top: 2px;
 }
 
 .recItem p {
   font-size: 15.5px;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink);
   margin: 0;
 }
 
-.recItem p strong { color: var(--ink); font-weight: 600; }
+.recsFoot {
+  margin-top: 22px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 64ch;
+}
 
 /* ============================================================ CONVERSION */
 
 .convertWrap { background: var(--verdict-tint); }
+.convertSection { padding: clamp(56px, 7vw, 96px) 0; }
 
 .convert {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(32px, 5vw, 72px);
-  align-items: start;
+  align-items: center;
 }
 
 @media (max-width: 880px) {
-  .convert { grid-template-columns: 1fr; gap: 32px; }
+  .convert { grid-template-columns: 1fr; gap: 32px; align-items: start; }
+}
+
+.convertLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0;
 }
 
 .convertHead {
-  font-size: clamp(26px, 3.4vw, 38px);
+  font-size: clamp(28px, 3.6vw, 42px);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.08;
   color: var(--ink);
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   max-width: 16ch;
 }
 
@@ -709,18 +832,11 @@
 .btn:active { transform: translateY(0) scale(0.97); transition-duration: 60ms; }
 
 .btnPrimary { background: var(--verdict); color: #fff; }
-.btnPrimary:hover {
-  background: var(--verdict-press);
-  box-shadow: 0 8px 20px -10px rgba(10, 92, 68, 0.55);
-}
+.btnPrimary:hover { background: var(--verdict-press); box-shadow: 0 8px 20px -10px rgba(10, 92, 68, 0.55); }
 
 .btnGhost { background: var(--panel); color: var(--ink); border-color: var(--mint); }
-.btnGhost:hover {
-  border-color: var(--verdict);
-  color: var(--verdict-press);
-}
+.btnGhost:hover { border-color: var(--verdict); color: var(--verdict-press); }
 
-/* manual-vs-auto comparison plate */
 .compare {
   background: var(--panel);
   border: 1px solid var(--edge-green);
@@ -745,10 +861,7 @@
   color: var(--ink-2);
 }
 
-.compareHead span + span {
-  border-left: 1px solid var(--hairline);
-  color: var(--verdict);
-}
+.compareHead span + span { border-left: 1px solid var(--hairline); color: var(--verdict); }
 
 .compareRow {
   display: grid;
@@ -759,12 +872,7 @@
 .compareRow:last-child { border-bottom: 0; }
 
 .compareRow .manual,
-.compareRow .auto {
-  padding: 14px 18px;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
+.compareRow .auto { padding: 14px 18px; font-size: 14px; line-height: 1.45; }
 .compareRow .manual { color: var(--ink-2); }
 
 .compareRow .auto {
@@ -776,13 +884,7 @@
   align-items: flex-start;
 }
 
-.compareRow .auto svg {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  color: var(--verdict);
-  margin-top: 1px;
-}
+.compareRow .auto svg { flex-shrink: 0; width: 16px; height: 16px; color: var(--verdict); margin-top: 1px; }
 
 @media (max-width: 460px) {
   .compareHead,

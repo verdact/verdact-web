@@ -16,9 +16,7 @@ const GAUGE_MAX = 1.5;        // track right edge = Visa's excessive ratio
 const VISA_EVENT_GATE = 1500; // Visa VAMP monitoring count gate (events/month)
 const MC_CB_GATE = 100;       // Mastercard ECP monitoring count gate (chargebacks/month)
 
-// Stripe's 0.75% sits at the 50% mark of the track (0 → 1.5%).
 const STRIPE_POS = (STRIPE_LINE / GAUGE_MAX) * 100; // 50
-const HEALTHY_POS = (HEALTHY_MAX / GAUGE_MAX) * 100; // 43.33
 
 type Band = 'empty' | 'invalid' | 'tooEarly' | 'healthy' | 'close' | 'atRisk';
 
@@ -56,24 +54,15 @@ function compute(form: FormValues): Result {
   const numerator = disputes + fraud;
 
   const base: Result = {
-    band: 'empty',
-    ratio: 0,
-    numerator,
-    settled,
-    disputes,
-    bufferEvents: 0,
-    markerPos: 0,
-    highCount: false,
-    hasRate: false,
+    band: 'empty', ratio: 0, numerator, settled, disputes,
+    bufferEvents: 0, markerPos: 0, highCount: false, hasRate: false,
   };
 
-  // Need a positive settled count to compute a rate.
   if (form.settled.trim() === '' || settled <= 0) {
     if (settled < 0 || disputes < 0 || fraud < 0) return { ...base, band: 'invalid' };
     return base;
   }
 
-  // Disputes + fraud can never exceed your settled charges.
   if (settled < 0 || disputes < 0 || fraud < 0 || numerator > settled) {
     return { ...base, band: 'invalid' };
   }
@@ -95,24 +84,9 @@ function compute(form: FormValues): Result {
 // ─── Static content ──────────────────────────────────────────────────────────
 
 const INPUTS: { id: keyof FormValues; label: string; help: string; placeholder: string }[] = [
-  {
-    id: 'settled',
-    label: 'Settled transactions',
-    help: 'Successful card charges across all brands. In Stripe: Balance Transactions, type=payment.',
-    placeholder: 'e.g. 4200',
-  },
-  {
-    id: 'disputes',
-    label: 'Disputes received',
-    help: 'Chargebacks and inquiries. In Stripe: Disputes.',
-    placeholder: 'e.g. 12',
-  },
-  {
-    id: 'fraud',
-    label: 'Fraud reports received',
-    help: 'Early fraud warnings (TC40). In Stripe: Radar, Reviews.',
-    placeholder: 'e.g. 8',
-  },
+  { id: 'settled', label: 'Settled transactions', help: 'Successful card charges across all brands. In Stripe: Balance Transactions, type=payment.', placeholder: 'e.g. 4200' },
+  { id: 'disputes', label: 'Disputes received', help: 'Chargebacks and inquiries. In Stripe: Disputes.', placeholder: 'e.g. 12' },
+  { id: 'fraud', label: 'Fraud reports received', help: 'Early fraud warnings (TC40). In Stripe: Radar, Reviews.', placeholder: 'e.g. 8' },
 ];
 
 const NETWORKS: { name: string; desc: string; primary?: boolean }[] = [
@@ -180,18 +154,14 @@ export function VampChecker() {
   const { band } = result;
   const scored = band === 'healthy' || band === 'close' || band === 'atRisk';
   const hasVerdict = scored || band === 'tooEarly';
-  const showScale = hasVerdict; // gauge appears once a rate exists
   const bandClass = band === 'atRisk' ? styles.atRisk : band === 'close' ? styles.close
     : band === 'healthy' ? styles.healthy : styles.empty;
-  const youColor =
-    band === 'atRisk' ? 'var(--gap)' : band === 'close' ? 'var(--warning)' : 'var(--verdict)';
-
+  const youColor = band === 'atRisk' ? 'var(--gap)' : band === 'close' ? 'var(--warning)' : 'var(--verdict)';
   const ratioDisplay = result.hasRate ? `${result.ratio.toFixed(2)}%` : '—';
 
   const setField = (id: keyof FormValues) => (value: string) =>
     setForm((prev) => ({ ...prev, [id]: value.replace(/[^\d]/g, '') }));
 
-  // Live summary for assistive tech (announced politely on change).
   const liveSummary = !result.hasRate
     ? 'Enter your numbers to see where your account stands.'
     : `Your dispute rate is ${result.ratio.toFixed(2)} percent. Status: ${
@@ -204,117 +174,104 @@ export function VampChecker() {
       <MarketingHeader ctaLabel="Start free" ctaHref="/signup" />
 
       <main id="main" className={styles.page}>
-        {/* ─── B. HERO ─────────────────────────────────────────────── */}
+        {/* ─── HERO ────────────────────────────────────────────────── */}
         <section className={styles.hero}>
-          <div className="wrap reveal-view">
-            <p className="eyebrow">Free dispute rate &amp; account risk checker</p>
-            <p className={styles.coverage}>
-              Works for every card brand you take: Visa, Mastercard, Amex, and Discover.
-            </p>
-            <h1 className={styles.heroHeadline}>
-              See where your Stripe account <span className={styles.key}>actually stands</span>.
-            </h1>
-            <p className={styles.subhead}>
-              Enter your last 30 days of Stripe numbers to estimate your dispute rate and see how
-              close you are to the level where Stripe can limit your account.
-            </p>
-            <p className={styles.bridge}>
-              Searching for your VAMP ratio? VAMP is Visa&rsquo;s version. We show your overall
-              dispute rate, since Stripe and every card network watch it.
-            </p>
-            <p className={styles.hook}>
-              Most merchants get limited by Stripe at 0.75%, well before any single card
-              network&rsquo;s program kicks in. We show you the line that actually applies at your
-              volume.
-            </p>
+          <div className="wrap">
+            <div className={`${styles.heroInner} reveal-view`}>
+              <p className="eyebrow">Free dispute rate &amp; account risk checker</p>
+              <p className={styles.coverage}>
+                Works for every card brand you take: Visa, Mastercard, Amex, and Discover.
+              </p>
+              <h1 className={styles.heroHeadline}>
+                See where your Stripe account <span className={styles.key}>actually stands</span>.
+              </h1>
+              <p className={styles.subhead}>
+                Enter your last 30 days of Stripe numbers to estimate your dispute rate and see how
+                close you are to the level where Stripe can limit your account.
+              </p>
+              <div className={styles.heroAside}>
+                <p className={styles.bridge}>
+                  Searching for your VAMP ratio? VAMP is Visa&rsquo;s version. We show your overall
+                  dispute rate, since Stripe and every card network watch it.
+                </p>
+                <p className={styles.hook}>
+                  Most merchants get limited by Stripe at 0.75%, well before any single card
+                  network&rsquo;s program kicks in. We show the line that actually applies at your volume.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ─── C + D. CALCULATOR + RESULT ──────────────────────────── */}
-        <section>
-          <div className={`wrap ${styles.calcWrap}`}>
-            <div className={`${styles.autoStrip} reveal-view`}>
-              <span className={styles.dotPulse} aria-hidden="true" />
-              <span className={styles.lead}>Automatic with Verdact</span>
-              <span className={styles.txt}>
-                Connect Stripe and these numbers update daily, with a warning before you reach
-                Stripe&rsquo;s 0.75% line.
-              </span>
-            </div>
+        {/* ─── THE INSTRUMENT (calculator + read-out + full-width gauge) ── */}
+        <section className={styles.instrumentBand}>
+          <div className="wrap">
+            <div className={`${styles.instrumentWrap} reveal-view`}>
+              <div className={`${styles.instrument} ${scored ? bandClass : ''}`}>
+                <span
+                  style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+                  aria-live="polite"
+                >
+                  {liveSummary}
+                </span>
 
-            <div className={styles.calcGrid}>
-              {/* Inputs */}
-              <div className="reveal-view">
-                <p className={styles.colLabel}>Your numbers (last 30 days)</p>
-                <div className={styles.inputs}>
-                  {INPUTS.map(({ id, label, help, placeholder }) => (
-                    <div className="field" key={id}>
-                      <label htmlFor={`vamp-${id}`}>{label}</label>
-                      <input
-                        id={`vamp-${id}`}
-                        className="inp"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        value={form[id]}
-                        onChange={(e) => setField(id)(e.target.value)}
-                        placeholder={placeholder}
-                        aria-describedby={`vamp-${id}-help`}
-                      />
-                      <p className="help" id={`vamp-${id}-help`}>{help}</p>
-                    </div>
-                  ))}
+                {/* header bar */}
+                <div className={styles.instrumentBar}>
+                  <span className={styles.instrumentTitle}>Dispute rate calculator &middot; last 30 days</span>
+                  <span className={styles.autoPill}>
+                    <span className={styles.dotPulse} aria-hidden="true" />
+                    <span><b>Automatic with Verdact.</b> Updates daily once you connect Stripe.</span>
+                  </span>
                 </div>
-              </div>
 
-              {/* Result */}
-              <div className="reveal-view">
-                <p className={styles.colLabel}>Your result</p>
-                <div className={`${styles.result} ${scored ? bandClass : ''}`}>
-                  <div className={styles.resultBody}>
-                    <span
-                      style={{
-                        position: 'absolute', width: 1, height: 1, padding: 0, margin: -1,
-                        overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0,
-                      }}
-                      aria-live="polite"
-                    >
-                      {liveSummary}
-                    </span>
-
-                    {/* D1 — the number */}
-                    <div className={styles.figureRow}>
-                      <span className={styles.figureLabel}>Your dispute rate</span>
-                      <span className={`${styles.figure} ${scored ? bandClass : result.hasRate ? '' : styles.empty}`}>
-                        {ratioDisplay}
-                      </span>
+                {/* inputs | read-out */}
+                <div className={styles.instrumentCols}>
+                  <div className={styles.calcCol}>
+                    <p className={styles.colLabel}>Your numbers</p>
+                    <div className={styles.inputs}>
+                      {INPUTS.map(({ id, label, help, placeholder }) => (
+                        <div className="field" key={id}>
+                          <label htmlFor={`vamp-${id}`}>{label}</label>
+                          <input
+                            id={`vamp-${id}`}
+                            className="inp"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            value={form[id]}
+                            onChange={(e) => setField(id)(e.target.value)}
+                            placeholder={placeholder}
+                            aria-describedby={`vamp-${id}-help`}
+                          />
+                          <p className="help" id={`vamp-${id}-help`}>{help}</p>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+
+                  <div className={styles.readCol}>
+                    <p className={styles.colLabel}>Your dispute rate</p>
+                    <span className={`${styles.figure} ${scored ? bandClass : result.hasRate ? '' : styles.empty}`}>
+                      {ratioDisplay}
+                    </span>
                     {result.hasRate && (
                       <p className={styles.figureNote}>
-                        This is your overall rate across all card brands. Each network has its own
-                        version. Visa calls it VAMP.
+                        Your overall rate across all card brands. Each network has its own version;
+                        Visa calls it VAMP.
                       </p>
                     )}
 
-                    {/* invalid */}
                     {band === 'invalid' && (
                       <div className={styles.invalid} role="alert">
                         <AlertTriangleIcon />
-                        <span>
-                          Check these numbers. Disputes and fraud reports should be part of your
-                          settled charges, not on top of them.
-                        </span>
+                        <span>Check these numbers. Disputes and fraud reports should be part of your settled charges, not on top of them.</span>
                       </div>
                     )}
 
-                    {/* empty */}
                     {band === 'empty' && (
-                      <p className={styles.verdictMsg}>
-                        Enter your numbers to see where your account stands.
-                      </p>
+                      <p className={styles.verdictMsg}>Enter your numbers to see where your account stands.</p>
                     )}
 
-                    {/* D2 — verdict band */}
                     {hasVerdict && (
                       <>
                         <span className={`${styles.verdict} ${bandClass}`}>
@@ -324,30 +281,21 @@ export function VampChecker() {
 
                         {band === 'tooEarly' && (
                           <p className={styles.verdictMsg}>
-                            With <strong>{fmt(result.settled)}</strong> charges, one or two disputes
-                            can swing this number a lot. Your volume is too low for this rate to mean
-                            much yet. Here is what to watch as you grow.
+                            With <strong>{fmt(result.settled)}</strong> charges, one or two disputes can
+                            swing this number a lot. Your volume is too low for this rate to mean much
+                            yet. Here is what to watch as you grow.
                           </p>
                         )}
                         {band === 'healthy' && (
-                          <p className={styles.verdictMsg}>
-                            You are comfortably under Stripe&rsquo;s 0.75% line. Keep it there.
-                          </p>
+                          <p className={styles.verdictMsg}>You are comfortably under Stripe&rsquo;s 0.75% line. Keep it there.</p>
                         )}
                         {band === 'close' && (
-                          <p className={styles.verdictMsg}>
-                            You are between the normal range and Stripe&rsquo;s 0.75% line. Act now,
-                            while you still have room.
-                          </p>
+                          <p className={styles.verdictMsg}>You are between the normal range and Stripe&rsquo;s 0.75% line. Act now, while you still have room.</p>
                         )}
                         {band === 'atRisk' && (
-                          <p className={styles.verdictMsg}>
-                            Your estimate is at or above Stripe&rsquo;s 0.75% line. Confirm your exact
-                            status in Stripe and start remediating today.
-                          </p>
+                          <p className={styles.verdictMsg}>Your estimate is at or above Stripe&rsquo;s 0.75% line. Confirm your exact status in Stripe and start remediating today.</p>
                         )}
 
-                        {/* D3 — operative-line read */}
                         <p className={styles.operative}>
                           {band === 'tooEarly'
                             ? 'At your volume, the card networks’ formal programs are not triggered (Visa needs 1,500+ events a month, Mastercard 100+). Stripe still watches your rate and can act at 0.75%, so that is the line to keep in view as you grow.'
@@ -360,7 +308,6 @@ export function VampChecker() {
                           </p>
                         )}
 
-                        {/* D5 — buffer */}
                         {scored && band !== 'atRisk' && result.bufferEvents >= 0 && (
                           <p className={styles.buffer}>
                             About <span className={styles.bnum}>{fmt(result.bufferEvents)}</span>
@@ -375,42 +322,36 @@ export function VampChecker() {
                         )}
                       </>
                     )}
+                  </div>
+                </div>
 
-                    {/* D4 — reference scale */}
-                    {showScale && (
-                      <div className={styles.scale}>
-                        <p className={styles.scaleLabel}>Where you fall</p>
-                        <div className={styles.gauge} aria-hidden="true">
-                          <span className={`${styles.gaugeZone} ${styles.healthy}`} />
-                          <span className={`${styles.gaugeZone} ${styles.close}`} />
-                          <span className={`${styles.gaugeZone} ${styles.risk}`} />
-                          <span className={styles.gaugeTick} style={{ left: `${STRIPE_POS}%` }} />
-                          <span className={styles.gaugeTickLabel} style={{ left: `${STRIPE_POS}%` }}>
-                            0.75%
-                            <span>Stripe acts here</span>
-                          </span>
-                          <span
-                            className={styles.gaugeYou}
-                            style={{ left: `${result.markerPos}%`, background: youColor }}
-                          >
-                            <i className={styles.gaugeYouDot} style={{ background: youColor }} />
-                          </span>
-                        </div>
-                        <div className={styles.gaugeEnds}>
-                          <span>0%</span>
-                          <span>1.5% &middot; Visa excessive</span>
-                        </div>
-
-                        <div className={styles.netList}>
-                          {NETWORKS.map(({ name, desc, primary }) => (
-                            <div className={styles.netRow} key={name}>
-                              <span className={`${styles.nName} ${primary ? styles.primary : ''}`}>{name}</span>
-                              <span className={styles.nDesc}>{desc}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                {/* full-width gauge footer */}
+                <div className={styles.gaugeFooter}>
+                  <p className={styles.scaleLabel}>Where you fall</p>
+                  <div className={styles.gauge} role="img"
+                    aria-label={result.hasRate
+                      ? `Your dispute rate ${result.ratio.toFixed(2)} percent on a scale to 1.5 percent. Stripe acts at 0.75 percent.`
+                      : 'Dispute-rate scale from 0 to 1.5 percent. Stripe acts at 0.75 percent.'}>
+                    <span className={`${styles.gaugeZone} ${styles.healthy}`} />
+                    <span className={`${styles.gaugeZone} ${styles.close}`} />
+                    <span className={`${styles.gaugeZone} ${styles.risk}`} />
+                    <span className={styles.gaugeTick} style={{ left: `${STRIPE_POS}%` }} />
+                    <span className={styles.gaugeTickLabel} style={{ left: `${STRIPE_POS}%` }}>
+                      0.75%
+                      <span>Stripe acts here</span>
+                    </span>
+                    {result.hasRate && (
+                      <span
+                        className={styles.gaugeYou}
+                        style={{ left: `${result.markerPos}%`, background: youColor }}
+                      >
+                        <i className={styles.gaugeYouDot} style={{ background: youColor }} />
+                      </span>
                     )}
+                  </div>
+                  <div className={styles.gaugeEnds}>
+                    <span>0%</span>
+                    <span>1.5% &middot; Visa excessive</span>
                   </div>
                 </div>
               </div>
@@ -418,11 +359,102 @@ export function VampChecker() {
           </div>
         </section>
 
-        {/* ─── F. RECOMMENDATIONS ──────────────────────────────────── */}
+        {/* ─── REFERENCE BAND (networks + explainer) ───────────────── */}
+        <section className={styles.refSection}>
+          <div className="wrap">
+            <div className={`${styles.refHead} reveal-view`}>
+              <h2>How dispute rate actually works</h2>
+              <p>
+                The number is the same kind of rate Stripe and every card network use to monitor your
+                account. The thresholds below are the lines that matter, with the sources to verify them.
+              </p>
+            </div>
+            <div className={styles.refGrid}>
+              <div className={`${styles.netCard} reveal-view`}>
+                <div className={styles.netCardHead}>The lines that matter</div>
+                {NETWORKS.map(({ name, desc, primary }) => (
+                  <div className={`${styles.netRow} ${primary ? styles.primary : ''}`} key={name}>
+                    <span className={styles.nName}>{name}</span>
+                    <span className={styles.nDesc}>{desc}</span>
+                  </div>
+                ))}
+              </div>
+
+              <details className={`${styles.explainer} reveal-view`}>
+                <summary>
+                  How your dispute rate is measured
+                  <ChevronIcon className={styles.chev} />
+                </summary>
+                <div className={styles.explainerBody}>
+                  <p>
+                    It is the share of your charges that end in a dispute, counted the way the card
+                    networks measure it for monitoring (by when the dispute arrives). Early fraud
+                    warnings count too. It covers every card brand, not just one.
+                  </p>
+                  <h3>Why it can cost you your account</h3>
+                  <p>
+                    Stripe is your acquirer. The card networks require Stripe to keep merchants&rsquo;
+                    dispute activity under their limits and fine Stripe when it does not, so Stripe
+                    watches your rate, warns you, and can limit or close your account to protect
+                    itself. Stripe usually acts first, before the networks&rsquo; formal programs.
+                  </p>
+                  <h3>The levels that matter</h3>
+                  <ul>
+                    <li><strong>Stripe danger zone: 0.75%.</strong> At or above this, Stripe says network monitoring programs are likely triggered. Under about 0.65% is normal. A sharp upward trend can draw attention even lower.</li>
+                    <li><strong>Visa (VAMP):</strong> excessive at 1.5% with 1,500+ disputes and fraud reports a month.</li>
+                    <li><strong>Mastercard (ECP):</strong> 1.5%+ with 100+ chargebacks a month; severe (HECM) at 3%+ with 300+.</li>
+                    <li><strong>Amex and Discover</strong> run their own monitoring on top.</li>
+                    <li>Most smaller merchants are under every network&rsquo;s count, so Stripe&rsquo;s own limit is the real line for them.</li>
+                  </ul>
+                  <h3>The worst case</h3>
+                  <p>
+                    A merchant terminated for excessive chargebacks can land on the MATCH list, which
+                    can block getting a new payment processor for up to five years.
+                  </p>
+                  <h3>What helps</h3>
+                  <p>
+                    Certain Visa fraud disputes defended under Visa&rsquo;s Compelling Evidence 3.0
+                    rules are excluded from the Visa count.
+                  </p>
+                  <div className={styles.sources}>
+                    <span className={styles.sTitle}>Verify it yourself</span>
+                    <a href="https://docs.stripe.com/disputes/measuring" target="_blank" rel="noopener noreferrer">Measuring disputes, incl. the 0.75% thresholds (Stripe)</a>
+                    <a href="https://docs.stripe.com/disputes/monitoring-programs" target="_blank" rel="noopener noreferrer">Dispute monitoring programs (Stripe)</a>
+                    <a href="https://corporate.visa.com/en/sites/visa-perspectives/security-trust/introducing-visa-acquirer-monitoring-program.html" target="_blank" rel="noopener noreferrer">Introducing VAMP (Visa)</a>
+                    <a href="https://corporate.visa.com/content/dam/VCOM/corporate/visa-perspectives/security-and-trust/documents/visa-acquirer-monitoring-program-fact-sheet-2025.pdf" target="_blank" rel="noopener noreferrer">VAMP Fact Sheet 2025, PDF (Visa)</a>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── DEEP-GREEN STATEMENT POSTER ─────────────────────────── */}
+        <section className={styles.poster} aria-label="Why this matters">
+          <svg className={styles.posterSeal} viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <circle cx="13" cy="13" r="11" stroke="var(--mint)" strokeWidth="1.4" strokeDasharray="4 3.5" opacity="0.55" />
+            <path d="M8.2 13.4l3.1 3.1 6.5-6.8" stroke="var(--mint)" strokeWidth="1.6" strokeLinecap="square" opacity="0.7" />
+          </svg>
+          <div className="wrap">
+            <div className={`${styles.posterRule} reveal-view`} aria-hidden="true">
+              <i className={styles.g1} /><span className={styles.gx} /><i className={styles.g2} />
+            </div>
+            <p className={`${styles.posterP} reveal-view`}>
+              Every dispute counts against your rate, even the ones you win.
+              <span className={styles.posterSub}>
+                Winning a dispute recovers the cash. Only fewer disputes bring the rate down. That is
+                why account health and evidence are two different jobs.
+              </span>
+            </p>
+          </div>
+        </section>
+
+        {/* ─── RECOMMENDATIONS (band-keyed) ────────────────────────── */}
         {hasVerdict && (
-          <section>
+          <section className={styles.recsSection} style={{ background: 'var(--paper-2)' }}>
             <div className="wrap reveal-view">
               <h2 className={styles.recsHead}>What to do next</h2>
+              <p className={styles.recsSub}>Keyed to where your account stands today.</p>
               <ol className={styles.recsList}>
                 {RECS[band].map((rec, i) => (
                   <li className={styles.recItem} key={i}>
@@ -431,112 +463,45 @@ export function VampChecker() {
                   </li>
                 ))}
               </ol>
-              <p style={{ marginTop: 18, fontSize: 13.5, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '64ch' }}>
-                Fighting a dispute can recover the cash, but most service disputes still count toward
-                your rate even when you win. Only fewer disputes bring the rate down.
+              <p className={styles.recsFoot}>
+                These are guidance, not automation. Verdact shows you the move; you decide what to act on.
               </p>
             </div>
           </section>
         )}
 
-        {/* ─── E. EXPLAINER (inline, crawlable) ────────────────────── */}
-        <section className={styles.explainerWrap}>
-          <div className="wrap reveal-view">
-            <details className={styles.explainer}>
-              <summary>
-                How your dispute rate is measured
-                <ChevronIcon className={styles.chev} />
-              </summary>
-              <div className={styles.explainerBody}>
-                <p>
-                  It is the share of your charges that end in a dispute, counted the way the card
-                  networks measure it for monitoring (by when the dispute arrives). Early fraud
-                  warnings count too. It covers every card brand, not just one.
-                </p>
-
-                <h3>Why it can cost you your account</h3>
-                <p>
-                  Stripe is your acquirer. The card networks require Stripe to keep merchants&rsquo;
-                  dispute activity under their limits and fine Stripe when it does not, so Stripe
-                  watches your rate, warns you, and can limit or close your account to protect
-                  itself. Stripe usually acts first, before the networks&rsquo; formal programs.
-                </p>
-
-                <h3>The levels that matter</h3>
-                <ul>
-                  <li>
-                    <strong>Stripe danger zone: 0.75%.</strong> At or above this, Stripe says network
-                    monitoring programs are likely triggered. Under about 0.65% is normal. A sharp
-                    upward trend can draw attention even lower.
-                  </li>
-                  <li><strong>Visa (VAMP):</strong> excessive at 1.5% with 1,500+ disputes and fraud reports a month.</li>
-                  <li><strong>Mastercard (ECP):</strong> 1.5%+ with 100+ chargebacks a month; severe (HECM) at 3%+ with 300+.</li>
-                  <li><strong>Amex and Discover</strong> run their own monitoring on top.</li>
-                  <li>Most smaller merchants are under every network&rsquo;s count, so Stripe&rsquo;s own limit is the real line for them.</li>
-                </ul>
-
-                <h3>The worst case</h3>
-                <p>
-                  A merchant terminated for excessive chargebacks can land on the MATCH list, which
-                  can block getting a new payment processor for up to five years.
-                </p>
-
-                <h3>What helps</h3>
-                <p>
-                  Certain Visa fraud disputes defended under Visa&rsquo;s Compelling Evidence 3.0
-                  rules are excluded from the Visa count.
-                </p>
-
-                <div className={styles.sources}>
-                  <span className={styles.sTitle}>Verify it yourself</span>
-                  <a href="https://docs.stripe.com/disputes/measuring" target="_blank" rel="noopener noreferrer">
-                    Measuring disputes, incl. the 0.75% thresholds (Stripe)
-                  </a>
-                  <a href="https://docs.stripe.com/disputes/monitoring-programs" target="_blank" rel="noopener noreferrer">
-                    Dispute monitoring programs (Stripe)
-                  </a>
-                  <a href="https://corporate.visa.com/en/sites/visa-perspectives/security-trust/introducing-visa-acquirer-monitoring-program.html" target="_blank" rel="noopener noreferrer">
-                    Introducing VAMP (Visa)
-                  </a>
-                  <a href="https://corporate.visa.com/content/dam/VCOM/corporate/visa-perspectives/security-and-trust/documents/visa-acquirer-monitoring-program-fact-sheet-2025.pdf" target="_blank" rel="noopener noreferrer">
-                    VAMP Fact Sheet 2025, PDF (Visa)
-                  </a>
-                </div>
-              </div>
-            </details>
-          </div>
-        </section>
-
-        {/* ─── G. CONVERSION ───────────────────────────────────────── */}
+        {/* ─── CONVERSION ──────────────────────────────────────────── */}
         <section className={styles.convertWrap}>
-          <div className={`wrap ${styles.convert} reveal-view`}>
-            <div>
-              <p className={styles.colLabel}>Stop tracking this by hand</p>
-              <h2 className={styles.convertHead}>Connect Stripe once. Verdact watches it daily.</h2>
-              <p className={styles.convertSub}>
-                Verdact updates these numbers every day and warns you before you reach
-                Stripe&rsquo;s 0.75% line, so account risk is never a surprise.
-              </p>
-              <div className={styles.convertCtas}>
-                <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>Create workspace</Link>
-                <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>See how Verdact works</Link>
-              </div>
-            </div>
-
-            <div className={styles.compare}>
-              <div className={styles.compareHead}>
-                <span>Tracking by hand</span>
-                <span>With Verdact</span>
-              </div>
-              {COMPARE_ROWS.map((row, i) => (
-                <div className={styles.compareRow} key={i}>
-                  <span className={styles.manual}>{row.manual}</span>
-                  <span className={styles.auto}>
-                    <CheckIcon />
-                    {row.auto}
-                  </span>
+          <div className={`wrap ${styles.convertSection}`}>
+            <div className={`${styles.convert} reveal-view`}>
+              <div>
+                <p className={styles.convertLabel}>Stop tracking this by hand</p>
+                <h2 className={styles.convertHead}>Connect Stripe once. Verdact watches it daily.</h2>
+                <p className={styles.convertSub}>
+                  Verdact updates these numbers every day and warns you before you reach
+                  Stripe&rsquo;s 0.75% line, so account risk is never a surprise.
+                </p>
+                <div className={styles.convertCtas}>
+                  <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>Create workspace</Link>
+                  <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>See how Verdact works</Link>
                 </div>
-              ))}
+              </div>
+
+              <div className={styles.compare}>
+                <div className={styles.compareHead}>
+                  <span>Tracking by hand</span>
+                  <span>With Verdact</span>
+                </div>
+                {COMPARE_ROWS.map((row, i) => (
+                  <div className={styles.compareRow} key={i}>
+                    <span className={styles.manual}>{row.manual}</span>
+                    <span className={styles.auto}>
+                      <CheckIcon />
+                      {row.auto}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
