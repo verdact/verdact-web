@@ -35,10 +35,15 @@ export default function RootLayout({
       className={`h-full antialiased ${schibsted.variable}`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Sync theme before first paint — prevents FOUC on dark/light reload */}
+        {/* Resolve the app theme before first paint — prevents FOUC and makes
+            system-dark deterministic. An explicit Light/Dark choice wins; with
+            no stored choice we follow the OS via matchMedia and set the
+            attribute so .app-shell renders dark on first load for system-dark
+            users. Marketing/auth stay light because dark tokens are scoped to
+            .app-shell in globals.css. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('verdact-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('verdact-theme');if(t!=='dark'&&t!=='light'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
           }}
         />
         <a href="#main" className="skip-link">

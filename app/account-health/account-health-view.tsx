@@ -3,6 +3,7 @@ import { type Dispute, type EfwAlert, type VampSnapshot } from '@/lib/dal';
 import { STRIPE_LINE, GAUGE_MAX } from '@/lib/account-health/vamp-snapshots';
 import { MeasuredPopup } from './_components/measured-popup';
 import { ExportButton } from './_components/export-button';
+import { RefreshButton } from './_components/refresh-button';
 import s from './account-health.module.css';
 
 // ── Constants (mirror the server writer; STRIPE_LINE/GAUGE_MAX are percents) ──
@@ -45,7 +46,10 @@ export function AccountHealthView({
         <header className={s.headerRow}>
           <div className={s.headerText}>
             <h1 className={s.pageTitle}>Account health</h1>
-            <p className={s.freshness}>{freshnessLine(snapshot, stripeConnected)}</p>
+            <div className={s.freshnessRow}>
+              <p className={s.freshness}>{freshnessLine(snapshot, stripeConnected)}</p>
+              {stripeConnected ? <RefreshButton /> : null}
+            </div>
           </div>
           <StatusChip stripeConnected={stripeConnected} scored={scored} band={band} />
         </header>

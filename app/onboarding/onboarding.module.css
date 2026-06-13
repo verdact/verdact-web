@@ -1,0 +1,306 @@
+/* ─── Onboarding wizard — VERDICT v2, light only ────────────────────────────
+   Renders outside .app-shell, so it stays light like marketing/auth (per the
+   onboarding wireframe). Slim top bar, progress ledger, one step panel. v2
+   tokens only.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.skipBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.skipBtn:hover { color: var(--ink); }
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-6) var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ── Progress ledger ────────────────────────────────────────────── */
+
+.ledger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.ledgerStep {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--panel);
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ledgerNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledgerCurrent {
+  border-color: var(--verdict-deep);
+  background: var(--verdict-tint);
+  color: var(--ink);
+}
+
+.ledgerCurrent .ledgerNum {
+  background: var(--verdict);
+  color: var(--paper);
+}
+
+.ledgerDone {
+  color: var(--ink-2);
+}
+
+.ledgerDone .ledgerNum {
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+
+/* ── Step panel ─────────────────────────────────────────────────── */
+
+.panel {
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: var(--panel);
+  padding: var(--space-8) var(--space-7);
+  box-shadow: var(--shadow-elev-1);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stepTitle {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+.stepBody {
+  font-size: 14.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 60ch;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.fact {
+  position: relative;
+  padding-left: var(--space-5);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.fact::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--verdict);
+}
+
+.scopeList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-4);
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--panel-wash);
+}
+
+.scopeItem {
+  position: relative;
+  padding-left: var(--space-5);
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.scopeItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.connectedNote {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--verdict);
+  margin: 0;
+}
+
+/* ── Form fields ────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--rule-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: 2px solid var(--verdict);
+  outline-offset: 1px;
+  border-color: var(--verdict);
+}
+
+.input::placeholder { color: var(--ink-3); }
+
+/* ── Actions ────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--verdict);
+  color: var(--paper);
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.primaryBtn:hover { background: var(--verdict-press); }
+.primaryBtn:disabled { opacity: 0.6; cursor: default; }
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--panel);
+  color: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+
+.secondaryBtn:hover { color: var(--ink); border-color: var(--edge-green); }
+
+.formMsg {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.formMsgError { color: var(--gap-text); }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .main { padding: var(--space-7) var(--space-4) var(--space-12); }
+  .panel { padding: var(--space-6) var(--space-5); }
+  .ledgerLabel { display: none; }
+  .ledgerStep { padding: 6px 10px; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .primaryBtn, .secondaryBtn { justify-content: center; }
+}

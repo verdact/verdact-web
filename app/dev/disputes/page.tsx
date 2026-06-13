@@ -1,16 +1,15 @@
 import { notFound } from 'next/navigation';
-import { DashboardView, type StripeConnection } from '../../dashboard/dashboard-view';
-import { type Dispute, type EfwAlert } from '@/lib/dal';
+import { DisputesView, isDisputeFilter, type DisputeFilter } from '../../dashboard/disputes/disputes-view';
+import { type Dispute } from '@/lib/dal';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DEV-ONLY visual preview of the dashboard with sample data.
-// The real /dashboard is auth-gated by proxy.ts middleware and can't render
-// without a Supabase session, so this route (outside the protected path) lets
-// the rebuilt DashboardView be inspected directly. 404s in production.
+// DEV-ONLY visual preview of /dashboard/disputes with sample data. The real
+// route is auth-gated. Use ?filter=needs-action|open|all and ?stripe=off to
+// preview the value-forward not-connected state. 404s in production.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata = {
-  title: 'Dashboard preview · Verdact',
+  title: 'Disputes preview · Verdact',
   robots: { index: false, follow: false },
 };
 
@@ -22,13 +21,6 @@ const inDays = (n: number): string => {
   return d.toISOString();
 };
 const daysAgo = (n: number): string => inDays(-n);
-
-const MOCK_CONNECTION: StripeConnection = {
-  id: 'pc_preview',
-  processor_account_id: 'acct_1QExAmpLeWxYz000',
-  livemode: false,
-  connected_at: daysAgo(42),
-};
 
 const MOCK_DISPUTES: Dispute[] = [
   {
@@ -73,43 +65,42 @@ const MOCK_DISPUTES: Dispute[] = [
     outcome: null,
     created_at: daysAgo(5),
   },
-];
-
-const MOCK_EFW: EfwAlert[] = [
   {
-    id: 'efw_preview_1',
-    processor_alert_id: 'issfr_1Preview0001',
-    processor_charge_id: 'ch_3QExample0009StUvWx',
-    fraud_type: 'Visa TC40 fraud notice',
-    actionable: true,
-    merchant_decision: 'pending',
-    created_at: daysAgo(1),
+    id: 'dp_preview_4',
+    processor_dispute_id: 'du_1Preview0004',
+    processor_charge_id: 'ch_3QExample0004StUvWx',
+    amount: 32000,
+    currency: 'usd',
+    reason: 'Credit not processed',
+    network: 'visa',
+    status: 'won',
+    due_by: null,
+    ce3_eligible: false,
+    outcome: 'won',
+    created_at: daysAgo(40),
   },
 ];
 
-export default async function DashboardPreviewPage({
+export default async function DisputesPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stripe?: string }>;
+  searchParams: Promise<{ filter?: string; stripe?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
   }
 
   const params = await searchParams;
-  const connected = params.stripe !== 'off';
+  const filter: DisputeFilter = isDisputeFilter(params.filter) ? params.filter : 'needs-action';
+  const stripeConnected = params.stripe !== 'off';
 
   return (
-    <DashboardView
+    <DisputesView
       email="founder@acmesoftware.com"
       businessName="Acme Software"
-      fullName="Rishi Verma"
-      disputes={connected ? MOCK_DISPUTES : []}
-      efwAlerts={connected ? MOCK_EFW : []}
-      vampRatio={connected ? 0.0061 : null}
-      stripeConnection={connected ? MOCK_CONNECTION : null}
-      justConnected={false}
-      stripeError={null}
+      disputes={stripeConnected ? MOCK_DISPUTES : []}
+      stripeConnected={stripeConnected}
+      filter={filter}
     />
   );
 }

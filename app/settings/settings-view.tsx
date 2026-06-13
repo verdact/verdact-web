@@ -2,6 +2,7 @@ import { AppShell } from '../_components/app-chrome';
 import {
   BusinessForm,
   PoliciesForm,
+  NameForm,
   EmailForm,
   PasswordForm,
   SignOutButton,
@@ -30,6 +31,7 @@ export type SettingsStripe = {
 
 export type SettingsViewProps = {
   email: string;
+  fullName: string;
   businessName: string | null;
   activeTab: TabKey;
   justDisconnected: boolean;
@@ -52,6 +54,7 @@ export function isTabKey(value: string | undefined): value is TabKey {
 // preview route renders this directly with sample data.
 export function SettingsView({
   email,
+  fullName,
   businessName,
   activeTab,
   justDisconnected,
@@ -112,7 +115,7 @@ export function SettingsView({
           </section>
         ) : null}
         {activeTab === 'notifications' ? <NotificationsPanel /> : null}
-        {activeTab === 'account' ? <AccountPanel email={email} /> : null}
+        {activeTab === 'account' ? <AccountPanel email={email} fullName={fullName} /> : null}
       </div>
     </AppShell>
   );
@@ -223,14 +226,16 @@ function NotificationsPanel() {
 
 // ── Account panel ────────────────────────────────────────────────────────────
 
-function AccountPanel({ email }: { email: string }) {
+function AccountPanel({ email, fullName }: { email: string; fullName: string }) {
   return (
     <div className={s.stack}>
       <section className={s.panel}>
         <div className={s.panelHead}>
           <h2 className={s.panelTitle}>Account</h2>
-          <p className={s.panelDesc}>Your sign-in details and plan.</p>
+          <p className={s.panelDesc}>Your name, sign-in details, and plan.</p>
         </div>
+        <NameForm fullName={fullName} />
+        <hr className={s.divider} />
         <EmailForm email={email} />
         <hr className={s.divider} />
         <PasswordForm />

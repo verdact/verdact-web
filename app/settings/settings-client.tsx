@@ -6,6 +6,7 @@ import { signOutAction } from '@/lib/auth/actions';
 import {
   updateBusinessAction,
   updatePoliciesAction,
+  updateNameAction,
   updateEmailAction,
   updatePasswordAction,
   requestAccountDeletionAction,
@@ -262,7 +263,36 @@ export function PoliciesForm({ initial }: { initial: PoliciesInitial }) {
   );
 }
 
-// ── Account: email + password ────────────────────────────────────────────────
+// ── Account: your name + email + password ────────────────────────────────────
+
+export function NameForm({ fullName }: { fullName: string }) {
+  const [state, formAction, pending] = useActionState(updateNameAction, undefined);
+
+  return (
+    <form action={formAction} className={s.form}>
+      <div className={s.field}>
+        <label className={s.label} htmlFor="fullName">
+          Your name
+        </label>
+        <input
+          id="fullName"
+          name="fullName"
+          className={s.input}
+          defaultValue={fullName}
+          autoComplete="name"
+          placeholder="Alex Rivera"
+        />
+        <span className={s.hint}>How Verdact greets you. This is your name, not your company name.</span>
+      </div>
+      <div className={s.actions}>
+        <button type="submit" className={s.saveBtn} disabled={pending}>
+          {pending ? 'Saving…' : 'Save name'}
+        </button>
+        <FormMessage state={state} />
+      </div>
+    </form>
+  );
+}
 
 export function EmailForm({ email }: { email: string }) {
   const [state, formAction, pending] = useActionState(updateEmailAction, undefined);

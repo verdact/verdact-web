@@ -42,6 +42,19 @@ export function SignupForm() {
         ) : null}
 
         <div className="field">
+          <label htmlFor="signup-name">Your name</label>
+          <input
+            id="signup-name"
+            className="inp"
+            name="fullName"
+            type="text"
+            autoComplete="name"
+            defaultValue={state?.fullName ?? ''}
+            placeholder="Alex Rivera"
+          />
+        </div>
+
+        <div className="field">
           <label htmlFor="signup-email">Work email</label>
           <input
             id="signup-email"

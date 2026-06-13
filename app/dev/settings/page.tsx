@@ -36,6 +36,7 @@ export default async function SettingsPreviewPage({
   return (
     <SettingsView
       email="founder@acmesoftware.com"
+      fullName="Rishi Verma"
       businessName="Acme Software"
       activeTab={activeTab}
       justDisconnected={false}

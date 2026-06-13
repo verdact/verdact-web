@@ -36,6 +36,8 @@ export default async function SettingsPage({
   const user = await verifySession();
   const membership = await getMerchant();
   const businessName = membership?.merchant?.business_name?.trim() || null;
+  const fullName =
+    typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : '';
 
   let profile: ProfileRow | null = null;
   let stripe: SettingsStripe = null;
@@ -82,6 +84,7 @@ export default async function SettingsPage({
   return (
     <SettingsView
       email={user.email ?? ''}
+      fullName={fullName}
       businessName={businessName}
       activeTab={activeTab}
       justDisconnected={justDisconnected}

@@ -124,6 +124,29 @@ export async function updatePoliciesAction(
   }
 }
 
+export async function updateNameAction(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  await verifySession();
+  const fullName = field(formData, 'fullName');
+  if (fullName.length === 0) {
+    return { error: 'Enter your name.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    // Stored in auth user_metadata.full_name (no DB migration). This is the
+    // name Verdact uses to greet the person, separate from the workspace name.
+    const { error } = await supabase.auth.updateUser({ data: { full_name: fullName } });
+    if (error) throw error;
+    revalidatePath('/dashboard');
+    return { ok: true, message: 'Name saved.' };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
 export async function updateEmailAction(
   _prev: SettingsState,
   formData: FormData,

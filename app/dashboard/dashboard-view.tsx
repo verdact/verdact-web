@@ -1,5 +1,7 @@
 import { AppShell } from '../_components/app-chrome';
+import { ConnectStripePanel } from '../_components/connect-stripe-panel';
 import { type Dispute, type EfwAlert } from '@/lib/dal';
+import { firstNameFrom } from '@/lib/greeting';
 import { AlertIcon, CheckIcon } from './dash-icons';
 import s from './dashboard.module.css';
 
@@ -15,6 +17,7 @@ export type StripeConnection = {
 export type DashboardViewProps = {
   email: string | null | undefined;
   businessName: string | null;
+  fullName: string | null;
   disputes: Dispute[];
   efwAlerts: EfwAlert[];
   vampRatio: number | null;
@@ -44,6 +47,7 @@ const OPEN_STATUSES = new Set(['needs_response', 'under_review']);
 export function DashboardView({
   email,
   businessName,
+  fullName,
   disputes,
   efwAlerts,
   vampRatio,
@@ -51,7 +55,9 @@ export function DashboardView({
   justConnected,
   stripeError,
 }: DashboardViewProps) {
-  const greetingName = businessName || email?.split('@')[0] || 'there';
+  // Greet the person by first name, never the company. Company name labels the
+  // workspace separately under the greeting.
+  const greetingName = firstNameFrom(fullName, email);
 
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
@@ -92,16 +98,6 @@ export function DashboardView({
 
   return (
     <AppShell email={email} businessName={businessName} active="dashboard">
-      {/* ── Not-connected soft banner ────────────────────────────── */}
-      {!stripeConnection && (
-        <div className={s.connectBanner}>
-          <span>Connect Stripe to start watching your disputes and account health.</span>
-          <a href="/api/stripe/connect/start" className={s.connectBannerAction}>
-            Connect Stripe
-          </a>
-        </div>
-      )}
-
       <div className={s.page}>
         {/* Stripe connection banners */}
         {justConnected && (
@@ -140,6 +136,12 @@ export function DashboardView({
           )}
         </header>
 
+        {/* ── No-Stripe activation: value-forward, not a blank page ── */}
+        {!stripeConnection && <ConnectStripePanel context="dashboard" />}
+
+        {/* ── Connected: tiles + queue + guidance ──────────────────── */}
+        {stripeConnection && (
+          <>
         {/* ── Zone B: Status tiles ─────────────────────────────────── */}
         <div className={s.tiles}>
           {/* Tile 1: Account health */}
@@ -154,7 +156,7 @@ export function DashboardView({
           </div>
 
           {/* Tile 2: Open disputes */}
-          <a href="/disputes?filter=needs-action" className={s.tile}>
+          <a href="/dashboard/disputes?filter=needs-action" className={s.tile}>
             <p className={s.tileLabel}>Open disputes</p>
             <p className={s.tileFigure}>{openDisputes.length}</p>
             <p className={s.tileSub}>
@@ -184,7 +186,7 @@ export function DashboardView({
         <section className={s.queueSection}>
           <div className={s.queueHeader}>
             <h2 className={s.queueTitle}>Disputes</h2>
-            <a href="/disputes" className={s.viewAllLink}>
+            <a href="/dashboard/disputes" className={s.viewAllLink}>
               View all disputes
             </a>
           </div>
@@ -193,21 +195,21 @@ export function DashboardView({
         </section>
 
         {/* ── Zone D: Guidance band ────────────────────────────────── */}
-        {stripeConnection && (
-          <section className={s.guidance}>
-            <h2 className={s.guidanceTitle}>What Verdact is watching</h2>
-            <div className={s.insights}>
-              {insights.map((insight, i) => (
-                <div key={i} className={s.insightCard}>
-                  <p className={s.insightText}>{insight.text}</p>
-                  <p className={s.insightAction}>{insight.action}</p>
-                </div>
-              ))}
-            </div>
-            <p className={s.guidanceFoot}>
-              Based on your own data. Verdact advises, you decide. No guarantees.
-            </p>
-          </section>
+        <section className={s.guidance}>
+          <h2 className={s.guidanceTitle}>What Verdact is watching</h2>
+          <div className={s.insights}>
+            {insights.map((insight, i) => (
+              <div key={i} className={s.insightCard}>
+                <p className={s.insightText}>{insight.text}</p>
+                <p className={s.insightAction}>{insight.action}</p>
+              </div>
+            ))}
+          </div>
+          <p className={s.guidanceFoot}>
+            Based on your own data. Verdact advises, you decide. No guarantees.
+          </p>
+        </section>
+          </>
         )}
       </div>
     </AppShell>

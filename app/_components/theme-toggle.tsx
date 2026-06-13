@@ -29,12 +29,16 @@ export function ThemeToggle() {
     }
 
     // No explicit choice yet — follow the system preference and keep tracking
-    // it until the user picks Light or Dark.
+    // it until the user picks Light or Dark. The pre-paint script in layout.tsx
+    // already set data-theme to the resolved system value; here we keep both the
+    // button state and the attribute in sync if the OS preference changes live.
     setActive(systemTheme());
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
       if (!localStorage.getItem(STORAGE_KEY)) {
-        setActive(mq.matches ? "dark" : "light");
+        const next = mq.matches ? "dark" : "light";
+        setActive(next);
+        document.documentElement.setAttribute("data-theme", next);
       }
     };
     mq.addEventListener("change", onChange);

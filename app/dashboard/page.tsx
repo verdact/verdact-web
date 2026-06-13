@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import {
   getDisputes,
   getEfwAlerts,
@@ -25,8 +26,18 @@ export default async function DashboardPage({
   const stripeError = typeof params.stripe_error === 'string' ? params.stripe_error : null;
 
   const user = await verifySession();
+
+  // First-run gate: send merchants who have not finished onboarding to the
+  // wizard. Onboarding "Skip for now", "Finish", and connecting Stripe all set
+  // onboarding_completed = true, so nobody is trapped or looped.
+  if (user.user_metadata?.onboarding_completed !== true) {
+    redirect('/onboarding');
+  }
+
   const membership = await getMerchant();
   const businessName = membership?.merchant?.business_name?.trim() || null;
+  const fullName =
+    typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null;
 
   let stripeConnection: StripeConnection = null;
   if (membership) {
@@ -49,6 +60,7 @@ export default async function DashboardPage({
     <DashboardView
       email={user.email}
       businessName={businessName}
+      fullName={fullName}
       disputes={disputes}
       efwAlerts={efwAlerts}
       vampRatio={vampSnapshot?.estimated_vamp_ratio ?? null}

@@ -10,6 +10,7 @@ export type AuthFormState =
       error?: string;
       email?: string;
       businessName?: string;
+      fullName?: string;
     }
   | undefined;
 
@@ -62,32 +63,41 @@ export async function signupAction(
   const email = ((formData.get('email') as string | null) ?? '').trim();
   const password = (formData.get('password') as string | null) ?? '';
   const businessName = ((formData.get('businessName') as string | null) ?? '').trim();
+  const fullName = ((formData.get('fullName') as string | null) ?? '').trim();
 
   if (!email || !password) {
-    return { error: 'Email and password are required.', email, businessName };
+    return { error: 'Email and password are required.', email, businessName, fullName };
   }
   if (password.length < 8) {
     return {
       error: 'Password must be at least 8 characters.',
       email,
       businessName,
+      fullName,
     };
   }
 
   const supabase = await createClient();
   const origin = getOrigin();
 
+  // Person name and company name are distinct: full_name greets the human,
+  // business_name labels the workspace. Both live in auth user_metadata, no DB
+  // migration needed.
+  const metadata: Record<string, string> = {};
+  if (fullName) metadata.full_name = fullName;
+  if (businessName) metadata.business_name = businessName;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: businessName ? { business_name: businessName } : undefined,
+      data: Object.keys(metadata).length > 0 ? metadata : undefined,
       emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
     },
   });
 
   if (error) {
-    return { error: error.message, email, businessName };
+    return { error: error.message, email, businessName, fullName };
   }
 
   // If email confirmation is disabled in Supabase, a session is returned immediately.
