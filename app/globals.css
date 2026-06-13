@@ -6,12 +6,15 @@
  *
  * Source of truth: Verdact_Hifi_Tokens_v2.md + Verdact_Hifi_App_Extension_v1.md
  * §13 errata (Verdact_Stage8_Prebuild_Design_Addendum_v1.md) governs:
- *   — Light-only. No dark mode, no data-theme, no prefers-color-scheme dark.
+ *   — Marketing/auth are LIGHT-ONLY. The logged-in app (.app-shell) is theme-aware
+ *     (light/dark/system) per Rishi's 2026-06-13 instruction; dark tokens are scoped
+ *     to .app-shell so they never touch the public site. See DARK MODE TOKENS below.
  *   — Single typeface: Schibsted Grotesk (loaded via --font-sans in layout.tsx).
  *   — Two-color chromatic law: verdict green = action/verified, gap red = missing only.
  */
 
 :root {
+  /* Marketing/auth are light-only; the app (.app-shell) opts into dark below. */
   color-scheme: light;
 
   /* ─── VERDICT v2 base palette (ratified Verdact_Hifi_Tokens_v2.md) ─── */
@@ -161,6 +164,173 @@
   --foreground: var(--ink);
   --focus: var(--focus-ring-color);
   --shadow-color: 21, 16, 13;
+
+  /* ── App dialect aliases (Extension §"App Token Extension" + A5) ── */
+  --paper-neutral: #F2F2F0;
+  --app-bg: var(--paper);
+  --app-bg-soft: var(--paper-2);
+  --app-panel: var(--panel);
+  --app-panel-wash: var(--panel-wash);
+  --app-border: var(--hairline);
+  --app-border-strong: var(--edge-green);
+  --app-text: var(--ink);
+  --app-text-muted: var(--ink-2);
+  --app-action: var(--verdict);
+  --app-action-hover: var(--verdict-press);
+  --app-action-tint: var(--verdict-tint);
+  --app-confirm: var(--verdict);
+  --app-confirm-tint: var(--verdict-tint);
+  --app-gap: var(--gap);
+  --app-gap-text: var(--gap-text);
+  --app-gap-tint: var(--gap-tint);
+}
+
+/* ─── DARK MODE TOKENS (app surfaces only) ───────────────────────────────────
+   Scoped to .app-shell so ONLY the logged-in app (dashboard, etc.) is theme-
+   aware. Marketing and auth pages render outside .app-shell and stay light.
+   Applied by system preference (when [data-theme] is absent) or by manual
+   [data-theme="dark"] on <html>. Layout injects a tiny sync script that reads
+   localStorage("verdact-theme") before first paint to prevent FOUC.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .app-shell {
+    color-scheme: dark;
+
+    --paper: #0E1311;
+    --paper-2: #141C19;
+    --panel: #1C2620;
+    --panel-wash: #162019;
+    --ink: #ECF2EE;
+    --ink-2: #8DA89F;
+    --ink-3: #617870;
+    --hairline: #263029;
+    --edge-green: #2F3D37;
+
+    --verdict: #33BB88;
+    --verdict-press: #45CC98;
+    --verdict-deep: #0A1E16;
+    --verdict-abyss: #061410;
+    --verdict-tint: #0B2219;
+    --mint: #52C490;
+
+    --gap: #E87048;
+    --gap-text: #F29070;
+    --gap-tint: #2C1208;
+    --gap-2: var(--gap-tint);
+
+    --panel-2: var(--paper-2);
+    --panel-3: #2A3430;
+    --rule: var(--hairline);
+    --rule-strong: #344039;
+    --mark: #2A2808;
+
+    --warning: #CFA828;
+    --warning-soft: #231E08;
+    --warning-rule: #5A4A18;
+    --warning-deep: #E8C838;
+
+    --tag-stripe-ink: #8CA5E8;
+    --tag-stripe-rule: #38406A;
+    --tag-stripe-fill: #1A1E3A;
+    --tag-slack-ink: #B890D8;
+    --tag-slack-rule: #503870;
+    --tag-slack-fill: #201030;
+    --tag-neutral-ink: var(--ink-3);
+
+    --accent-rule: #5A2A18;
+
+    --focus-ring-color: var(--verdict);
+    --shadow-elev-1: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px -1px rgba(0,0,0,.3);
+    --shadow-elev-2: 0 4px 12px -2px rgba(0,0,0,.5), 0 2px 4px -2px rgba(0,0,0,.35);
+    --shadow-record: 0 8px 32px -4px rgba(0,0,0,.55), 0 0 0 1px rgba(51,187,136,.12);
+
+    --band: #060E0A;
+    --band-ink: #C8DAD2;
+    --band-mute: #7A9A90;
+    --band-rule: #1E2D26;
+
+    --surface: var(--paper);
+    --surface-2: var(--paper-2);
+    --surface-3: var(--panel);
+    --on-solid: var(--paper);
+    --ink-soft: var(--ink-2);
+    --ink-mute: var(--ink-2);
+    --ink-faint: var(--ink-3);
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --grid-line: var(--rule);
+    --shadow-color: 12, 20, 17;
+  }
+}
+
+html[data-theme="dark"] .app-shell {
+  color-scheme: dark;
+
+  --paper: #0E1311;
+  --paper-2: #141C19;
+  --panel: #1C2620;
+  --panel-wash: #162019;
+  --ink: #ECF2EE;
+  --ink-2: #8DA89F;
+  --ink-3: #617870;
+  --hairline: #263029;
+  --edge-green: #2F3D37;
+
+  --verdict: #33BB88;
+  --verdict-press: #45CC98;
+  --verdict-deep: #0A1E16;
+  --verdict-abyss: #061410;
+  --verdict-tint: #0B2219;
+  --mint: #52C490;
+
+  --gap: #E87048;
+  --gap-text: #F29070;
+  --gap-tint: #2C1208;
+  --gap-2: var(--gap-tint);
+
+  --panel-2: var(--paper-2);
+  --panel-3: #2A3430;
+  --rule: var(--hairline);
+  --rule-strong: #344039;
+  --mark: #2A2808;
+
+  --warning: #CFA828;
+  --warning-soft: #231E08;
+  --warning-rule: #5A4A18;
+  --warning-deep: #E8C838;
+
+  --tag-stripe-ink: #8CA5E8;
+  --tag-stripe-rule: #38406A;
+  --tag-stripe-fill: #1A1E3A;
+  --tag-slack-ink: #B890D8;
+  --tag-slack-rule: #503870;
+  --tag-slack-fill: #201030;
+  --tag-neutral-ink: var(--ink-3);
+
+  --accent-rule: #5A2A18;
+
+  --focus-ring-color: var(--verdict);
+  --shadow-elev-1: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px -1px rgba(0,0,0,.3);
+  --shadow-elev-2: 0 4px 12px -2px rgba(0,0,0,.5), 0 2px 4px -2px rgba(0,0,0,.35);
+  --shadow-record: 0 8px 32px -4px rgba(0,0,0,.55), 0 0 0 1px rgba(51,187,136,.12);
+
+  --band: #060E0A;
+  --band-ink: #C8DAD2;
+  --band-mute: #7A9A90;
+  --band-rule: #1E2D26;
+
+  --surface: var(--paper);
+  --surface-2: var(--paper-2);
+  --surface-3: var(--panel);
+  --on-solid: var(--paper);
+  --ink-soft: var(--ink-2);
+  --ink-mute: var(--ink-2);
+  --ink-faint: var(--ink-3);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --grid-line: var(--rule);
+  --shadow-color: 12, 20, 17;
 }
 
 @theme inline {
@@ -1408,4 +1578,295 @@ html.js .rv-row.in {
   .auth-card {
     padding: var(--space-6) var(--space-5);
   }
+}
+
+/* ─── APP SHELL LAYOUT ──────────────────────────────────────────────────────
+   Two-column grid on desktop (240px rail + fluid content).
+   Single-column stack on mobile (top bar + content + bottom nav).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  grid-template-areas: "rail content";
+  min-height: 100dvh;
+  /* Host for the dark tokens (scoped above); paints the surface so the body
+     underneath never shows through on overscroll. */
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ── Left rail ────────────────────────────────────────────────────────────── */
+
+.app-rail {
+  grid-area: rail;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-right: 1px solid var(--hairline);
+  overflow-y: auto;
+  z-index: var(--z-raised);
+}
+
+.app-rail__head {
+  padding: var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.app-rail__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: var(--space-1) var(--space-2);
+  margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1);
+  transition: background 150ms;
+  outline: none;
+}
+
+.app-rail__logo:hover { background: var(--edge-green); }
+.app-rail__logo:focus-visible { box-shadow: 0 0 0 2px var(--verdict); }
+
+.app-rail__workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.app-rail__workspace-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  line-height: 1;
+}
+
+.app-rail__workspace-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-rail__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+}
+
+.app-rail__link {
+  display: flex;
+  align-items: center;
+  padding: 9px var(--space-3);
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background 120ms, color 120ms;
+  outline: none;
+}
+
+.app-rail__link:hover { background: var(--edge-green); color: var(--ink); }
+.app-rail__link:focus-visible { box-shadow: 0 0 0 2px var(--verdict); }
+
+.app-rail__link.is-active {
+  border-left-color: var(--verdict);
+  background: var(--verdict-tint);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.app-rail__foot {
+  padding: var(--space-4);
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-rail__user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.app-rail__email {
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.app-rail__signout {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+  transition: color 120ms;
+  flex-shrink: 0;
+}
+
+.app-rail__signout:hover { color: var(--gap-text); }
+
+/* ── Main content ─────────────────────────────────────────────────────────── */
+
+.app-content {
+  grid-area: content;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+
+/* ── Mobile top bar ───────────────────────────────────────────────────────── */
+
+.app-topbar {
+  display: none;
+  grid-area: topbar;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  height: 52px;
+}
+
+.app-topbar__logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.app-topbar__workspace {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+/* ── Mobile bottom nav ────────────────────────────────────────────────────── */
+
+.app-bottom-nav {
+  display: none;
+  grid-area: bottom-nav;
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-raised);
+  align-items: stretch;
+  background: var(--panel);
+  border-top: 1px solid var(--hairline);
+  height: 56px;
+}
+
+.app-bottom-nav__item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-top: 2px solid transparent;
+  transition: color 120ms, border-color 120ms;
+}
+
+.app-bottom-nav__item:hover { color: var(--ink); }
+
+.app-bottom-nav__item.is-active {
+  color: var(--verdict);
+  border-top-color: var(--verdict);
+}
+
+/* ── Mobile breakpoint ────────────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px minmax(0, 1fr) 56px;
+    grid-template-areas:
+      "topbar"
+      "content"
+      "bottom-nav";
+  }
+
+  .app-rail      { display: none; }
+  .app-topbar    { display: flex; }
+  .app-bottom-nav { display: flex; }
+  .app-content   { min-height: auto; }
+}
+
+/* ─── THEME TOGGLE ──────────────────────────────────────────────────────────
+   Compact System / Light / Dark three-way control.
+   Lives in the left-rail footer. ────────────────────────────────────────── */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 2px;
+  width: 100%;
+}
+
+.theme-toggle__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  white-space: nowrap;
+}
+
+.theme-toggle__btn:hover { color: var(--ink); background: var(--edge-green); }
+
+.theme-toggle__btn.is-active {
+  background: var(--verdict-tint);
+  color: var(--ink);
+}
+
+.theme-toggle__icon {
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
 }

@@ -29,8 +29,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased ${schibsted.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`h-full antialiased ${schibsted.variable}`}
+    >
       <body className="min-h-full flex flex-col">
+        {/* Sync theme before first paint — prevents FOUC on dark/light reload */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('verdact-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})()`,
+          }}
+        />
         <a href="#main" className="skip-link">
           Skip to main content
         </a>

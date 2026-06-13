@@ -1,99 +1,71 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-/**
- * Theme selector, segmented [System | Light | Dark].
- *
- * Storage contract (shared with the FOUC script in the root layout):
- * - "system": no `verdact-theme` key, no `data-theme` attribute; CSS follows
- *   the OS `prefers-color-scheme`.
- * - "light" / "dark": persisted to localStorage and mirrored as `data-theme`
- *   on <html>.
- *
- * Accessibility (Stage 8 addendum 7.3): buttons are an aria-pressed group;
- * the System button's accessible name includes the resolved theme.
- */
+type Theme = "light" | "dark";
 
-type Mode = 'system' | 'light' | 'dark';
-type Resolved = 'light' | 'dark';
+const STORAGE_KEY = "verdact-theme";
 
-const STORAGE_KEY = 'verdact-theme';
-
-function readStoredMode(): Mode {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
-  } catch {
-    /* storage unavailable: fall through to system */
-  }
-  return 'system';
+function systemTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function readSystemTheme(): Resolved {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
+const OPTIONS: { value: Theme; label: string; icon: string }[] = [
+  { value: "light", label: "Light", icon: "☀" },
+  { value: "dark", label: "Dark", icon: "☾" },
+];
 
-export function ThemeToggle({ className }: { className?: string }) {
-  // SSR and first client paint agree on the default; the effect syncs truth.
-  const [mode, setMode] = useState<Mode>('system');
-  const [systemTheme, setSystemTheme] = useState<Resolved>('light');
-  const [mounted, setMounted] = useState(false);
+export function ThemeToggle() {
+  // `active` is the theme currently on screen. With no explicit choice stored,
+  // it mirrors the OS preference (system default) without persisting anything.
+  const [active, setActive] = useState<Theme>("light");
 
   useEffect(() => {
-    setMode(readStoredMode());
-    setSystemTheme(readSystemTheme());
-    setMounted(true);
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => setSystemTheme(mq.matches ? 'dark' : 'light');
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  function apply(next: Mode) {
-    setMode(next);
-    try {
-      if (next === 'system') {
-        localStorage.removeItem(STORAGE_KEY);
-      } else {
-        localStorage.setItem(STORAGE_KEY, next);
-      }
-    } catch {
-      /* storage unavailable: attribute still applies for this page view */
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "light" || stored === "dark") {
+      setActive(stored);
+      return;
     }
 
-    const root = document.documentElement;
-    if (next === 'system') {
-      root.removeAttribute('data-theme');
-    } else {
-      root.setAttribute('data-theme', next);
+    // No explicit choice yet — follow the system preference and keep tracking
+    // it until the user picks Light or Dark.
+    setActive(systemTheme());
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        setActive(mq.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  function select(choice: Theme) {
+    setActive(choice);
+    document.documentElement.setAttribute("data-theme", choice);
+    try {
+      localStorage.setItem(STORAGE_KEY, choice);
+    } catch {
+      // ignore storage failures (private mode, disabled, etc.)
     }
   }
 
-  const systemLabel = mounted
-    ? `System, currently ${systemTheme}`
-    : 'System';
-
-  const modes: { value: Mode; label: string; ariaLabel?: string }[] = [
-    { value: 'system', label: 'System', ariaLabel: systemLabel },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-  ];
-
   return (
-    <div role="group" aria-label="Color theme" className={`themeseg ${className ?? ''}`}>
-      {modes.map(({ value, label, ariaLabel }) => (
+    <div className="theme-toggle" role="group" aria-label="Color scheme">
+      {OPTIONS.map((opt) => (
         <button
-          key={value}
+          key={opt.value}
           type="button"
-          aria-pressed={mounted && mode === value}
-          aria-label={ariaLabel}
-          onClick={() => apply(value)}
+          className={`theme-toggle__btn${active === opt.value ? " is-active" : ""}`}
+          aria-pressed={active === opt.value}
+          onClick={() => select(opt.value)}
+          title={opt.label}
         >
-          {label}
+          <span className="theme-toggle__icon" aria-hidden="true">
+            {opt.icon}
+          </span>
+          <span className="theme-toggle__label">{opt.label}</span>
         </button>
       ))}
     </div>
