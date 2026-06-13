@@ -16,27 +16,38 @@ const PREVIEW_ROWS = [
   { num: '3', label: 'Review packet', desc: 'Check sources and approve before submission' },
 ];
 
-export default async function SignupPage() {
+type SignupPageProps = {
+  searchParams: Promise<{ intent?: string }>;
+};
+
+export default async function SignupPage({ searchParams }: SignupPageProps) {
   const user = await getUser();
   if (user) {
     redirect('/dashboard');
   }
 
+  const { intent } = await searchParams;
+  const fightDispute = intent === 'fight-dispute';
+
   return (
     <AuthFrame>
       <div className="auth-split">
         <div className="auth-promise auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
-          <p className="eyebrow auth-eyebrow-row">New workspace</p>
+          <p className="eyebrow auth-eyebrow-row">{fightDispute ? 'Fight this dispute' : 'New workspace'}</p>
           <h1 className="auth-h1">
-            Create your evidence workspace<span className="auth-dot">.</span>
+            {fightDispute
+              ? <>Build your evidence<span className="auth-dot">.</span></>
+              : <>Create your evidence workspace<span className="auth-dot">.</span></>}
           </h1>
           <p className="auth-sub">
-            Build source-traced dispute evidence, check account risk, and review
-            the response before anything is submitted to Stripe.
+            {fightDispute
+              ? 'Verdact reads the dispute, organizes your evidence, and flags what\'s missing before the deadline.'
+              : 'Build source-traced dispute evidence, check account risk, and review the response before anything is submitted to Stripe.'}
           </p>
           <p className="auth-micro">
-            You can create the workspace before connecting Stripe. Stripe is
-            needed before Verdact can read disputes or account-risk data.
+            {fightDispute
+              ? 'Create your workspace first. Connect Stripe after signup so Verdact can read the dispute details.'
+              : 'You can create the workspace before connecting Stripe. Stripe is needed before Verdact can read disputes or account-risk data.'}
           </p>
         </div>
 
