@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -28,6 +29,8 @@ export function MarketingHeader({
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const reducedMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -102,7 +105,8 @@ export function MarketingHeader({
   };
 
   return (
-    <header
+    <>
+      <header
       style={{
         position: 'sticky',
         top: 0,
@@ -259,9 +263,13 @@ export function MarketingHeader({
           {drawerOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
         </button>
       </nav>
+      </header>
 
-      {/* Mobile drawer */}
-      <AnimatePresence>
+      {/* Mobile drawer — portaled to body so the header's backdrop-filter
+          (which establishes a containing block for fixed descendants) does not
+          collapse the fixed drawer. */}
+      {mounted && createPortal(
+        <AnimatePresence>
         {drawerOpen && (
           <>
             {/* Scrim */}
@@ -378,7 +386,9 @@ export function MarketingHeader({
             </motion.div>
           </>
         )}
-      </AnimatePresence>
-    </header>
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
   );
 }
