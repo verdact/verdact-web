@@ -99,6 +99,12 @@ export type EfwAlert = {
 export type VampSnapshot = {
   estimated_vamp_ratio: number | null;
   confidence_level: 'low' | 'medium' | 'high' | null;
+  visa_settled_transaction_count: number;
+  visa_dispute_count: number;
+  visa_efw_count: number;
+  calculation_window_start: string;
+  calculation_window_end: string;
+  raw_components: Record<string, unknown> | null;
   calculated_at: string;
 };
 
@@ -162,7 +168,9 @@ export const getLatestVampSnapshot = cache(async (): Promise<VampSnapshot | null
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('vamp_snapshots')
-    .select('estimated_vamp_ratio, confidence_level, calculated_at')
+    .select(
+      'estimated_vamp_ratio, confidence_level, visa_settled_transaction_count, visa_dispute_count, visa_efw_count, calculation_window_start, calculation_window_end, raw_components, calculated_at',
+    )
     .eq('merchant_id', membership.merchant.id)
     .order('calculated_at', { ascending: false })
     .limit(1)

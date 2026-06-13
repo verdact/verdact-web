@@ -19,7 +19,7 @@ export async function disconnectStripeAction() {
     .eq('connection_status', 'connected')
     .maybeSingle();
 
-  if (!connection) redirect('/dashboard');
+  if (!connection) redirect('/settings');
 
   const clientId = process.env.STRIPE_CONNECT_CLIENT_ID;
   if (clientId) {
@@ -43,5 +43,5 @@ export async function disconnectStripeAction() {
     })
     .eq('id', connection.id);
 
-  redirect('/dashboard');
+  redirect('/settings?stripe=disconnected');
 }

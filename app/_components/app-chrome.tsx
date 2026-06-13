@@ -1,7 +1,7 @@
 import { ThemeToggle } from "./theme-toggle";
 import { VerdactLogo } from "./verdact-logo";
 
-type ActiveKey = "dashboard" | "connections" | "disputes" | "settings";
+type ActiveKey = "dashboard" | "account-health" | "disputes" | "settings";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ type AppShellProps = {
 const NAV_ITEMS: Array<{ key: ActiveKey; label: string; href: string }> = [
   { key: "dashboard", label: "Dashboard", href: "/dashboard" },
   { key: "disputes", label: "Disputes", href: "/dashboard/disputes" },
-  { key: "connections", label: "Account health", href: "/dashboard/connections" },
+  { key: "account-health", label: "Account health", href: "/account-health" },
   { key: "settings", label: "Settings", href: "/settings" },
 ];
 
