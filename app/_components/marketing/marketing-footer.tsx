@@ -4,6 +4,7 @@ const PRODUCT_LINKS = [
   { label: 'How it works', href: '/#how' },
   { label: 'What it costs', href: '/#plans' },
   { label: 'Account health', href: '/#health' },
+  { label: 'Dispute rate checker', href: '/tools/vamp-check' },
   { label: 'Security', href: '/#control' },
 ];
 

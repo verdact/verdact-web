@@ -557,6 +557,21 @@ export function HomepageClient() {
                   <Link href="/signup" className={styles.textlink}>
                     Connect Stripe and see where your account stands, free
                   </Link>
+                  <p className={`${styles.micro} ${styles.muted}`} style={{ marginTop: 14 }}>
+                    Just want a number?{' '}
+                    <Link
+                      href="/tools/vamp-check"
+                      style={{
+                        color: 'var(--verdict)',
+                        fontWeight: 600,
+                        textDecoration: 'underline',
+                        textUnderlineOffset: '3px',
+                      }}
+                    >
+                      Estimate your dispute rate now, no signup
+                    </Link>
+                    .
+                  </p>
                 </div>
               </div>
               <div className={`${styles.gaugePanel} rv`} ref={setContainer(3)}>
