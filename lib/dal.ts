@@ -158,6 +158,120 @@ export const getEfwAlerts = cache(async (): Promise<EfwAlert[]> => {
   return data as EfwAlert[];
 });
 
+// ─── Per-customer evidence grouping (R8 — subscription-customer linkage) ─────
+// Groups a merchant's disputes by the customer they came from, so a merchant
+// facing the same customer disputing across months reuses one record instead of
+// rebuilding. Linkage is by normalized customer_email (a stable key for
+// subscription / repeat clients). Fuzzy name/agency entity-resolution is
+// deliberately deferred — only exact-email matches group here.
+
+export type CustomerDisputeRef = {
+  id: string;
+  processor_dispute_id: string;
+  amount: number | null;
+  currency: string | null;
+  reason: string | null;
+  network: string | null;
+  status: DisputeStatus;
+  due_by: string | null;
+  outcome: string | null;
+  created_at: string;
+};
+
+export type CustomerGroup = {
+  // Lower-cased customer email — the linkage key. Null bucket = unlinked.
+  customerKey: string | null;
+  customerEmail: string | null;
+  customerName: string | null;
+  disputes: CustomerDisputeRef[];
+  totalAmount: number; // cents, summed across the group
+  openCount: number;
+  wonCount: number;
+  lostCount: number;
+};
+
+type DisputeWithPiiRow = CustomerDisputeRef & {
+  dispute_pii: { customer_email: string | null; customer_name: string | null } | null;
+};
+
+const OPEN_FOR_CUSTOMER: DisputeStatus[] = ['needs_response', 'under_review', 'submitted'];
+
+export const getDisputesByCustomer = cache(async (): Promise<CustomerGroup[]> => {
+  const membership = await getMerchant();
+  if (!membership) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('disputes')
+    .select(
+      `id, processor_dispute_id, amount, currency, reason, network, status, due_by, outcome, created_at,
+       dispute_pii ( customer_email, customer_name )`,
+    )
+    .eq('merchant_id', membership.merchant.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return groupDisputesByCustomer(data as unknown as DisputeWithPiiRow[]);
+});
+
+// Pure, exported for testing. Groups rows by normalized email; rows without an
+// email fall into a single null bucket (unlinked).
+export function groupDisputesByCustomer(rows: DisputeWithPiiRow[]): CustomerGroup[] {
+  const groups = new Map<string, CustomerGroup>();
+
+  for (const row of rows) {
+    const pii = Array.isArray(row.dispute_pii) ? row.dispute_pii[0] : row.dispute_pii;
+    const email = pii?.customer_email?.trim().toLowerCase() || null;
+    const key = email ?? '__unlinked__';
+
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        customerKey: email,
+        customerEmail: pii?.customer_email?.trim() || null,
+        customerName: pii?.customer_name?.trim() || null,
+        disputes: [],
+        totalAmount: 0,
+        openCount: 0,
+        wonCount: 0,
+        lostCount: 0,
+      };
+      groups.set(key, group);
+    }
+
+    group.disputes.push({
+      id: row.id,
+      processor_dispute_id: row.processor_dispute_id,
+      amount: row.amount,
+      currency: row.currency,
+      reason: row.reason,
+      network: row.network,
+      status: row.status,
+      due_by: row.due_by,
+      outcome: row.outcome,
+      created_at: row.created_at,
+    });
+    group.totalAmount += row.amount ?? 0;
+    if (OPEN_FOR_CUSTOMER.includes(row.status)) group.openCount += 1;
+    if (row.outcome === 'won') group.wonCount += 1;
+    if (row.outcome === 'lost') group.lostCount += 1;
+    if (!group.customerName && pii?.customer_name?.trim()) {
+      group.customerName = pii.customer_name.trim();
+    }
+  }
+
+  // Repeat-offender groups (2+ disputes) first, then by total amount.
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.disputes.length !== b.disputes.length) return b.disputes.length - a.disputes.length;
+    return b.totalAmount - a.totalAmount;
+  });
+}
+
 // Most recent VAMP snapshot for the current merchant, or null if none exist.
 export const getLatestVampSnapshot = cache(async (): Promise<VampSnapshot | null> => {
   const membership = await getMerchant();

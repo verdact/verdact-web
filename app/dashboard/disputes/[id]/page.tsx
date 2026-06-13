@@ -11,6 +11,7 @@ import {
   LockIcon,
   ShieldIcon,
 } from '../../dash-icons';
+import { NoProfileFirstOpen } from './no-profile-first-open';
 
 export const metadata = {
   title: 'Evidence record · Verdact',
@@ -74,43 +75,51 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   }
 
   const supabase = await createClient();
-  const [{ data: dispute }, { data: evidenceFiles }, vampSnapshot] = await Promise.all([
-    supabase
-      .from('disputes')
-      .select(
-        [
-          'id',
-          'merchant_id',
-          'processor_dispute_id',
-          'processor_charge_id',
-          'amount',
-          'currency',
-          'reason',
-          'network',
-          'status',
-          'due_by',
-          'ce3_eligible',
-          'evidence_draft',
-          'evidence_approved_at',
-          'submitted_at',
-          'outcome',
-          'created_at',
-          'updated_at',
-        ].join(', '),
-      )
-      .eq('id', id)
-      .eq('merchant_id', membership.merchant.id)
-      .maybeSingle(),
-    supabase
-      .from('evidence_files')
-      .select(
-        'id, purpose, upload_status, mime_type, content_size_bytes, processor_file_id, processor_uploaded_at, supabase_path, created_at',
-      )
-      .eq('dispute_id', id)
-      .eq('merchant_id', membership.merchant.id)
-      .order('created_at', { ascending: false }),
-    getLatestVampSnapshot(),
-  ]);
+  const [{ data: dispute }, { data: evidenceFiles }, { data: profileRow }, vampSnapshot] =
+    await Promise.all([
+      supabase
+        .from('disputes')
+        .select(
+          [
+            'id',
+            'merchant_id',
+            'processor_dispute_id',
+            'processor_charge_id',
+            'amount',
+            'currency',
+            'reason',
+            'network',
+            'status',
+            'due_by',
+            'ce3_eligible',
+            'evidence_draft',
+            'evidence_approved_at',
+            'submitted_at',
+            'outcome',
+            'created_at',
+            'updated_at',
+          ].join(', '),
+        )
+        .eq('id', id)
+        .eq('merchant_id', membership.merchant.id)
+        .maybeSingle(),
+      supabase
+        .from('evidence_files')
+        .select(
+          'id, purpose, upload_status, mime_type, content_size_bytes, processor_file_id, processor_uploaded_at, supabase_path, created_at',
+        )
+        .eq('dispute_id', id)
+        .eq('merchant_id', membership.merchant.id)
+        .order('created_at', { ascending: false }),
+      // Does the merchant have a business profile yet? Drives the "no profile
+      // yet" first-open guided state below.
+      supabase
+        .from('merchant_profiles')
+        .select('id, product_description, delivery_method, refund_policy_text, refund_policy_url')
+        .eq('merchant_id', membership.merchant.id)
+        .maybeSingle(),
+      getLatestVampSnapshot(),
+    ]);
 
   if (!dispute) {
     notFound();
@@ -118,6 +127,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   const record = dispute as unknown as WorkbenchDispute;
   const files = (evidenceFiles ?? []) as unknown as EvidenceFile[];
+  const hasProfile = profileHasContent(profileRow);
   const approved = Boolean(record.evidence_approved_at);
   const submitted = Boolean(record.submitted_at);
   const hasFiles = files.length > 0;
@@ -158,6 +168,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
       <section className="mx-auto grid w-full max-w-[1280px] gap-6 px-6 py-8 md:px-10 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
+          {!hasProfile && <NoProfileFirstOpen reason={record.reason} />}
+
           <ReadinessCard
             readiness={readiness}
             missingCount={missingCount}
@@ -661,6 +673,27 @@ function ReadinessFact({
       </p>
       {note ? <p className="meta-mono mt-1 text-ink-mute">{note}</p> : null}
     </div>
+  );
+}
+
+type ProfileRow = {
+  id: string;
+  product_description: string | null;
+  delivery_method: string | null;
+  refund_policy_text: string | null;
+  refund_policy_url: string | null;
+} | null;
+
+// A profile "exists" for first-open purposes only if it carries the context the
+// evidence record actually leans on. An empty row created by some other flow
+// should still trigger the guided state.
+function profileHasContent(profile: ProfileRow): boolean {
+  if (!profile) return false;
+  return Boolean(
+    profile.product_description?.trim() ||
+      profile.delivery_method?.trim() ||
+      profile.refund_policy_text?.trim() ||
+      profile.refund_policy_url?.trim(),
   );
 }
 
