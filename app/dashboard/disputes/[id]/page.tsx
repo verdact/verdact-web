@@ -12,6 +12,9 @@ import {
   ShieldIcon,
 } from '../../dash-icons';
 import { NoProfileFirstOpen } from './no-profile-first-open';
+import { EvidenceAnalysisPanels } from './evidence-analysis-panels';
+import { analyzeEvidence } from '@/lib/evidence';
+import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 
 export const metadata = {
   title: 'Evidence record · Verdact',
@@ -115,7 +118,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       // yet" first-open guided state below.
       supabase
         .from('merchant_profiles')
-        .select('id, product_description, delivery_method, refund_policy_text, refund_policy_url')
+        .select(
+          'id, product_description, delivery_method, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, logs_user_activity',
+        )
         .eq('merchant_id', membership.merchant.id)
         .maybeSingle(),
       getLatestVampSnapshot(),
@@ -135,6 +140,33 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const missingCount = approved ? 0 : 1;
   const evidenceItems = buildEvidenceItems(record, files, approved);
   const businessName = membership.merchant.business_name?.trim() || null;
+
+  // ── Per-dispute evidence analysis (Revano-adopted features) ────────────────
+  // Proof is derived conservatively from attached evidence files until the
+  // workbench's explicit proof checkboxes are wired. Session/geo data is not yet
+  // sourced (DB-connect roadmap), so the consistency narratives degrade to their
+  // honest "not yet connected" states rather than inventing a pattern.
+  const proof = deriveProofFromFiles(files);
+  const { reasonCode, signals } = buildEvidenceSignals({
+    dispute: {
+      reason: record.reason,
+      processor_charge_id: record.processor_charge_id,
+      created_at: record.created_at,
+    },
+    profile: (profileRow as ProfileRow & {
+      cancellation_policy_text: string | null;
+      cancellation_policy_url: string | null;
+      logs_user_activity: string | null;
+    }) ?? null,
+    sessions: [],
+    proof,
+  });
+  const evidenceAnalysis = analyzeEvidence({
+    reasonCode,
+    signals,
+    hasChargeAttached: Boolean(record.processor_charge_id),
+    approved,
+  });
 
   return (
     <AppShell email={user.email} businessName={businessName} active="disputes">
@@ -181,10 +213,11 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
           <ResolveMissingProof open={!approved} />
 
           <EvidenceRecord items={evidenceItems} missingCount={missingCount} />
+
+          <EvidenceAnalysisPanels analysis={evidenceAnalysis} />
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-6">
-          <QaPanel approved={approved} hasFiles={hasFiles} record={record} />
           <AccountRiskPanel ratio={vampSnapshot?.estimated_vamp_ratio ?? null} />
         </aside>
       </section>
@@ -438,83 +471,6 @@ function EvidenceItemRow({ item }: { item: EvidenceItem }) {
   );
 }
 
-function QaPanel({
-  approved,
-  hasFiles,
-  record,
-}: {
-  approved: boolean;
-  hasFiles: boolean;
-  record: WorkbenchDispute;
-}) {
-  const rows = [
-    {
-      ok: Boolean(record.reason),
-      title: 'Reason code matched',
-      body: record.reason
-        ? `Evidence is mapped to ${formatReason(record.reason)}.`
-        : 'Reason code has not been normalized yet.',
-    },
-    {
-      ok: Boolean(record.processor_charge_id),
-      title: 'Stripe charge attached',
-      body: record.processor_charge_id
-        ? 'Charge context is available for source traceability.'
-        : 'Charge ID is not attached yet.',
-    },
-    {
-      ok: hasFiles,
-      title: 'File evidence present',
-      body: hasFiles
-        ? 'At least one evidence file is attached to this dispute.'
-        : 'No uploaded files are attached yet.',
-    },
-    {
-      ok: approved,
-      title: 'Merchant approval',
-      body: approved
-        ? 'The record has been approved for filing workflow use.'
-        : 'Approval is still locked until the missing item is resolved.',
-    },
-    {
-      ok: record.ce3_eligible !== true || record.reason?.includes('10.4') === true,
-      title: 'CE 3.0 scope',
-      body: 'CE 3.0 should surface only for Visa card-absent fraud, never RC 13.1 services.',
-    },
-  ];
-
-  return (
-    <section className="surface-card overflow-hidden">
-      <header className="flex items-center justify-between gap-3 border-b border-rule px-5 py-4">
-        <p className="label-mono-strong">Pre-submission QA</p>
-        <span className={approved ? 'pill-trust' : 'pill-warning'}>
-          {approved ? <CheckIcon className="h-3 w-3" /> : <AlertIcon className="h-3 w-3" />}
-          {approved ? 'Ready' : '1 to resolve'}
-        </span>
-      </header>
-      <ul className="px-5 py-1">
-        {rows.map((row) => (
-          <li className="flex gap-3 border-b border-rule py-3 last:border-b-0" key={row.title}>
-            <span
-              className={`mt-0.5 grid h-[18px] w-[18px] flex-none place-items-center rounded-[4px] text-white ${
-                row.ok ? 'bg-trust' : 'bg-warning'
-              }`}
-            >
-              {row.ok ? <CheckIcon className="h-3 w-3" /> : <AlertIcon className="h-3 w-3" />}
-            </span>
-            <span>
-              <span className="block text-sm font-semibold leading-snug text-ink">
-                {row.title}
-              </span>
-              <span className="mt-1 block text-xs leading-5 text-ink-mute">{row.body}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function AccountRiskPanel({ ratio }: { ratio: number | null }) {
   return (
     <section className="surface-card overflow-hidden">
@@ -754,6 +710,24 @@ function buildEvidenceItems(
       status: approved ? 'confirmed' : 'missing',
     },
   ];
+}
+
+// Conservative proof read from attached evidence files, until the workbench's
+// explicit proof checkboxes are wired. A communication file → comms; a service
+// documentation / policy file → delivery. Absent files → all false (honest).
+function deriveProofFromFiles(files: EvidenceFile[]): {
+  delivery: boolean;
+  usage: boolean;
+  comms: boolean;
+} {
+  let delivery = false;
+  let usage = false;
+  let comms = false;
+  for (const f of files) {
+    if (f.purpose === 'communication') comms = true;
+    if (f.purpose === 'service_documentation') delivery = true;
+  }
+  return { delivery, usage, comms };
 }
 
 const RESOLVE_OPTIONS = [
