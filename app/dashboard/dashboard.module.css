@@ -52,6 +52,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
+  margin: 0;
 }
 
 .chip {

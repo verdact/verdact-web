@@ -33,15 +33,21 @@ export function evaluateGuidance(
   const byWeight = (a: GuidanceItem, b: GuidanceItem) => b.weight - a.weight;
 
   const fired = GUIDANCE_RULES.filter(
-    (rule) => rule.target === target && rule.trigger(signals),
-  ).map<GuidanceItem & { fallback: boolean }>((rule) => ({
-    id: rule.id,
-    layer: rule.layer,
-    target: rule.target,
-    weight: rule.weight,
-    fallback: rule.fallback === true,
-    ...rule.render(signals),
-  }));
+    (rule) =>
+      rule.target === target &&
+      (rule.dataPrecondition === undefined || rule.dataPrecondition(signals)) &&
+      rule.trigger(signals),
+  ).map<GuidanceItem & { fallback: boolean }>((rule) => {
+    const rendered = rule.render(signals);
+    return {
+      id: rule.id,
+      layer: rule.layer,
+      target: rule.target,
+      weight: rule.weight,
+      fallback: rule.fallback === true,
+      ...rendered,
+    };
+  });
 
   // Band: real-signal rules first; fill from fallbacks only up to the minimum.
   const bandReal = fired.filter((i) => i.layer === 'band' && !i.fallback).sort(byWeight);

@@ -22,6 +22,9 @@ export type GuidanceLayer = 'band' | 'inline' | 'primer';
 
 export type GuidanceTarget = 'dashboard' | 'account-health' | 'disputes' | 'settings' | 'workbench';
 
+// Persona IDs used for persona-weighted ranking adjustments.
+export type GuidancePersona = 'marcus' | 'priya' | 'david' | 'aisha';
+
 /**
  * The merchant's own signals the rules read. Everything is derived from live
  * data the surface already holds — no rule may invent a signal that is absent.
@@ -50,6 +53,8 @@ export interface GuidanceItem {
   text: string;
   action: string;
   actionHref?: string;
+  // Propagated from render — see GuidanceRender.targetRef.
+  targetRef?: string;
   severity: GuidanceSeverity;
   weight: number;
 }
@@ -57,6 +62,9 @@ export interface GuidanceItem {
 /** What a rule's render returns (id/layer/target/weight come from the rule). */
 export type GuidanceRender = Pick<GuidanceItem, 'text' | 'action' | 'severity'> & {
   actionHref?: string;
+  // Object reference for dedup: inline-at-object wins; the band aggregates and
+  // points there instead of duplicating. E.g. a dispute ID or EFW charge ID.
+  targetRef?: string;
 };
 
 export interface GuidanceRule {
@@ -67,9 +75,16 @@ export interface GuidanceRule {
   // Fallback rules only fill the band to its minimum when too few real-signal
   // rules fired; they never displace a real-signal rule.
   fallback?: boolean;
-  // Honesty gate: fire only when truthfully supported by these signals.
+  // Data precondition (honesty gate — step 1): signals must satisfy this before
+  // the trigger is evaluated. Use when the rule requires a specific data field
+  // to be non-null/non-empty before it can fire truthfully.
+  dataPrecondition?: (signals: GuidanceSignals) => boolean;
+  // Honesty gate (step 2): fire only when this merchant's condition is met.
   trigger: (signals: GuidanceSignals) => boolean;
   render: (signals: GuidanceSignals) => GuidanceRender;
+  // Per-persona ranking weight multipliers. When set, the rule's effective weight
+  // is `weight * (personaWeight[persona] ?? 1)` during evaluation.
+  personaWeight?: Partial<Record<GuidancePersona, number>>;
 }
 
 export interface GuidanceResult {

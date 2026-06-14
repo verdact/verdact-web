@@ -19,5 +19,6 @@ export type {
   GuidanceSeverity,
   GuidanceLayer,
   GuidanceTarget,
+  GuidancePersona,
   HealthBand,
 } from './types';

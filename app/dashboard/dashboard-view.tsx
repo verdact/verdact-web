@@ -122,9 +122,9 @@ export function DashboardView({
           </div>
         )}
 
-        {/* ── Masthead: eyebrow + connection chip ─────────────────────── */}
+        {/* ── Masthead: h1 + connection chip ──────────────────────────── */}
         <header className={s.top}>
-          <span className={s.eyebrow}>Dashboard</span>
+          <h1 className={s.eyebrow}>Dashboard</h1>
           {hasStripe ? (
             <span className={`${s.chip} ${s.chipConnected}`}>
               <span className={s.chipDot} aria-hidden="true" />
