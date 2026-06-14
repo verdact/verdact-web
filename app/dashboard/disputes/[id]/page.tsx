@@ -15,6 +15,9 @@ import { NoProfileFirstOpen } from './no-profile-first-open';
 import { EvidenceAnalysisPanels } from './evidence-analysis-panels';
 import { analyzeEvidence } from '@/lib/evidence';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
+import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
+import { can } from '@/lib/entitlements';
+import { PaidGate } from '../../../_components/ui/paid-gate';
 
 export const metadata = {
   title: 'Evidence record · Verdact',
@@ -78,8 +81,13 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   }
 
   const supabase = await createClient();
-  const [{ data: dispute }, { data: evidenceFiles }, { data: profileRow }, vampSnapshot] =
-    await Promise.all([
+  const [
+    { data: dispute },
+    { data: evidenceFiles },
+    { data: profileRow },
+    vampSnapshot,
+    { data: connectionRow },
+  ] = await Promise.all([
       supabase
         .from('disputes')
         .select(
@@ -101,6 +109,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             'outcome',
             'created_at',
             'updated_at',
+            // Nested customer PII (linked via disputes.pii_id) — billing country
+            // feeds the geo/network consistency analyzer.
+            'dispute_pii ( billing_address )',
           ].join(', '),
         )
         .eq('id', id)
@@ -124,6 +135,15 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         .eq('merchant_id', membership.merchant.id)
         .maybeSingle(),
       getLatestVampSnapshot(),
+      // Connected Stripe account — lets us best-effort enrich the charge for real
+      // purchase-date / billing-country / issuing-country geo signals.
+      supabase
+        .from('processor_connections')
+        .select('processor_account_id')
+        .eq('merchant_id', membership.merchant.id)
+        .eq('processor', 'stripe')
+        .eq('connection_status', 'connected')
+        .maybeSingle(),
     ]);
 
   if (!dispute) {
@@ -132,7 +152,30 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   const record = dispute as unknown as WorkbenchDispute;
   const files = (evidenceFiles ?? []) as unknown as EvidenceFile[];
-  const hasProfile = profileHasContent(profileRow);
+  const profile = (profileRow as ProfileRow) ?? null;
+  const hasProfile = profileHasContent(profile);
+
+  // ── Real geo signal: enrich from the underlying Stripe charge (best-effort) ──
+  // Falls back to the stored billing-address country; degrades to null silently
+  // when charges are disabled / access is revoked (analyzers handle the gap).
+  const piiRaw = (dispute as unknown as { dispute_pii?: DisputePiiRow | DisputePiiRow[] | null })
+    .dispute_pii;
+  const pii = (Array.isArray(piiRaw) ? piiRaw[0] : piiRaw) ?? null;
+  const stripeAccountId =
+    (connectionRow as { processor_account_id: string } | null)?.processor_account_id ?? null;
+  const enrichment = await enrichDisputeCharge({
+    chargeId: record.processor_charge_id,
+    stripeAccountId,
+  });
+  const billingCountry = enrichment.billingCountry ?? pii?.billing_address?.country ?? null;
+
+  // ── Entitlements seam (decision #3): resolve the Free→Paid gate per action.
+  // Beta-unlocked by default, so these are true today; the gate flips here, with
+  // zero changes at the call sites in BottomActionBar, once billing turns on.
+  const [exportGate, submitGate] = await Promise.all([
+    can(user, 'export_packet'),
+    can(user, 'submit_to_stripe'),
+  ]);
   const approved = Boolean(record.evidence_approved_at);
   const submitted = Boolean(record.submitted_at);
   const hasFiles = files.length > 0;
@@ -152,12 +195,14 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       reason: record.reason,
       processor_charge_id: record.processor_charge_id,
       created_at: record.created_at,
+      purchase_at: enrichment.purchaseAt,
+      billing_country: billingCountry,
+      issuing_country: enrichment.issuingCountry,
     },
-    profile: (profileRow as ProfileRow & {
-      cancellation_policy_text: string | null;
-      cancellation_policy_url: string | null;
-      logs_user_activity: string | null;
-    }) ?? null,
+    profile,
+    // Session/usage events still need a usage-events source (DB-connect roadmap);
+    // until then this is honestly empty and the activity analyzer degrades. The
+    // geo/network analyzer now runs on the real billing + issuing country above.
     sessions: [],
     proof,
   });
@@ -222,7 +267,12 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         </aside>
       </section>
 
-      <BottomActionBar approved={approved} submitted={submitted} />
+      <BottomActionBar
+        approved={approved}
+        submitted={submitted}
+        canExport={exportGate.allowed}
+        canSubmit={submitGate.allowed}
+      />
     </AppShell>
   );
 }
@@ -513,9 +563,13 @@ function AccountRiskPanel({ ratio }: { ratio: number | null }) {
 function BottomActionBar({
   approved,
   submitted,
+  canExport,
+  canSubmit,
 }: {
   approved: boolean;
   submitted: boolean;
+  canExport: boolean;
+  canSubmit: boolean;
 }) {
   return (
     <div className="sticky bottom-0 z-10 border-t border-[#1e293b] bg-[#0f172a] text-[#cbd5e1]">
@@ -535,19 +589,25 @@ function BottomActionBar({
             ? 'Submission actions will be wired in the filing workflow stage.'
             : 'Submit unlocks only after the missing item is resolved and the merchant approves.'}
         </p>
-        <button className="rounded-md border border-[#3a4b60] px-4 py-2 text-sm font-semibold text-[#e7edf4]" type="button">
-          Export draft
-        </button>
-        <button
-          className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-          type="button"
-          disabled={!approved || submitted}
-        >
-          Review and submit
-          <span className="rounded-sm bg-white/20 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em]">
-            Locked
-          </span>
-        </button>
+        {/* Free→Paid gate routes through `can()`; beta-unlocked today so the real
+            buttons render unchanged, gated affordance appears once billing lands. */}
+        <PaidGate action="export_packet" allowed={canExport}>
+          <button className="rounded-md border border-[#3a4b60] px-4 py-2 text-sm font-semibold text-[#e7edf4]" type="button">
+            Export draft
+          </button>
+        </PaidGate>
+        <PaidGate action="submit_to_stripe" allowed={canSubmit} previewAvailable={false}>
+          <button
+            className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            disabled={!approved || submitted}
+          >
+            Review and submit
+            <span className="rounded-sm bg-white/20 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em]">
+              Locked
+            </span>
+          </button>
+        </PaidGate>
       </div>
     </div>
   );
@@ -632,13 +692,25 @@ function ReadinessFact({
   );
 }
 
+// Mirrors the merchant_profiles columns this workbench selects. Widened from the
+// earlier 5-field shape so buildEvidenceSignals (which reads cancellation policy
+// + activity logging) consumes it directly, with no inline cast at the call site.
 type ProfileRow = {
   id: string;
   product_description: string | null;
   delivery_method: string | null;
   refund_policy_text: string | null;
   refund_policy_url: string | null;
+  cancellation_policy_text: string | null;
+  cancellation_policy_url: string | null;
+  logs_user_activity: string | null;
 } | null;
+
+// Nested customer PII selected via the disputes.pii_id relationship. billing_address
+// is jsonb; only the country is read for the geo/network consistency analyzer.
+type DisputePiiRow = {
+  billing_address: { country?: string | null } | null;
+};
 
 // A profile "exists" for first-open purposes only if it carries the context the
 // evidence record actually leans on. An empty row created by some other flow

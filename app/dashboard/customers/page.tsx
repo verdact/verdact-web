@@ -1,5 +1,9 @@
 import { getDisputesByCustomer, getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
+import { getIdentityLinks } from '@/lib/customers/links';
+import { applyConfirmedMerges } from '@/lib/customers/resolve';
+import { buildMergeSuggestions, partitionSuggestions } from '@/lib/customers/suggestions';
+import { pairId, type IdentityLink } from '@/lib/customers/types';
 import { CustomersView } from './customers-view';
 
 export const metadata = {
@@ -27,13 +31,36 @@ export default async function CustomersPage() {
     stripeConnected = Boolean(data);
   }
 
-  const groups = membership ? await getDisputesByCustomer() : [];
+  const [rawGroups, links] = membership
+    ? await Promise.all([getDisputesByCustomer(), getIdentityLinks(membership.merchant.id)])
+    : [[], []];
+
+  // Apply the merchant's confirmed merges, then look at the still-undecided
+  // "possible same customer" pairs (decided pairs — merge OR split — are excluded).
+  const confirmedGroups = applyConfirmedMerges(rawGroups, links);
+  const decided = new Set(links.map((l) => pairId(l.primaryKey, l.linkedKey)));
+  const { autoMerges, prompts } = partitionSuggestions(
+    buildMergeSuggestions(confirmedGroups, decided),
+  );
+
+  // Sure pairs auto-merge (Rishi 2026-06-14); doubtful pairs are prompted. The
+  // auto-merge is applied to the grouping here and shown transparently with an
+  // undo. (Persisting auto-merges as training rows happens on user correction —
+  // we never write during render.)
+  const autoLinks: IdentityLink[] = autoMerges.map((s) => ({
+    primaryKey: s.primaryKey,
+    linkedKey: s.linkedKey,
+    decision: 'merge',
+  }));
+  const groups = applyConfirmedMerges(confirmedGroups, autoLinks);
 
   return (
     <CustomersView
       email={user.email}
       businessName={businessName}
       groups={groups}
+      suggestions={prompts}
+      autoMerged={autoMerges}
       stripeConnected={stripeConnected}
     />
   );

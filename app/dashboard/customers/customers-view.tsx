@@ -1,21 +1,35 @@
 import { AppShell } from '../../_components/app-chrome';
 import { ConnectStripePanel } from '../../_components/connect-stripe-panel';
 import type { CustomerGroup } from '@/lib/dal';
+import type { MergeSuggestion } from '@/lib/customers/types';
+import { confirmMergeAction, rejectMergeAction } from '@/lib/customers/actions';
 import s from './customers.module.css';
 
 // Presentational per-customer evidence view (R8). Groups a merchant's disputes
 // by customer email so repeat / daisy-chained disputes from the same customer
-// surface together. Data wrapper lives in page.tsx; a dev-only route renders
+// surface together, and surfaces "possible same customer" suggestions to confirm
+// (never auto-merged). Data wrapper lives in page.tsx; a dev-only route renders
 // this directly.
 
 export type CustomersViewProps = {
   email: string | null | undefined;
   businessName: string | null;
   groups: CustomerGroup[];
+  // Doubtful pairs the merchant is asked to confirm.
+  suggestions: MergeSuggestion[];
+  // High-confidence pairs Verdact already merged automatically (shown with undo).
+  autoMerged: MergeSuggestion[];
   stripeConnected: boolean;
 };
 
-export function CustomersView({ email, businessName, groups, stripeConnected }: CustomersViewProps) {
+export function CustomersView({
+  email,
+  businessName,
+  groups,
+  suggestions,
+  autoMerged,
+  stripeConnected,
+}: CustomersViewProps) {
   const linked = groups.filter((g) => g.customerKey !== null);
   const unlinked = groups.find((g) => g.customerKey === null) ?? null;
   const repeatGroups = linked.filter((g) => g.disputes.length > 1);
@@ -37,6 +51,9 @@ export function CustomersView({ email, businessName, groups, stripeConnected }: 
           <EmptyState />
         ) : (
           <>
+            {autoMerged.length > 0 && <AutoLinked autoMerged={autoMerged} />}
+            {suggestions.length > 0 && <MergeSuggestions suggestions={suggestions} />}
+
             {repeatGroups.length > 0 && (
               <p className={s.repeatBanner}>
                 <strong>{repeatGroups.length}</strong> customer{repeatGroups.length === 1 ? ' has' : 's have'}{' '}
@@ -70,6 +87,100 @@ export function CustomersView({ email, businessName, groups, stripeConnected }: 
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
+
+function AutoLinked({ autoMerged }: { autoMerged: MergeSuggestion[] }) {
+  return (
+    <section className={s.autoSection}>
+      <h2 className={s.autoHead}>Auto-linked</h2>
+      <p className={s.autoSub}>
+        Verdact was confident these are the same customer and linked them for you. If any is wrong,
+        split it — Verdact learns from the correction.
+      </p>
+      <div className={s.autoList}>
+        {autoMerged.map((sg) => (
+          <div key={sg.id} className={s.autoRow}>
+            <span className={s.autoPair}>
+              {sg.primaryLabel} <span aria-hidden="true">↔</span> {sg.linkedLabel}
+            </span>
+            <span className={s.autoReason}>{sg.reason}</span>
+            <form action={rejectMergeAction}>
+              <SuggestionFields suggestion={sg} />
+              <input type="hidden" name="source" value="auto" />
+              <button type="submit" className={s.autoSplit}>
+                Not the same
+              </button>
+            </form>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MergeSuggestions({ suggestions }: { suggestions: MergeSuggestion[] }) {
+  return (
+    <section className={s.suggestSection}>
+      <h2 className={s.suggestHead}>Possible same customer</h2>
+      <p className={s.suggestSub}>
+        Verdact spotted disputes that may belong to the same customer. Nothing is merged until you
+        confirm — your choice is remembered.
+      </p>
+      <div className={s.suggestList}>
+        {suggestions.map((sg) => (
+          <div key={sg.id} className={s.suggestCard}>
+            <div className={s.suggestPair}>
+              <span className={s.suggestId}>{sg.primaryLabel}</span>
+              <span className={s.suggestArrow} aria-hidden="true">
+                ↔
+              </span>
+              <span className={s.suggestId}>{sg.linkedLabel}</span>
+              <span className={s.suggestConfidence}>{confidenceLabel(sg.confidence)} confidence</span>
+            </div>
+            <p className={s.suggestReason}>{sg.reason}</p>
+            <div className={s.suggestActions}>
+              <form action={confirmMergeAction}>
+                <SuggestionFields suggestion={sg} includeReason />
+                <button type="submit" className={s.suggestConfirm}>
+                  Confirm same customer
+                </button>
+              </form>
+              <form action={rejectMergeAction}>
+                <SuggestionFields suggestion={sg} />
+                <button type="submit" className={s.suggestReject}>
+                  Not the same
+                </button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SuggestionFields({
+  suggestion,
+  includeReason = false,
+}: {
+  suggestion: MergeSuggestion;
+  includeReason?: boolean;
+}) {
+  return (
+    <>
+      <input type="hidden" name="primaryKey" value={suggestion.primaryKey} />
+      <input type="hidden" name="linkedKey" value={suggestion.linkedKey} />
+      <input type="hidden" name="kind" value={suggestion.kind} />
+      <input type="hidden" name="confidence" value={String(suggestion.confidence)} />
+      {includeReason && <input type="hidden" name="reason" value={suggestion.reason} />}
+    </>
+  );
+}
+
+function confidenceLabel(confidence: number): string {
+  if (confidence >= 0.8) return 'High';
+  if (confidence >= 0.4) return 'Medium';
+  return 'Low';
+}
 
 function CustomerCard({ group }: { group: CustomerGroup }) {
   const isRepeat = group.disputes.length > 1;

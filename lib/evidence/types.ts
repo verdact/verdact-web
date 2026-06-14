@@ -47,6 +47,11 @@ export interface EvidenceSignals {
   purchaseAt?: string | null;
   disputeCreatedAt?: string | null;
   billingCountry?: string | null; // ISO-3166 alpha-2
+  // The card's issuing country (ISO-3166 alpha-2) from the Stripe charge. A real,
+  // single-point network signal available without any session history: an
+  // issuing-vs-billing country match corroborates a legitimate cardholder; a
+  // mismatch is a reviewer-visible fraud flag the merchant must explain.
+  issuingCountry?: string | null;
   sessions: SessionSignal[];
   policy: PolicySnapshot | null;
   // Whether the merchant says they hold each proof kind (mirrors the audit

@@ -49,23 +49,21 @@ function pct(part: number, whole: number): number {
 export function buildGeoConsistencyNarrative(signals: EvidenceSignals): NarrativeBlock {
   const sessions = signals.sessions;
   const total = sessions.length;
+  const billing = signals.billingCountry?.toUpperCase() ?? null;
+  const issuing = signals.issuingCountry?.toUpperCase() ?? null;
 
+  // Without a session pattern, fall back to the single but REAL network signal
+  // available from the Stripe charge: the card's issuing country vs the billing
+  // country. This needs zero usage history, so it works the moment a charge is
+  // enriched — and surfaces a genuine fraud flag if the two disagree.
   if (total < MIN_SESSIONS_FOR_PATTERN) {
-    return {
-      id: 'geo-consistency',
-      heading: 'Geographic consistency',
-      body:
-        'Not enough session history is connected to argue a consistent location pattern yet. Connect more activity data to strengthen this.',
-      severity: 'missing',
-      include: false,
-    };
+    return geoFromIssuingCountry(billing, issuing);
   }
 
   const byCountry = countBy(sessions, (s) => s.country);
   const byIp = countBy(sessions, (s) => s.ip);
   const topCountry = topEntry(byCountry);
   const topIp = topEntry(byIp);
-  const billing = signals.billingCountry?.toUpperCase() ?? null;
 
   // Mismatch: billing country known and the dominant session country differs.
   if (billing && topCountry && topCountry.value.toUpperCase() !== billing) {
@@ -81,7 +79,6 @@ export function buildGeoConsistencyNarrative(signals: EvidenceSignals): Narrativ
   }
 
   const countryShare = topCountry ? pct(topCountry.count, total) : 0;
-  const ipShare = topIp ? pct(topIp.count, total) : 0;
   const strong = countryShare >= 80 && Boolean(topCountry);
 
   const bodyParts: string[] = [];
@@ -96,6 +93,10 @@ export function buildGeoConsistencyNarrative(signals: EvidenceSignals): Narrativ
       `${topIp.count} of those sessions came from the same network address, consistent with one returning account holder rather than scattered access.`,
     );
   }
+  // Corroborate with the card's issuing country when it agrees with billing.
+  if (issuing && billing && issuing === billing) {
+    bodyParts.push(`The card was also issued in ${issuing}, matching the billing country.`);
+  }
 
   return {
     id: 'geo-consistency',
@@ -103,6 +104,48 @@ export function buildGeoConsistencyNarrative(signals: EvidenceSignals): Narrativ
     body: bodyParts.join(' ') || 'Session locations are consistent across the recorded history.',
     severity: strong ? 'strong' : 'present',
     include: true,
+  };
+}
+
+/**
+ * Geo/network narrative from the card's issuing country alone (no session
+ * pattern yet). Real data from the enriched Stripe charge:
+ *   - issuing === billing → a corroborating consistency point (include).
+ *   - issuing !== billing → a reviewer-visible mismatch the merchant must explain.
+ *   - either unknown      → honest "not enough connected" state.
+ */
+function geoFromIssuingCountry(billing: string | null, issuing: string | null): NarrativeBlock {
+  if (billing && issuing && issuing !== billing) {
+    return {
+      id: 'geo-consistency',
+      heading: 'Geographic consistency',
+      body:
+        `The card was issued in ${issuing}, but the billing country on file is ${billing}. ` +
+        'A reviewer reads an issuing-vs-billing country mismatch as a fraud signal. Confirm the legitimate explanation before filing, or this argument works against you.',
+      severity: 'mismatch',
+      include: false,
+    };
+  }
+
+  if (billing && issuing && issuing === billing) {
+    return {
+      id: 'geo-consistency',
+      heading: 'Geographic consistency',
+      body:
+        `The card was issued in ${issuing}, matching the ${billing} billing country — one corroborating consistency point. ` +
+        'Connect usage history to argue a sustained, same-location pattern.',
+      severity: 'present',
+      include: true,
+    };
+  }
+
+  return {
+    id: 'geo-consistency',
+    heading: 'Geographic consistency',
+    body:
+      'Not enough location data is connected to argue a consistent pattern yet. Connect usage history, or attach the charge so the card issuing and billing countries can be compared.',
+    severity: 'missing',
+    include: false,
   };
 }
 

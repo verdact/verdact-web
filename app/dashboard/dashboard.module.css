@@ -1,18 +1,19 @@
-/* ─── Dashboard page — VERDICT v2 app dialect ───────────────────────────────
-   A1 type sub-scale: denser, quieter than marketing. tnum on all data cells.
-   All tokens are v2 custom properties so dark mode is automatic.
+/* ─── Dashboard — "The Standing Docket" (VERDICT v2 app dialect) ─────────────
+   Opens with the account's standing in a sentence, anchors on a truthful ledger
+   line, and lists every dispute as an actionable case-record. All tokens are v2
+   custom properties so light/dark/system theming is automatic.
    ─────────────────────────────────────────────────────────────────────────── */
 
-/* ── Page wrapper ───────────────────────────────────────────────── */
-
 .page {
-  padding: var(--space-8) var(--space-6) var(--space-16);
+  padding: var(--space-7) var(--space-6) var(--space-16);
   max-width: 1160px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-10);
+  gap: var(--space-6);
 }
+
+.num { font-variant-numeric: tabular-nums; }
 
 /* ── Status banners (Stripe connect success / error) ────────────── */
 
@@ -27,7 +28,6 @@
   border: 1px solid var(--verdict-deep);
   background: var(--verdict-tint);
   color: var(--ink);
-  margin-bottom: calc(var(--space-10) * -0.5);
 }
 
 .bannerError {
@@ -36,71 +36,30 @@
   color: var(--gap-text);
 }
 
-/* ── Stripe not-connected soft banner ───────────────────────────── */
+/* ── Masthead: eyebrow + chip ───────────────────────────────────── */
 
-.connectBanner {
+.top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-3) var(--space-6);
-  background: var(--paper-2);
-  border-bottom: 1px solid var(--hairline);
-  font-size: 13.5px;
-  color: var(--ink-2);
 }
 
-.connectBannerAction {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--verdict);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.connectBannerAction:hover { text-decoration: underline; }
-
-/* ── Zone A: header line ────────────────────────────────────────── */
-
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.greeting {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.greetingText {
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  margin: 0;
-}
-
-.workspaceName {
+.eyebrow {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-3);
-  margin: 0;
 }
-
-/* Status chip (Stripe connected / Connect Stripe) */
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
   font-size: 12.5px;
   font-weight: 500;
   border: 1px solid var(--hairline);
@@ -113,8 +72,11 @@
 .chipConnected {
   border-color: var(--verdict-deep);
   background: var(--verdict-tint);
-  color: var(--ink);
+  color: var(--verdict);
 }
+
+.chipGhost { cursor: pointer; }
+.chipGhost:hover { border-color: var(--edge-green); }
 
 .chipDot {
   width: 7px;
@@ -124,430 +86,489 @@
   flex-shrink: 0;
 }
 
-/* ── Zone B: status tiles ───────────────────────────────────────── */
+.chipGhost .chipDot { background: var(--ink-3); }
 
-.tiles {
+/* ── Standing sentence ──────────────────────────────────────────── */
+
+.stand {
+  font-size: clamp(1.3rem, 2.4vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.28;
+  color: var(--ink);
+  max-width: 34ch;
+  margin: 0;
+}
+
+.standMuted {
+  color: var(--ink-2);
+  font-size: clamp(1.15rem, 2vw, 1.35rem);
+  max-width: 40ch;
+}
+
+/* ── Ledger line ────────────────────────────────────────────────── */
+
+.ledger {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: 1fr 1fr 1.35fr;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding: var(--space-4) 0;
 }
 
-.tile {
-  padding: var(--space-5) var(--space-5);
-  border-radius: 8px;
-  border: 1px solid var(--hairline);
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 120ms;
+.ledgerCollapsed { grid-template-columns: 1fr 1.4fr; }
+
+.lcell {
+  padding: 0 var(--space-5);
+  border-right: 1px solid var(--hairline);
 }
 
-a.tile:hover { border-color: var(--edge-green); }
+.lcell:first-child { padding-left: 0; }
+.lcell:last-child { border-right: 0; padding-right: 0; }
 
-.tileLabel {
+.lEyebrow {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin: 0;
 }
 
-.tileFigure {
+.fig {
   font-size: 30px;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--ink);
   line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  margin: var(--space-1) 0 0;
+  margin: 5px 0 3px;
 }
 
-.tileFigureUrgent { color: var(--gap-text); }
+.figRecovered { color: var(--verdict); }
 
-.tileSub {
-  font-size: 12.5px;
-  color: var(--ink-2);
+.sub {
+  font-size: 12px;
+  color: var(--ink-3);
   line-height: 1.4;
-  margin: 0;
 }
 
-.tileStatusRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: var(--space-1);
+/* Health cell */
+
+.health {
+  background: var(--panel);
+  border: 1px solid var(--edge-green);
+  border-radius: 9px;
+  padding: 11px 14px;
 }
 
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.statusDotHealthy { background: var(--verdict); }
-.statusDotClose   { background: none; border: 2px solid var(--gap); }
-.statusDotAtRisk  { background: var(--gap); }
-.statusDotNeutral { background: var(--ink-3); }
-
-.statusLabel {
-  font-size: 12.5px;
-  font-weight: 500;
+.healthCalibrating {
+  font-size: 18px;
+  font-weight: 700;
   color: var(--ink-2);
+  letter-spacing: -0.01em;
+  margin: 6px 0 3px;
 }
 
-.statusLabelHealthy { color: var(--verdict); }
-.statusLabelClose   { color: var(--ink); }
-.statusLabelAtRisk  { color: var(--gap-text); }
-
-/* Dispute-rate meter bar */
-
-.meterBar {
-  margin-top: var(--space-2);
-  height: 4px;
-  border-radius: 2px;
+.meter {
+  height: 7px;
+  border-radius: 4px;
   background: var(--hairline);
-  overflow: hidden;
+  position: relative;
+  margin: 9px 0 7px;
 }
 
 .meterFill {
-  height: 100%;
-  border-radius: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   background: var(--verdict);
+  border-radius: 4px;
   transition: width 300ms var(--ease-out);
 }
 
-.meterFillClose   { background: var(--gap); }
-.meterFillAtRisk  { background: var(--gap); }
+.meterFillGap { background: var(--gap); }
 
-/* ── Zone C: disputes queue ─────────────────────────────────────── */
-
-.queueSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.meterLine {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink-2);
 }
 
-.queueHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--hairline);
-  margin-bottom: 0;
-}
-
-.queueTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-
-.viewAllLink {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--verdict);
-  text-decoration: none;
-}
-
-.viewAllLink:hover { text-decoration: underline; }
-
-/* Dispute rows */
-
-.disputeList {
-  display: flex;
-  flex-direction: column;
-}
-
-.disputeRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
-  text-decoration: none;
-  color: inherit;
-}
-
-.disputeRow:last-child { border-bottom: none; }
-
-.disputeRowStatus {
+.hrow {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--verdict);
 }
 
-.disputeRowStatusLabel {
+.hrowGap { color: var(--gap-text); }
+
+.tick,
+.tickGap {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--verdict);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  flex: none;
+}
+
+.tickGap { border-color: var(--gap); }
+
+.tick::after,
+.tickGap::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--verdict);
+  border-width: 0 2px 2px 0;
+  transform: rotate(40deg);
+}
+
+.tickGap::after { border-color: var(--gap); }
+
+/* ── Section header (The record) ────────────────────────────────── */
+
+.sec {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.secRight {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.sort {
   font-size: 12px;
-  font-weight: 500;
   color: var(--ink-2);
-  white-space: nowrap;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 5px 11px;
+  background: var(--panel);
 }
 
-.disputeRowInfo {
+.vlink {
+  font-size: 12.5px;
+  color: var(--verdict);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.vlink:hover { text-decoration: underline; }
+
+/* ── Case-record rows ───────────────────────────────────────────── */
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px var(--space-5);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--hairline);
+  align-items: start;
+}
+
+.rReason {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.sdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex: none;
+}
+
+.rMeta {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.proof {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 6px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.proofOk { color: var(--verdict); font-weight: 500; }
+.proofOk::before { content: "✓ "; }
+
+.proofNone { color: var(--ink-3); }
+.proofNone::before { content: "— "; }
+
+.rRight {
+  text-align: right;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  overflow: hidden;
+  align-items: flex-end;
+  gap: 9px;
+  min-width: 128px;
 }
 
-.disputeRowReason {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.amt { font-size: 16px; font-weight: 600; color: var(--ink); }
 
-.disputeRowId {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.dead { font-size: 12.5px; color: var(--ink-2); }
 
-.disputeRowAmount {
-  font-size: 13.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-.disputeRowDeadline {
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-
-.disputeRowDeadlineUrgent { color: var(--gap-text); font-weight: 600; }
-
-.disputeRowAction {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
+.deadUrgent {
+  color: var(--gap-text);
+  background: var(--gap-tint);
   border-radius: 6px;
-  font-size: 12.5px;
+  padding: 3px 9px;
   font-weight: 600;
-  background: var(--verdict-tint);
-  color: var(--verdict);
-  border: 1px solid var(--verdict-deep);
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background 120ms;
 }
 
-.disputeRowAction:hover { background: var(--verdict-press); color: var(--paper); }
+/* ── Buttons ────────────────────────────────────────────────────── */
 
-/* Marcus simplification: single dispute action card */
-
-.actionCard {
-  padding: var(--space-6);
+.btn {
+  font-size: 13px;
+  font-weight: 500;
   border-radius: 8px;
-  border: 1px solid var(--hairline);
-  background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-  margin-top: var(--space-2);
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 0;
+  font-family: inherit;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 120ms, color 120ms, border-color 120ms;
 }
 
-.actionCardLabel {
+.btnSolid { background: var(--verdict); color: var(--paper); }
+.btnSolid:hover { background: var(--verdict-press); }
+
+.btnGhost {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+}
+.btnGhost:hover { border-color: var(--edge-green); }
+
+.btnBig { padding: 11px 22px; font-size: 14px; }
+
+/* ── Single case-record (panic collapse) ────────────────────────── */
+
+.caserec {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.caseLabel {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gap-text);
-  margin: 0 0 var(--space-1);
-}
-
-.actionCardTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0 0 4px;
-}
-
-.actionCardMeta {
-  font-size: 12.5px;
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.actionCardBtn {
-  display: inline-flex;
-  align-items: center;
-  padding: 9px 20px;
-  border-radius: 6px;
-  font-size: 13.5px;
   font-weight: 700;
-  background: var(--verdict);
-  color: var(--paper);
-  text-decoration: none;
-  white-space: nowrap;
-  border: none;
-  transition: background 120ms;
-  flex-shrink: 0;
 }
 
-.actionCardBtn:hover { background: var(--verdict-press); }
+.caseTitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 6px 0 2px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
 
-/* Empty state (connected, no disputes) */
+.caseMeta { font-size: 13px; color: var(--ink-3); }
 
-.queueEmpty {
-  padding: var(--space-8) 0 var(--space-4);
+.caseRight {
+  text-align: right;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  align-items: flex-end;
+  gap: 12px;
 }
 
-.queueEmptyTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-}
+/* ── Empty well (connected, nothing open) ───────────────────────── */
 
-.queueEmptyText {
-  font-size: 13px;
+.well {
+  background: var(--panel-wash);
+  border-radius: 11px;
+  padding: 26px;
   color: var(--ink-2);
-  margin: 0;
+  font-size: 14px;
   line-height: 1.5;
 }
 
-/* EFW rows */
-
-.efwRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
+.wellTitle {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 600;
+  margin: 0 0 5px;
 }
 
-.efwRowLabel {
+/* ── Prevention lane ────────────────────────────────────────────── */
+
+.prevent {
+  background: var(--panel-wash);
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.preventLabel {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
-  padding: 2px 6px;
-  border: 1px solid var(--hairline);
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-weight: 600;
+  border-right: 1px solid var(--hairline);
+  padding-right: 14px;
 }
 
-/* ── Zone D: guidance band ──────────────────────────────────────── */
+.preventText { font-size: 13px; color: var(--ink-2); flex: 1; min-width: 220px; }
 
-.guidance {
-  border-radius: 8px;
-  border: 1px solid var(--hairline);
-  background: var(--panel-wash);
-  padding: var(--space-6);
+/* ── Guidance band (Layer 1) + primers (Layer 4) ────────────────── */
+
+.guide {
+  border-left: 2px solid var(--hairline);
+  padding-left: 18px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 10px;
 }
 
-.guidanceTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-
-.insights {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-3);
-}
-
-.insightCard {
-  padding: var(--space-4) var(--space-4);
-  border-radius: 6px;
-  border: 1px solid var(--hairline);
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.insightText {
-  font-size: 13px;
-  color: var(--ink);
+.guideItem {
+  font-size: 13.5px;
+  color: var(--ink-2);
   line-height: 1.5;
   margin: 0;
 }
 
-.insightAction {
-  font-size: 12px;
-  font-weight: 500;
+.guideStrong { color: var(--ink); font-weight: 600; }
+
+.guideLink {
   color: var(--verdict);
-  margin: 0;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.guidanceFoot {
+.guideLink:hover { text-decoration: underline; }
+
+.primers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 2px;
+}
+
+.primerLink {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--hairline);
+}
+
+.primerLink:hover { color: var(--verdict); border-color: var(--edge-green); }
+
+.guideFoot {
   font-size: 11.5px;
   color: var(--ink-3);
-  margin: 0;
-  border-top: 1px solid var(--hairline);
-  padding-top: var(--space-4);
+  margin: 4px 0 0;
 }
+
+/* ── Not-connected: sample + checklist ──────────────────────────── */
+
+.sampleTag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--panel-wash);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  padding: 2px 7px;
+  margin-left: 8px;
+}
+
+.muted { opacity: 0.55; filter: saturate(0.6); pointer-events: none; }
+
+.checklist { margin-top: var(--space-5); }
+
+.ci {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  padding: 11px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.ciFirst { color: var(--ink); font-weight: 600; }
+
+.ciBox {
+  width: 17px;
+  height: 17px;
+  border: 1.8px solid var(--hairline);
+  border-radius: 5px;
+  flex: none;
+}
+
+.ciFirst .ciBox { border-color: var(--verdict); }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
   .page {
     padding: var(--space-5) var(--space-4) var(--space-12);
-    gap: var(--space-7);
+    gap: var(--space-5);
   }
 
-  .tiles {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
+  .ledger,
+  .ledgerCollapsed {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
 
-  /* 3rd tile spans full width on 2-column mobile */
-  .tiles > :nth-child(3) { grid-column: 1 / -1; }
-
-  .tileFigure { font-size: 24px; }
-
-  .disputeRow {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    gap: var(--space-2) var(--space-3);
+  .lcell {
+    padding: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: var(--space-4);
   }
 
-  .disputeRowStatus { grid-column: 1; grid-row: 1; }
-  .disputeRowInfo   { grid-column: 1 / -1; grid-row: 2; }
-  .disputeRowAmount { display: none; }
-  .disputeRowDeadline { grid-column: 2; grid-row: 1; font-size: 11.5px; }
-  .disputeRowAction { display: none; }
+  .lcell:last-child { border-bottom: 0; padding-bottom: 0; }
 
-  .actionCard { flex-direction: column; align-items: flex-start; }
-  .insights { grid-template-columns: 1fr; }
-}
+  .stand { max-width: none; }
 
-@media (max-width: 480px) {
-  .tiles { grid-template-columns: 1fr; }
-  .tiles > :nth-child(3) { grid-column: auto; }
+  /* Keep the row two-column so the action stays visible (the shipped bug was a
+     hidden primary action on mobile — the panic entry must always show it). */
+  .row { grid-template-columns: 1fr auto; }
+  .rRight { min-width: 0; }
+
+  .caserec { grid-template-columns: 1fr; }
+  .caseRight { align-items: stretch; }
+  .caseRight .btn { width: 100%; text-align: center; }
 }

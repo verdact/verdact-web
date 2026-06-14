@@ -2,6 +2,11 @@ import type { EvidenceAnalysis } from '@/lib/evidence';
 import type { NarrativeBlock, QaFinding, Severity } from '@/lib/evidence';
 import { AlertIcon, CheckIcon, InfoCircleIcon } from '../../dash-icons';
 
+// Cap the rendered activity bars so a long history stays a compact strip.
+const MAX_ACTIVITY_DAYS_SHOWN = 40;
+// Floor (in %) so a low-count day still renders a visible bar, never zero-height.
+const MIN_ACTIVITY_BAR_PCT = 8;
+
 /**
  * Presentational rendering of the per-dispute evidence analysis (Revano-adopted
  * features). Pure props in, UI out — the workbench server component computes the
@@ -122,8 +127,7 @@ function ArgumentNarratives({
 
 function ActivityBars({ timeline }: { timeline: { day: string; count: number }[] }) {
   const max = Math.max(...timeline.map((t) => t.count), 1);
-  // Cap the rendered bars so a long history stays a compact strip.
-  const shown = timeline.slice(-40);
+  const shown = timeline.slice(-MAX_ACTIVITY_DAYS_SHOWN);
   return (
     <div className="border-t border-rule py-4">
       <p className="label-mono mb-3">Activity over time</p>
@@ -132,7 +136,7 @@ function ActivityBars({ timeline }: { timeline: { day: string; count: number }[]
           <span
             key={t.day}
             className="flex-1 rounded-sm bg-action/70"
-            style={{ height: `${Math.max(8, (t.count / max) * 100)}%` }}
+            style={{ height: `${Math.max(MIN_ACTIVITY_BAR_PCT, (t.count / max) * 100)}%` }}
             title={`${t.day}: ${t.count}`}
           />
         ))}
@@ -156,9 +160,9 @@ function TranslationPanel({ pairs }: { pairs: { founder: string; bank: string }[
         <p className="label-mono mt-1.5">What you have, restated as the bank reads it</p>
       </header>
       <div className="px-6 py-2">
-        {pairs.map((p, i) => (
+        {pairs.map((p) => (
           <div
-            key={i}
+            key={`${p.founder}::${p.bank}`}
             className="grid gap-3 border-b border-rule py-4 last:border-b-0 sm:grid-cols-2"
           >
             <div className="rounded-md border border-rule bg-surface-2 px-4 py-3">

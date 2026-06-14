@@ -18,9 +18,11 @@ export interface DisputeForSignals {
   processor_charge_id: string | null;
   created_at: string;
   // Stripe doesn't give a purchase date directly on the dispute; the charge date
-  // is the closest proxy and is wired when charge enrichment lands.
+  // is the closest proxy and is wired via charge enrichment (lib/evidence/charge-enrichment).
   purchase_at?: string | null;
   billing_country?: string | null;
+  // The card's issuing country from the Stripe charge (charge enrichment).
+  issuing_country?: string | null;
 }
 
 export interface ProfileForSignals {
@@ -55,6 +57,7 @@ export function buildEvidenceSignals(input: SignalsInput): {
       purchaseAt: dispute.purchase_at ?? null,
       disputeCreatedAt: dispute.created_at,
       billingCountry: dispute.billing_country ?? null,
+      issuingCountry: dispute.issuing_country ?? null,
       sessions: input.sessions ?? [],
       policy: derivePolicy(reasonCode, profile, dispute.purchase_at ?? null),
       proof: input.proof ?? { delivery: false, usage: false, comms: false },

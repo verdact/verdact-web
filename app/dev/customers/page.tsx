@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import { CustomersView } from '../../dashboard/customers/customers-view';
 import type { CustomerGroup } from '@/lib/dal';
+import { buildMergeSuggestions, partitionSuggestions } from '@/lib/customers/suggestions';
+import { applyConfirmedMerges } from '@/lib/customers/resolve';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEV-ONLY preview of the per-customer evidence view (R8) with sample data.
-// The real /dashboard/customers is auth-gated. Use ?state=repeat|single|empty.
-// 404s in production.
+// The real /dashboard/customers is auth-gated.
+// Use ?state=repeat|single|empty|suggest. 404s in production.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata = {
@@ -118,6 +120,81 @@ const UNLINKED: CustomerGroup = {
   ],
 };
 
+// Two near-duplicate pairs that trip the suggestion engine: a same-name pair on
+// different emails, and a Gmail dot/+tag normalized-email pair.
+const SUGGEST_GROUPS: CustomerGroup[] = [
+  { ...REPEAT_GROUPS[0] },
+  {
+    customerKey: 'dana@gmail.com',
+    customerEmail: 'dana@gmail.com',
+    customerName: 'Northwind Consulting',
+    totalAmount: 30000,
+    openCount: 1,
+    wonCount: 0,
+    lostCount: 0,
+    disputes: [
+      {
+        id: 'd6',
+        processor_dispute_id: 'du_f',
+        amount: 30000,
+        currency: 'usd',
+        reason: 'Services not received',
+        network: 'visa',
+        status: 'needs_response',
+        due_by: daysAgo(-4),
+        outcome: null,
+        created_at: daysAgo(2),
+      },
+    ],
+  },
+  {
+    customerKey: 'jo.doe+stripe@gmail.com',
+    customerEmail: 'jo.doe+stripe@gmail.com',
+    customerName: 'Jo Doe',
+    totalAmount: 12000,
+    openCount: 0,
+    wonCount: 0,
+    lostCount: 0,
+    disputes: [
+      {
+        id: 'd7',
+        processor_dispute_id: 'du_g',
+        amount: 12000,
+        currency: 'usd',
+        reason: 'Duplicate charge',
+        network: 'visa',
+        status: 'under_review',
+        due_by: daysAgo(-10),
+        outcome: null,
+        created_at: daysAgo(6),
+      },
+    ],
+  },
+  {
+    customerKey: 'jodoe@gmail.com',
+    customerEmail: 'jodoe@gmail.com',
+    customerName: 'Jo Doe',
+    totalAmount: 9000,
+    openCount: 0,
+    wonCount: 0,
+    lostCount: 0,
+    disputes: [
+      {
+        id: 'd8',
+        processor_dispute_id: 'du_h',
+        amount: 9000,
+        currency: 'usd',
+        reason: 'Product not as described',
+        network: 'mastercard',
+        status: 'lost',
+        due_by: null,
+        outcome: 'lost',
+        created_at: daysAgo(30),
+      },
+    ],
+  },
+];
+
 export default async function CustomersPreviewPage({
   searchParams,
 }: {
@@ -134,13 +211,23 @@ export default async function CustomersPreviewPage({
       ? []
       : state === 'single'
         ? [REPEAT_GROUPS[1]]
-        : [...REPEAT_GROUPS, UNLINKED];
+        : state === 'suggest'
+          ? SUGGEST_GROUPS
+          : [...REPEAT_GROUPS, UNLINKED];
+
+  const { autoMerges, prompts } = partitionSuggestions(buildMergeSuggestions(groups, new Set()));
+  const mergedGroups = applyConfirmedMerges(
+    groups,
+    autoMerges.map((s) => ({ primaryKey: s.primaryKey, linkedKey: s.linkedKey, decision: 'merge' as const })),
+  );
 
   return (
     <CustomersView
       email="founder@acmesoftware.com"
       businessName="Acme Software"
-      groups={groups}
+      groups={mergedGroups}
+      suggestions={prompts}
+      autoMerged={autoMerges}
       stripeConnected={state !== 'disconnected'}
     />
   );

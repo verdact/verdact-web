@@ -1,7 +1,7 @@
 import { AppShell } from '../_components/app-chrome';
 import { ConnectStripePanel } from '../_components/connect-stripe-panel';
 import { type Dispute, type EfwAlert } from '@/lib/dal';
-import { firstNameFrom } from '@/lib/greeting';
+import { evaluateGuidance, type GuidanceItem, type HealthBand } from '@/lib/guidance';
 import { AlertIcon, CheckIcon } from './dash-icons';
 import s from './dashboard.module.css';
 
@@ -21,6 +21,11 @@ export type DashboardViewProps = {
   disputes: Dispute[];
   efwAlerts: EfwAlert[];
   vampRatio: number | null;
+  vampConfidence: 'low' | 'medium' | 'high' | null;
+  profileComplete: boolean;
+  // Proof purposes on file per dispute id (e.g. ['Delivery','Policy']). Real
+  // booleans from one batched evidence_files read — never fabricated.
+  proofByDispute: Record<string, string[]>;
   stripeConnection: StripeConnection;
   justConnected: boolean;
   stripeError: string | null;
@@ -38,68 +43,72 @@ const STRIPE_ERROR_MESSAGES: Record<string, string> = {
 };
 
 const OPEN_STATUSES = new Set(['needs_response', 'under_review']);
+// Stripe's operative dispute-rate line; gauge runs to 1.5% (the network ceiling).
+const STRIPE_LINE_FRACTION = 0.0075;
+const GAUGE_MAX_FRACTION = 0.015;
+const URGENT_DAYS = 3;
+
+type CssModuleStyles = Record<string, string>;
 
 // ── Presentational view ──────────────────────────────────────────────────────
-// Pure render layer for the dashboard. Receives already-fetched data and owns
-// all derivation + markup. The data wrapper lives in page.tsx; a dev-only
-// preview route renders this directly with sample data.
+// Pure render layer for the Standing Docket dashboard. Receives already-fetched
+// data and owns all derivation + markup. The data wrapper lives in page.tsx; a
+// dev-only preview route renders this directly with sample data.
 
 export function DashboardView({
   email,
   businessName,
-  fullName,
   disputes,
   efwAlerts,
   vampRatio,
+  vampConfidence,
+  profileComplete,
+  proofByDispute,
   stripeConnection,
   justConnected,
   stripeError,
 }: DashboardViewProps) {
-  // Greet the person by first name, never the company. Company name labels the
-  // workspace separately under the greeting.
-  const greetingName = firstNameFrom(fullName, email);
+  const hasStripe = !!stripeConnection;
 
-  const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  const openDisputes = disputes
+    .filter((d) => OPEN_STATUSES.has(d.status))
+    .sort(byDeadlineThenCreated);
+  const needsAction = disputes.filter((d) => d.status === 'needs_response');
+  const nearestWithDeadline = openDisputes.find((d) => d.due_by) ?? null;
+  const nearestDays = nearestWithDeadline?.due_by ? daysUntil(nearestWithDeadline.due_by) : null;
 
-  const openDisputes = disputes.filter((d) => OPEN_STATUSES.has(d.status));
-  const needsActionDisputes = disputes.filter((d) => d.status === 'needs_response');
-
-  const sortedByDeadline = [...openDisputes]
-    .filter((d) => d.due_by)
-    .sort((a, b) => new Date(a.due_by!).getTime() - new Date(b.due_by!).getTime());
-
-  const nextDeadlineDispute = sortedByDeadline[0] ?? null;
-
-  const healthBand =
-    vampRatio === null
-      ? ('unknown' as const)
-      : vampRatio < 0.005
-        ? ('healthy' as const)
-        : vampRatio < 0.0075
-          ? ('close' as const)
-          : ('at-risk' as const);
-
-  // Percentage for the meter (capped at 150% of the 0.75% line for visual range)
+  const healthBand = bandFor(vampRatio);
+  const healthConfident = vampConfidence === 'medium' || vampConfidence === 'high';
   const meterPct =
-    vampRatio === null ? 0 : Math.min((vampRatio / 0.01125) * 100, 100);
+    vampRatio === null ? 0 : Math.min((vampRatio / GAUGE_MAX_FRACTION) * 100, 100);
 
-  const stripeAccountLabel = stripeConnection
-    ? formatStripeAccountId(stripeConnection.processor_account_id)
-    : null;
+  const exposure = summarizeAmount(openDisputes);
+  const recovered = summarizeAmount(disputes.filter((d) => d.outcome === 'won'));
+  const actionableEfw = efwAlerts.filter(
+    (e) => e.actionable === true && e.merchant_decision === 'pending',
+  );
 
-  // Guidance insights (rule-based heuristics)
-  const insights = buildInsights({
-    needsActionCount: needsActionDisputes.length,
+  const guidance = evaluateGuidance({
+    hasStripe,
+    openDisputeCount: openDisputes.length,
+    needsActionCount: needsAction.length,
     healthBand,
-    efwAlerts,
-    hasStripe: !!stripeConnection,
+    healthConfident,
+    actionableEfwCount: actionableEfw.length,
+    profileComplete,
+    nearestDeadlineDays: nearestDays,
+  });
+
+  const standing = buildStandingSentence({
+    healthBand,
+    healthConfident,
+    openCount: openDisputes.length,
+    nearestDays,
   });
 
   return (
     <AppShell email={email} businessName={businessName} active="dashboard">
       <div className={s.page}>
-        {/* Stripe connection banners */}
         {justConnected && (
           <div className={s.banner} role="status">
             <CheckIcon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -109,106 +118,59 @@ export function DashboardView({
         {stripeError && (
           <div className={`${s.banner} ${s.bannerError}`} role="alert">
             <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
-            {STRIPE_ERROR_MESSAGES[stripeError] ??
-              'Something went wrong with Stripe. Please try again.'}
+            {STRIPE_ERROR_MESSAGES[stripeError] ?? 'Something went wrong with Stripe. Please try again.'}
           </div>
         )}
 
-        {/* ── Zone A: Header line ──────────────────────────────────── */}
-        <header className={s.header}>
-          <div className={s.greeting}>
-            <h1 className={s.greetingText}>
-              Good {timeOfDay}, {greetingName}.
-            </h1>
-            {businessName && <p className={s.workspaceName}>{businessName}</p>}
-          </div>
-
-          {stripeConnection ? (
+        {/* ── Masthead: eyebrow + connection chip ─────────────────────── */}
+        <header className={s.top}>
+          <span className={s.eyebrow}>Dashboard</span>
+          {hasStripe ? (
             <span className={`${s.chip} ${s.chipConnected}`}>
               <span className={s.chipDot} aria-hidden="true" />
-              Stripe connected{stripeConnection.livemode ? '' : ' (test)'}
-              {stripeAccountLabel ? ` · ${stripeAccountLabel}` : ''}
+              Stripe connected{stripeConnection!.livemode ? '' : ' (test)'}
+              {`  ·  ${formatStripeAccountId(stripeConnection!.processor_account_id)}`}
             </span>
           ) : (
-            <a href="/api/stripe/connect/start" className={s.chip}>
+            <a href="/api/stripe/connect/start" className={`${s.chip} ${s.chipGhost}`}>
+              <span className={s.chipDot} aria-hidden="true" />
               Connect Stripe
             </a>
           )}
         </header>
 
-        {/* ── No-Stripe activation: value-forward, not a blank page ── */}
-        {!stripeConnection && <ConnectStripePanel context="dashboard" />}
-
-        {/* ── Connected: tiles + queue + guidance ──────────────────── */}
-        {stripeConnection && (
+        {!hasStripe ? (
+          <NotConnected s={s} />
+        ) : (
           <>
-        {/* ── Zone B: Status tiles ─────────────────────────────────── */}
-        <div className={s.tiles}>
-          {/* Tile 1: Account health */}
-          <div className={s.tile}>
-            <p className={s.tileLabel}>Account health</p>
-            <AccountHealthContent
-              band={healthBand}
-              ratio={vampRatio}
-              meterPct={meterPct}
+            {/* ── Standing sentence ─────────────────────────────────── */}
+            <p className={s.stand}>{standing}</p>
+
+            {/* ── Ledger line ───────────────────────────────────────── */}
+            <Ledger
               s={s}
+              collapsed={openDisputes.length === 1}
+              exposure={exposure}
+              recovered={recovered}
+              healthBand={healthBand}
+              healthConfident={healthConfident}
+              vampRatio={vampRatio}
+              meterPct={meterPct}
             />
-          </div>
 
-          {/* Tile 2: Open disputes */}
-          <a href="/dashboard/disputes?filter=needs-action" className={s.tile}>
-            <p className={s.tileLabel}>Open disputes</p>
-            <p className={s.tileFigure}>{openDisputes.length}</p>
-            <p className={s.tileSub}>
-              {needsActionDisputes.length === 0
-                ? 'None need action'
-                : `${needsActionDisputes.length} need${needsActionDisputes.length === 1 ? 's' : ''} action`}
-            </p>
-          </a>
+            {/* ── The record (docket / single case / empty) ─────────── */}
+            <RecordSection
+              s={s}
+              openDisputes={openDisputes}
+              proofByDispute={proofByDispute}
+              hasFiledBefore={recovered.count > 0 || disputes.length > openDisputes.length}
+            />
 
-          {/* Tile 3: Next deadline */}
-          {nextDeadlineDispute ? (
-            <a href={`/dashboard/disputes/${nextDeadlineDispute.id}`} className={s.tile}>
-              <p className={s.tileLabel}>Next deadline</p>
-              <DeadlineContent dispute={nextDeadlineDispute} s={s} />
-            </a>
-          ) : (
-            <div className={s.tile}>
-              <p className={s.tileLabel}>Next deadline</p>
-              <p className={`${s.tileFigure} ${s.tileSub}`} style={{ fontSize: '14px', marginTop: '8px' }}>
-                No open disputes
-              </p>
-            </div>
-          )}
-        </div>
+            {/* ── Prevention lane (early fraud warnings) ────────────── */}
+            <PreventLane s={s} alerts={actionableEfw} hasOpen={openDisputes.length > 0} />
 
-        {/* ── Zone C: Disputes queue ───────────────────────────────── */}
-        <section className={s.queueSection}>
-          <div className={s.queueHeader}>
-            <h2 className={s.queueTitle}>Disputes</h2>
-            <a href="/dashboard/disputes" className={s.viewAllLink}>
-              View all disputes
-            </a>
-          </div>
-
-          <DisputeQueue disputes={disputes} efwAlerts={efwAlerts} s={s} />
-        </section>
-
-        {/* ── Zone D: Guidance band ────────────────────────────────── */}
-        <section className={s.guidance}>
-          <h2 className={s.guidanceTitle}>What Verdact is watching</h2>
-          <div className={s.insights}>
-            {insights.map((insight, i) => (
-              <div key={i} className={s.insightCard}>
-                <p className={s.insightText}>{insight.text}</p>
-                <p className={s.insightAction}>{insight.action}</p>
-              </div>
-            ))}
-          </div>
-          <p className={s.guidanceFoot}>
-            Based on your own data. Verdact advises, you decide. No guarantees.
-          </p>
-        </section>
+            {/* ── Guidance band (Layer 1) + primers (Layer 4) ───────── */}
+            <GuidanceBand s={s} band={guidance.band} primers={guidance.primers} />
           </>
         )}
       </div>
@@ -216,296 +178,487 @@ export function DashboardView({
   );
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── Ledger ───────────────────────────────────────────────────────────────────
 
-type CssModuleStyles = Record<string, string>;
+type AmountSummary = { display: string; count: number; sub: string };
 
-function AccountHealthContent({
-  band,
-  ratio,
-  meterPct,
+function Ledger({
   s,
+  collapsed,
+  exposure,
+  recovered,
+  healthBand,
+  healthConfident,
+  vampRatio,
+  meterPct,
 }: {
-  band: 'healthy' | 'close' | 'at-risk' | 'unknown';
-  ratio: number | null;
-  meterPct: number;
   s: CssModuleStyles;
+  collapsed: boolean;
+  exposure: AmountSummary;
+  recovered: AmountSummary;
+  healthBand: HealthBand;
+  healthConfident: boolean;
+  vampRatio: number | null;
+  meterPct: number;
 }) {
-  if (band === 'unknown') {
-    return (
-      <>
-        <p className={s.tileFigure} style={{ fontSize: '22px' }}>
-          Low volume
-        </p>
-        <p className={s.tileSub}>Not enough data for a read</p>
-      </>
-    );
-  }
-
-  const pctLabel = ratio !== null ? `${(ratio * 100).toFixed(2)}%` : '—';
-  const dotClass =
-    band === 'healthy'
-      ? s.statusDotHealthy
-      : band === 'close'
-        ? s.statusDotClose
-        : s.statusDotAtRisk;
-  const labelClass =
-    band === 'healthy'
-      ? s.statusLabelHealthy
-      : band === 'close'
-        ? s.statusLabelClose
-        : s.statusLabelAtRisk;
-  const label =
-    band === 'healthy' ? 'Healthy' : band === 'close' ? 'Getting close' : 'At risk';
-  const fillClass =
-    band === 'healthy'
-      ? ''
-      : band === 'close'
-        ? s.meterFillClose
-        : s.meterFillAtRisk;
-
   return (
-    <>
-      <p className={s.tileFigure}>{pctLabel}</p>
-      <div
-        className={s.tileStatusRow}
-        role="img"
-        aria-label={`Account health: ${label}. Dispute rate ${pctLabel} vs Stripe's 0.75% threshold.`}
-      >
-        <span className={`${s.statusDot} ${dotClass}`} aria-hidden="true" />
-        <span className={`${s.statusLabel} ${labelClass}`}>{label}</span>
+    <div className={`${s.ledger} ${collapsed ? s.ledgerCollapsed : ''}`}>
+      <div className={s.lcell}>
+        <div className={s.lEyebrow}>Open exposure</div>
+        <div className={`${s.fig} ${s.num}`}>{exposure.display}</div>
+        <div className={s.sub}>watching · {exposure.sub}</div>
       </div>
-      <div className={s.meterBar} aria-hidden="true">
-        <div
-          className={`${s.meterFill} ${fillClass}`}
-          style={{ width: `${meterPct}%` }}
+      {!collapsed && (
+        <div className={s.lcell}>
+          <div className={s.lEyebrow}>Recovered to date</div>
+          <div className={`${s.fig} ${s.figRecovered} ${s.num}`}>{recovered.display}</div>
+          <div className={s.sub}>lifetime · {recovered.sub}</div>
+        </div>
+      )}
+      <div className={s.lcell}>
+        <LedgerHealthCell
+          s={s}
+          band={healthBand}
+          confident={healthConfident}
+          vampRatio={vampRatio}
+          meterPct={meterPct}
         />
       </div>
-      <p className={s.tileSub}>vs Stripe's 0.75% line</p>
-    </>
+    </div>
   );
 }
 
-function DeadlineContent({
-  dispute,
+function LedgerHealthCell({
   s,
+  band,
+  confident,
+  vampRatio,
+  meterPct,
 }: {
-  dispute: Dispute;
   s: CssModuleStyles;
+  band: HealthBand;
+  confident: boolean;
+  vampRatio: number | null;
+  meterPct: number;
 }) {
-  if (!dispute.due_by) {
-    return <p className={s.tileSub}>No deadline set</p>;
+  // Honesty gate: no number/band until the snapshot is a confident read.
+  if (!confident || band === 'unknown' || vampRatio === null) {
+    return (
+      <div className={s.health}>
+        <div className={s.lEyebrow}>Account health</div>
+        <div className={s.healthCalibrating}>Calibrating</div>
+        <div className={s.sub}>Too early to score — not enough settled volume yet.</div>
+      </div>
+    );
   }
-  const days = daysUntil(dispute.due_by);
-  const label = deadlineLabel(days);
-  const isUrgent = days <= 3;
+
+  const pctLabel = `${(vampRatio * 100).toFixed(2)}%`;
+  const label = band === 'healthy' ? 'Healthy' : band === 'close' ? 'Getting close' : 'At risk';
+  const linePct = Math.min((STRIPE_LINE_FRACTION / GAUGE_MAX_FRACTION) * 100, 100);
+  const fillClass =
+    band === 'healthy' ? s.meterFill : `${s.meterFill} ${s.meterFillGap}`;
+  const hrowClass = band === 'healthy' ? s.hrow : `${s.hrow} ${s.hrowGap}`;
 
   return (
-    <>
-      <p className={`${s.tileFigure} ${isUrgent ? s.tileFigureUrgent : ''}`}>{label}</p>
-      <p className={s.tileSub}>
-        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
-        {dispute.reason ? ` · ${dispute.reason}` : ''}
-      </p>
-    </>
+    <div className={s.health}>
+      <div className={s.lEyebrow}>Account health</div>
+      <div
+        className={s.meter}
+        role="img"
+        aria-label={`Account health: ${label}. Dispute rate ${pctLabel} vs Stripe's 0.75% line.`}
+      >
+        <div className={fillClass} style={{ width: `${meterPct}%` }} />
+        <div className={s.meterLine} style={{ left: `${linePct}%` }} />
+      </div>
+      <div className={hrowClass}>
+        <span className={band === 'healthy' ? s.tick : s.tickGap} aria-hidden="true" />
+        {label} · <span className={s.num}>{pctLabel}</span>
+      </div>
+      <div className={s.sub}>room to Stripe&rsquo;s 0.75% line</div>
+    </div>
   );
 }
 
-function DisputeQueue({
-  disputes,
-  efwAlerts,
+// ── The record ───────────────────────────────────────────────────────────────
+
+function RecordSection({
   s,
+  openDisputes,
+  proofByDispute,
+  hasFiledBefore,
 }: {
-  disputes: Dispute[];
-  efwAlerts: EfwAlert[];
   s: CssModuleStyles;
+  openDisputes: Dispute[];
+  proofByDispute: Record<string, string[]>;
+  hasFiledBefore: boolean;
 }) {
-  const activeDisputes = disputes
-    .filter((d) => OPEN_STATUSES.has(d.status))
-    .sort((a, b) => {
-      if (!a.due_by && !b.due_by) return 0;
-      if (!a.due_by) return 1;
-      if (!b.due_by) return -1;
-      return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
-    });
+  // Collapse: exactly one open case → a single calm case-record (panic mode).
+  if (openDisputes.length === 1) {
+    return <SingleCase s={s} dispute={openDisputes[0]} proof={proofByDispute[openDisputes[0].id] ?? []} />;
+  }
 
-  // Marcus simplification: exactly one active dispute → action card
-  if (activeDisputes.length === 1) {
-    const d = activeDisputes[0];
-    const days = d.due_by ? daysUntil(d.due_by) : null;
-    const deadlineCopy = days !== null ? deadlineLabel(days) : null;
-
+  if (openDisputes.length === 0) {
     return (
-      <div className={s.actionCard}>
-        <div>
-          <p className={s.actionCardLabel}>Action needed</p>
-          <p className={s.actionCardTitle}>{d.reason ?? 'Dispute'}</p>
-          <p className={s.actionCardMeta}>
-            {d.amount != null ? formatAmount(d.amount, d.currency) : '—'}
-            {deadlineCopy ? ` · ${deadlineCopy}` : ''}
+      <section>
+        <div className={s.sec}>
+          <span className={s.eyebrow}>The record</span>
+        </div>
+        <div className={s.well}>
+          <p className={s.wellTitle}>Watching your Stripe account.</p>
+          <p>
+            {hasFiledBefore
+              ? 'No open disputes right now. New disputes and early fraud warnings appear here the moment they land.'
+              : 'New disputes and early fraud warnings will appear here the moment they land.'}
           </p>
         </div>
-        <a href={`/dashboard/disputes/${d.id}`} className={s.actionCardBtn}>
-          Build your response
-        </a>
-      </div>
-    );
-  }
-
-  // Empty state (Stripe connected, no open disputes)
-  if (activeDisputes.length === 0 && efwAlerts.length === 0) {
-    return (
-      <div className={s.queueEmpty}>
-        <p className={s.queueEmptyTitle}>
-          {disputes.length === 0
-            ? "You're set up. Nothing needs you yet."
-            : 'No open disputes right now.'}
-        </p>
-        <p className={s.queueEmptyText}>
-          Verdact is watching your account health and will surface new disputes as they arrive.
-        </p>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className={s.disputeList}>
-      {activeDisputes.map((d) => {
-        const days = d.due_by ? daysUntil(d.due_by) : null;
-        const isUrgent = days !== null && days <= 3;
-        const actionLabel =
-          d.status === 'needs_response'
-            ? 'Build response'
-            : d.status === 'under_review'
-              ? 'Review'
-              : 'View';
+    <section>
+      <div className={s.sec}>
+        <span className={s.eyebrow}>The record</span>
+        <span className={s.secRight}>
+          <span className={s.sort}>Deadline × readiness</span>
+          <a href="/dashboard/disputes" className={s.vlink}>
+            View all
+          </a>
+        </span>
+      </div>
+      {openDisputes.map((d, i) => (
+        <DocketRow
+          key={d.id}
+          s={s}
+          dispute={d}
+          proof={proofByDispute[d.id] ?? []}
+          primary={i === 0}
+        />
+      ))}
+    </section>
+  );
+}
 
-        return (
-          <div key={d.id} className={s.disputeRow}>
-            <div className={s.disputeRowStatus}>
-              <span
-                className={`${s.statusDot} ${s.statusDotNeutral}`}
-                aria-hidden="true"
-              />
-              <span className={s.disputeRowStatusLabel}>
-                {statusLabel(d.status)}
-              </span>
-            </div>
+function DocketRow({
+  s,
+  dispute,
+  proof,
+  primary,
+}: {
+  s: CssModuleStyles;
+  dispute: Dispute;
+  proof: string[];
+  primary: boolean;
+}) {
+  const days = dispute.due_by ? daysUntil(dispute.due_by) : null;
+  const urgent = days !== null && days <= URGENT_DAYS;
+  const actionLabel =
+    dispute.status === 'needs_response'
+      ? 'Build response'
+      : dispute.status === 'under_review'
+        ? 'Review'
+        : 'View';
 
-            <div className={s.disputeRowInfo}>
-              <span className={s.disputeRowReason}>{d.reason ?? 'Dispute'}</span>
-              <span className={s.disputeRowId}>
-                {d.processor_charge_id ? truncateChargeId(d.processor_charge_id) : '—'}
-              </span>
-            </div>
-
-            <span className={s.disputeRowAmount}>
-              {d.amount != null ? formatAmount(d.amount, d.currency) : '—'}
-            </span>
-
-            <span
-              className={`${s.disputeRowDeadline} ${isUrgent ? s.disputeRowDeadlineUrgent : ''}`}
-            >
-              {days !== null ? deadlineLabel(days) : '—'}
-            </span>
-
-            <a
-              href={`/dashboard/disputes/${d.id}`}
-              className={s.disputeRowAction}
-            >
-              {actionLabel}
-            </a>
-          </div>
-        );
-      })}
-
-      {efwAlerts.map((efw) => (
-        <div key={efw.id} className={`${s.disputeRow} ${s.efwRow}`}>
-          <span className={s.efwRowLabel}>EFW</span>
-          <div className={s.disputeRowInfo}>
-            <span className={s.disputeRowReason}>{efw.fraud_type ?? 'Early fraud warning'}</span>
-            <span className={s.disputeRowId}>{efw.processor_charge_id ? truncateChargeId(efw.processor_charge_id) : '—'}</span>
-          </div>
-          <span />
-          <span className={s.disputeRowDeadline} />
-          <span
-            className={s.disputeRowStatusLabel}
-            style={{ fontSize: '12px', color: 'var(--ink-3)' }}
-          >
-            {efw.merchant_decision === 'pending' ? 'Pending review' : efw.merchant_decision}
-          </span>
+  return (
+    <div className={s.row}>
+      <div>
+        <div className={s.rReason}>
+          <span className={s.sdot} aria-hidden="true" />
+          {dispute.reason ?? 'Dispute'}
         </div>
+        <div className={`${s.rMeta} ${s.num}`}>
+          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : '—'} ·{' '}
+          {statusLabel(dispute.status)}
+        </div>
+        <ProofRow s={s} proof={proof} />
+      </div>
+      <div className={s.rRight}>
+        <div className={`${s.amt} ${s.num}`}>
+          {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+        </div>
+        {days !== null && (
+          <div className={`${s.dead} ${urgent ? s.deadUrgent : ''} ${s.num}`}>{deadlineLabel(days)}</div>
+        )}
+        <a
+          href={`/dashboard/disputes/${dispute.id}`}
+          className={primary ? `${s.btn} ${s.btnSolid}` : `${s.btn} ${s.btnGhost}`}
+        >
+          {actionLabel}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function SingleCase({
+  s,
+  dispute,
+  proof,
+}: {
+  s: CssModuleStyles;
+  dispute: Dispute;
+  proof: string[];
+}) {
+  const days = dispute.due_by ? daysUntil(dispute.due_by) : null;
+  const urgent = days !== null && days <= URGENT_DAYS;
+  return (
+    <section>
+      <div className={s.sec}>
+        <span className={s.eyebrow}>The case that needs you</span>
+      </div>
+      <div className={s.caserec}>
+        <div>
+          <div className={s.caseLabel}>Action needed</div>
+          <h3 className={s.caseTitle}>{dispute.reason ?? 'Dispute'}</h3>
+          <div className={`${s.caseMeta} ${s.num}`}>
+            {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+            {dispute.processor_charge_id ? ` · ${truncateChargeId(dispute.processor_charge_id)}` : ''}
+          </div>
+          <ProofRow s={s} proof={proof} />
+        </div>
+        <div className={s.caseRight}>
+          {days !== null && (
+            <div className={`${s.dead} ${urgent ? s.deadUrgent : ''} ${s.num}`}>{deadlineLabel(days)}</div>
+          )}
+          <a href={`/dashboard/disputes/${dispute.id}`} className={`${s.btn} ${s.btnSolid} ${s.btnBig}`}>
+            Build your response
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProofRow({ s, proof }: { s: CssModuleStyles; proof: string[] }) {
+  if (proof.length === 0) {
+    return <div className={s.proof}><span className={s.proofNone}>Proof not added yet</span></div>;
+  }
+  return (
+    <div className={s.proof}>
+      {proof.map((p) => (
+        <span key={p} className={s.proofOk}>
+          {p}
+        </span>
       ))}
     </div>
   );
 }
 
-// ── Guidance insight builder ─────────────────────────────────────────────────
+// ── Prevention lane ──────────────────────────────────────────────────────────
 
-type Insight = { text: string; action: string };
-
-function buildInsights({
-  needsActionCount,
-  healthBand,
-  efwAlerts,
-  hasStripe,
+function PreventLane({
+  s,
+  alerts,
+  hasOpen,
 }: {
-  needsActionCount: number;
-  healthBand: 'healthy' | 'close' | 'at-risk' | 'unknown';
-  efwAlerts: EfwAlert[];
-  hasStripe: boolean;
-}): Insight[] {
-  const list: Insight[] = [];
-
-  if (!hasStripe) {
-    list.push({
-      text: 'Connect Stripe to start seeing disputes and account health data.',
-      action: 'Connect Stripe in settings',
-    });
+  s: CssModuleStyles;
+  alerts: EfwAlert[];
+  hasOpen: boolean;
+}) {
+  if (alerts.length === 0) {
+    // Only show the calm "nothing to prevent" line on the otherwise-empty surface.
+    if (hasOpen) return null;
+    return (
+      <div className={s.prevent}>
+        <span className={s.preventLabel}>Prevent</span>
+        <span className={s.preventText}>
+          No early fraud warnings right now. This is where you can stop a dispute before it counts.
+        </span>
+      </div>
+    );
   }
 
-  if (needsActionCount > 0) {
-    list.push({
-      text: `${needsActionCount} dispute${needsActionCount === 1 ? '' : 's'} need${needsActionCount === 1 ? 's' : ''} a response. Review the proof checklist before you write.`,
-      action: 'Open the nearest deadline',
-    });
-  }
-
-  if (healthBand === 'close' || healthBand === 'at-risk') {
-    list.push({
-      text:
-        healthBand === 'at-risk'
-          ? "Your dispute rate is above Stripe's 0.75% threshold. Act on the nearest deadlines first."
-          : "Your dispute rate is approaching Stripe's 0.75% threshold. Fighting the strongest cases first helps.",
-      action: 'See account health',
-    });
-  }
-
-  const actionableEfw = efwAlerts.filter(
-    (e) => e.actionable === true && e.merchant_decision === 'pending',
+  return (
+    <div className={s.prevent}>
+      <span className={s.preventLabel}>Prevent</span>
+      <span className={s.preventText}>
+        {alerts.length} early fraud warning{alerts.length === 1 ? '' : 's'}
+        {alerts[0].processor_charge_id ? ` · ${truncateChargeId(alerts[0].processor_charge_id)}` : ''}.
+        Refunding now may stop a dispute before it counts.
+      </span>
+      <a href="/dashboard/disputes" className={`${s.btn} ${s.btnGhost}`}>
+        Review
+      </a>
+    </div>
   );
-  if (actionableEfw.length > 0) {
-    list.push({
-      text: `You have ${actionableEfw.length} early fraud warning${actionableEfw.length === 1 ? '' : 's'}. Issuing a refund now may prevent a dispute from opening.`,
-      action: 'Review early fraud warnings',
-    });
+}
+
+// ── Guidance band (Layer 1) + primers (Layer 4) ──────────────────────────────
+
+function GuidanceBand({
+  s,
+  band,
+  primers,
+}: {
+  s: CssModuleStyles;
+  band: GuidanceItem[];
+  primers: GuidanceItem[];
+}) {
+  if (band.length === 0 && primers.length === 0) return null;
+  return (
+    <section className={s.guide}>
+      {band.map((item) => (
+        <p key={item.id} className={s.guideItem}>
+          <span className={s.guideStrong}>{item.text}</span>{' '}
+          {item.actionHref ? (
+            <a href={item.actionHref} className={s.guideLink}>
+              {item.action}
+            </a>
+          ) : (
+            <span className={s.guideLink}>{item.action}</span>
+          )}
+        </p>
+      ))}
+      {primers.length > 0 && (
+        <div className={s.primers}>
+          {primers.map((p) => (
+            <a key={p.id} href={p.actionHref ?? '#'} className={s.primerLink}>
+              {p.text}
+            </a>
+          ))}
+        </div>
+      )}
+      <p className={s.guideFoot}>Based on your own data. Verdact advises, you decide. No guarantees.</p>
+    </section>
+  );
+}
+
+// ── Not connected (muted preview, never empty tiles) ─────────────────────────
+
+function NotConnected({ s }: { s: CssModuleStyles }) {
+  return (
+    <>
+      <ConnectStripePanel context="dashboard" />
+      <p className={`${s.stand} ${s.standMuted}`}>
+        Once you connect, your standing and open cases appear here.
+      </p>
+      <section>
+        <div className={s.sec}>
+          <span className={s.eyebrow}>
+            The record <span className={s.sampleTag}>Sample</span>
+          </span>
+        </div>
+        <div className={`${s.row} ${s.muted}`}>
+          <div>
+            <div className={s.rReason}>
+              <span className={s.sdot} aria-hidden="true" />
+              Services not rendered
+            </div>
+            <div className={`${s.rMeta} ${s.num}`}>ch_0000…0000 · Needs response</div>
+            <div className={s.proof}>
+              <span className={s.proofOk}>Delivery</span>
+              <span className={s.proofOk}>Scope</span>
+            </div>
+          </div>
+          <div className={s.rRight}>
+            <div className={`${s.amt} ${s.num}`}>$1,800</div>
+            <div className={`${s.dead} ${s.num}`}>Due in 8 days</div>
+            <span className={`${s.btn} ${s.btnGhost}`}>Build response</span>
+          </div>
+        </div>
+        <div className={s.checklist}>
+          <div className={`${s.ci} ${s.ciFirst}`}>
+            <span className={s.ciBox} aria-hidden="true" />
+            Connect Stripe to find your disputes and account health
+          </div>
+          <div className={s.ci}>
+            <span className={s.ciBox} aria-hidden="true" />
+            Add your business profile before your first response
+          </div>
+          <div className={s.ci}>
+            <span className={s.ciBox} aria-hidden="true" />
+            Add policies when ready
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+// ── Derivation helpers ───────────────────────────────────────────────────────
+
+function buildStandingSentence({
+  healthBand,
+  healthConfident,
+  openCount,
+  nearestDays,
+}: {
+  healthBand: HealthBand;
+  healthConfident: boolean;
+  openCount: number;
+  nearestDays: number | null;
+}): string {
+  const healthClause =
+    !healthConfident || healthBand === 'unknown'
+      ? 'Your account health is still calibrating'
+      : healthBand === 'healthy'
+        ? 'Your account is healthy, with room to the line'
+        : healthBand === 'close'
+          ? "Your account is approaching Stripe's 0.75% line"
+          : "Your account is over Stripe's 0.75% line";
+
+  if (openCount === 0) {
+    return "You're set up. Nothing needs you right now — here's what Verdact is watching.";
   }
 
-  if (list.length < 2) {
-    list.push({
-      text: 'Add your refund policy and delivery confirmation now so they are ready when a dispute lands.',
-      action: 'Set up evidence sources in settings',
-    });
+  if (openCount === 1) {
+    const when =
+      nearestDays === null
+        ? 'One case needs you'
+        : nearestDays < 0
+          ? 'One case is past due and needs you now'
+          : nearestDays === 0
+            ? 'One case needs you today'
+            : nearestDays === 1
+              ? 'One case needs you by tomorrow'
+              : `One case needs you in ${nearestDays} days`;
+    return `${when}. ${healthClause}.`;
   }
 
-  if (list.length < 2) {
-    list.push({
-      text: 'Reason code 13.1 is the most common dispute type for service merchants. Your scope and delivery proof is usually strong here.',
-      action: 'View account health',
-    });
-  }
+  const nearest =
+    nearestDays === null
+      ? `${openCount} cases are open`
+      : nearestDays < 0
+        ? `${openCount} cases are open; the nearest is past due`
+        : nearestDays === 0
+          ? `${openCount} cases are open; the nearest is due today`
+          : nearestDays === 1
+            ? `${openCount} cases are open; the nearest is due tomorrow`
+            : `${openCount} cases are open; the nearest is due in ${nearestDays} days`;
+  return `${healthClause}. ${nearest}.`;
+}
 
-  return list.slice(0, 4);
+function summarizeAmount(disputes: Dispute[]): AmountSummary {
+  const count = disputes.length;
+  const caseWord = `${count} case${count === 1 ? '' : 's'}`;
+  if (count === 0) {
+    return { display: '$0', count, sub: 'none' };
+  }
+  const currencies = new Set(disputes.map((d) => (d.currency ?? 'usd').toLowerCase()));
+  if (currencies.size > 1) {
+    // Mixed currencies can't be summed honestly — show the count instead.
+    return { display: caseWord, count, sub: 'mixed currencies' };
+  }
+  const total = disputes.reduce((sum, d) => sum + (d.amount ?? 0), 0);
+  return {
+    display: formatAmount(total, disputes[0].currency),
+    count,
+    sub: caseWord,
+  };
+}
+
+function bandFor(ratio: number | null): HealthBand {
+  if (ratio === null) return 'unknown';
+  if (ratio < 0.005) return 'healthy';
+  if (ratio < STRIPE_LINE_FRACTION) return 'close';
+  return 'at-risk';
+}
+
+function byDeadlineThenCreated(a: Dispute, b: Dispute): number {
+  if (a.due_by && b.due_by) return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
+  if (a.due_by) return -1;
+  if (b.due_by) return 1;
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
 // ── Utility functions ────────────────────────────────────────────────────────
@@ -513,8 +666,7 @@ function buildInsights({
 function daysUntil(dueBy: string): number {
   const now = new Date();
   const due = new Date(dueBy);
-  const diff = due.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function deadlineLabel(days: number): string {

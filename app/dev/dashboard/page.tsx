@@ -87,10 +87,17 @@ const MOCK_EFW: EfwAlert[] = [
   },
 ];
 
+// Real proof booleans the docket rows render, keyed by dispute id.
+const MOCK_PROOF: Record<string, string[]> = {
+  dp_preview_1: ['Delivery', 'Document'],
+  dp_preview_2: ['Comms', 'Policy'],
+  dp_preview_3: [],
+};
+
 export default async function DashboardPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stripe?: string }>;
+  searchParams: Promise<{ stripe?: string; cases?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
@@ -98,15 +105,25 @@ export default async function DashboardPreviewPage({
 
   const params = await searchParams;
   const connected = params.stripe !== 'off';
+  // ?cases=one → single-case collapse · ?cases=none → connected empty state.
+  const disputes =
+    !connected || params.cases === 'none'
+      ? []
+      : params.cases === 'one'
+        ? MOCK_DISPUTES.slice(0, 1)
+        : MOCK_DISPUTES;
 
   return (
     <DashboardView
       email="founder@acmesoftware.com"
       businessName="Acme Software"
       fullName="Rishi Verma"
-      disputes={connected ? MOCK_DISPUTES : []}
-      efwAlerts={connected ? MOCK_EFW : []}
+      disputes={disputes}
+      efwAlerts={connected && params.cases !== 'one' ? MOCK_EFW : []}
       vampRatio={connected ? 0.0061 : null}
+      vampConfidence={connected ? 'high' : null}
+      profileComplete={connected}
+      proofByDispute={MOCK_PROOF}
       stripeConnection={connected ? MOCK_CONNECTION : null}
       justConnected={false}
       stripeError={null}

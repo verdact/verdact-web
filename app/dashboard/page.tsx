@@ -5,6 +5,9 @@ import {
   getLatestVampSnapshot,
   getMerchant,
   verifySession,
+  type Dispute,
+  type EfwAlert,
+  type VampSnapshot,
 } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
 import { consumeAuditBackfill } from '@/lib/audit/backfill';
@@ -50,21 +53,52 @@ export default async function DashboardPage({
     typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null;
 
   let stripeConnection: StripeConnection = null;
+  let disputes: Dispute[] = [];
+  let efwAlerts: EfwAlert[] = [];
+  let vampSnapshot: VampSnapshot | null = null;
+  let profileComplete = false;
+  let proofByDispute: Record<string, string[]> = {};
+
   if (membership) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from('processor_connections')
-      .select('id, processor_account_id, livemode, connected_at')
-      .eq('merchant_id', membership.merchant.id)
-      .eq('processor', 'stripe')
-      .eq('connection_status', 'connected')
-      .maybeSingle();
-    stripeConnection = data ?? null;
-  }
+    const merchantId = membership.merchant.id;
 
-  const [disputes, efwAlerts, vampSnapshot] = membership
-    ? await Promise.all([getDisputes(), getEfwAlerts(), getLatestVampSnapshot()])
-    : [[], [], null];
+    const [connectionResult, disputesData, efwData, snapshot, profileResult] = await Promise.all([
+      supabase
+        .from('processor_connections')
+        .select('id, processor_account_id, livemode, connected_at')
+        .eq('merchant_id', merchantId)
+        .eq('processor', 'stripe')
+        .eq('connection_status', 'connected')
+        .maybeSingle(),
+      getDisputes(),
+      getEfwAlerts(),
+      getLatestVampSnapshot(),
+      supabase
+        .from('merchant_profiles')
+        .select('product_description, delivery_method, refund_policy_text, refund_policy_url')
+        .eq('merchant_id', merchantId)
+        .maybeSingle(),
+    ]);
+
+    stripeConnection = connectionResult.data ?? null;
+    disputes = disputesData;
+    efwAlerts = efwData;
+    vampSnapshot = snapshot;
+    profileComplete = profileHasContent(profileResult.data as Record<string, unknown> | null);
+
+    // Proof-on-file pillars for the docket rows — one batched read for the open
+    // disputes, grouped by dispute. Real booleans only; never fabricated.
+    const openIds = disputes.filter((d) => OPEN_STATUSES.has(d.status)).map((d) => d.id);
+    if (openIds.length > 0) {
+      const { data: files } = await supabase
+        .from('evidence_files')
+        .select('dispute_id, purpose')
+        .eq('merchant_id', merchantId)
+        .in('dispute_id', openIds);
+      proofByDispute = groupProofByDispute((files ?? []) as ProofFileRow[]);
+    }
+  }
 
   return (
     <DashboardView
@@ -74,9 +108,44 @@ export default async function DashboardPage({
       disputes={disputes}
       efwAlerts={efwAlerts}
       vampRatio={vampSnapshot?.estimated_vamp_ratio ?? null}
+      vampConfidence={vampSnapshot?.confidence_level ?? null}
+      profileComplete={profileComplete}
+      proofByDispute={proofByDispute}
       stripeConnection={stripeConnection}
       justConnected={justConnected}
       stripeError={stripeError}
     />
   );
+}
+
+const OPEN_STATUSES = new Set(['needs_response', 'under_review']);
+
+// evidence_files.purpose → the proof pillar shown on a docket row.
+const PROOF_PILLAR_BY_PURPOSE: Record<string, string> = {
+  service_documentation: 'Delivery',
+  communication: 'Comms',
+  refund_policy: 'Policy',
+  cancellation_policy: 'Policy',
+  uncategorized: 'Document',
+};
+
+type ProofFileRow = { dispute_id: string; purpose: string };
+
+function groupProofByDispute(rows: ProofFileRow[]): Record<string, string[]> {
+  const byDispute = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const pillar = PROOF_PILLAR_BY_PURPOSE[row.purpose] ?? 'Document';
+    const set = byDispute.get(row.dispute_id) ?? new Set<string>();
+    set.add(pillar);
+    byDispute.set(row.dispute_id, set);
+  }
+  return Object.fromEntries([...byDispute].map(([id, set]) => [id, [...set]]));
+}
+
+// A profile "exists" only if it carries the context the evidence record leans on;
+// an empty row from another flow should still read as incomplete.
+function profileHasContent(profile: Record<string, unknown> | null | undefined): boolean {
+  if (!profile) return false;
+  const fields = ['product_description', 'delivery_method', 'refund_policy_text', 'refund_policy_url'];
+  return fields.some((f) => typeof profile[f] === 'string' && (profile[f] as string).trim().length > 0);
 }
