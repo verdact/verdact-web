@@ -43,12 +43,22 @@ export default async function SignupPage() {
           </p>
         </div>
 
-        <p className="auth-trust auth-rise" style={{ '--i': 2 } as React.CSSProperties}>
+        <p
+          className="auth-sub auth-rise"
+          style={{ '--i': 2, marginTop: 'var(--space-6)' } as React.CSSProperties}
+        >
+          Not ready to wait? Run a free, no-login{' '}
+          <a className="underline hover:text-ink" href="/audit">
+            dispute audit
+          </a>{' '}
+          and see which of your recent Stripe disputes are worth fighting.
+        </p>
+
+        <p className="auth-trust auth-rise" style={{ '--i': 3 } as React.CSSProperties}>
           Already have a workspace?{' '}
           <a className="underline hover:text-ink" href="/login">
             Sign in
           </a>
-          .
         </p>
       </div>
     </AuthFrame>
