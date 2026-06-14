@@ -17,7 +17,12 @@ function validatePassword(value: string): string | undefined {
   return undefined;
 }
 
-export function SignupForm() {
+interface SignupFormProps {
+  // Prefilled email when arriving from the public /audit funnel (?email=…).
+  initialEmail?: string;
+}
+
+export function SignupForm({ initialEmail }: SignupFormProps = {}) {
   const [state, formAction, pending] = useActionState(signupAction, initialState);
   const [emailErr, setEmailErr] = useState<string | undefined>(undefined);
   const [emailSugg, setEmailSugg] = useState<string | undefined>(undefined);
@@ -63,7 +68,7 @@ export function SignupForm() {
             name="email"
             type="email"
             autoComplete="email"
-            defaultValue={state?.email ?? ''}
+            defaultValue={state?.email ?? initialEmail ?? ''}
             placeholder="founder@company.com"
             required
             aria-invalid={emailErr ? true : undefined}

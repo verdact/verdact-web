@@ -103,8 +103,8 @@ const CHECKS: string[] = [
 
 const CLAUSES: { main: string; sub: string }[] = [
   {
-    main: 'By default, nothing is filed without your explicit approval of that specific response.',
-    sub: 'Auto-submit is off by default. If you ever turn it on, you can pause it any time.',
+    main: 'Nothing goes out without you, and we never take a cut of what you recover.',
+    sub: 'Auto-submit is off by default. Every filing waits for your explicit approval of that specific response, and if you ever turn auto-submit on you can pause it any time.',
   },
   {
     main: "Stripe connects through Stripe's own authorization flow.",
@@ -268,20 +268,21 @@ export function HomepageClient() {
               <div className={styles.heroCopy}>
                 <p className="eyebrow">For service businesses on Stripe</p>
                 <h1 id="hero-h" className={styles.heroHeadline}>
-                  Fight chargebacks for services you already{' '}
+                  Win the Stripe disputes everyone else marks{' '}
                   <span className={`${styles.key} ${keyGo ? 'go' : ''}`}>
-                    delivered.
+                    unwinnable.
                     <em className={styles.gapfill} aria-hidden="true" />
                   </span>
                 </h1>
                 <p className={styles.lede}>
-                  Verdact reads your Stripe dispute: the amount, the reason, the deadline.
-                  It organizes your evidence and flags what is missing while there is still
-                  time to fix it. Nothing is filed without your approval.
+                  Services-not-rendered and cancelled-subscription chargebacks are the hardest
+                  to fight, because the proof lives in your email and delivery logs, not in Stripe.
+                  Verdact turns that evidence into a structured, bank-ready argument. Nothing is
+                  filed without your approval.
                 </p>
                 <div className={styles.heroCtas}>
                   <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>
-                    Fight a service chargeback
+                    Connect Stripe, see your winnable cases
                   </Link>
                   <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>
                     See how it works
@@ -402,12 +403,13 @@ export function HomepageClient() {
           <div className="wrap">
             <div className={`${styles.centerHead} rv`}>
               <p className="eyebrow">What the bank actually weighs</p>
-              <h2 id="mapped-h">One dispute, mapped to the proof you have</h2>
+              <h2 id="mapped-h">The proof Stripe can&rsquo;t see, made into an argument</h2>
               <p className={styles.lede}>
                 For a service dispute, the bank is not looking for a shipping label.
                 It is looking for proof that you scoped the work, delivered it, and got
-                the client&rsquo;s acceptance. The same $2,400 dispute from the top of the
-                page, every item mapped to its source.
+                the client&rsquo;s acceptance. That evidence lives in your email, delivery
+                logs, and account, where Stripe-native tools cannot reach it. The same $2,400
+                dispute from the top of the page, every item mapped to its source.
               </p>
             </div>
             <div className={styles.mapped} ref={setContainer(1)}>
@@ -604,7 +606,7 @@ export function HomepageClient() {
           <div className="wrap">
             <div className={`${styles.secHead} rv`}>
               <p className="eyebrow">Control and security</p>
-              <h2 id="control-h">You stay in control</h2>
+              <h2 id="control-h">Nothing goes out without you</h2>
             </div>
             <div className={styles.clauses} ref={setContainer(4)}>
               {CLAUSES.map((c, i) => (

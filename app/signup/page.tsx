@@ -17,8 +17,12 @@ const PREVIEW_ROWS = [
 ];
 
 type SignupPageProps = {
-  searchParams: Promise<{ intent?: string }>;
+  searchParams: Promise<{ intent?: string; from?: string; email?: string }>;
 };
+
+function isPlausibleEmail(value: string | undefined): value is string {
+  return typeof value === 'string' && /^\S+@\S+\.\S+$/.test(value) && value.length <= 254;
+}
 
 export default async function SignupPage({ searchParams }: SignupPageProps) {
   const user = await getUser();
@@ -26,33 +30,44 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
     redirect('/dashboard');
   }
 
-  const { intent } = await searchParams;
+  const { intent, from, email } = await searchParams;
   const fightDispute = intent === 'fight-dispute';
+  const fromAudit = from === 'audit';
+  // Only trust the email enough to prefill the field; signup still validates it.
+  const auditEmail = fromAudit && isPlausibleEmail(email) ? email : undefined;
 
   return (
     <AuthFrame>
       <div className="auth-split">
         <div className="auth-promise auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
-          <p className="eyebrow auth-eyebrow-row">{fightDispute ? 'Fight this dispute' : 'New workspace'}</p>
+          <p className="eyebrow auth-eyebrow-row">
+            {fromAudit ? 'Keep your audit' : fightDispute ? 'Fight this dispute' : 'New workspace'}
+          </p>
           <h1 className="auth-h1">
-            {fightDispute
+            {fromAudit
+              ? <>Carry your audit into a workspace<span className="auth-dot">.</span></>
+              : fightDispute
               ? <>Build your evidence<span className="auth-dot">.</span></>
               : <>Create your evidence workspace<span className="auth-dot">.</span></>}
           </h1>
           <p className="auth-sub">
-            {fightDispute
+            {fromAudit
+              ? 'We pre-load the disputes from your audit as your starting history, so account health and your evidence records open with real context.'
+              : fightDispute
               ? 'Verdact reads the dispute, organizes your evidence, and flags what\'s missing before the deadline.'
               : 'Build source-traced dispute evidence, check account risk, and review the response before anything is submitted to Stripe.'}
           </p>
           <p className="auth-micro">
-            {fightDispute
+            {fromAudit
+              ? 'Use the same email from your audit so we attach it automatically. You build and view your evidence record for free, and nothing is filed without your approval.'
+              : fightDispute
               ? 'Create your workspace first. Connect Stripe after signup so Verdact can read the dispute details.'
               : 'You can create the workspace before connecting Stripe. Stripe is needed before Verdact can read disputes or account-risk data.'}
           </p>
         </div>
 
         <div className="auth-card auth-rise" style={{ '--i': 1 } as React.CSSProperties}>
-          <SignupForm />
+          <SignupForm initialEmail={auditEmail} />
           <p className="auth-trust">
             <CheckIcon />
             Nothing is filed without your review and authorization.

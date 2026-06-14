@@ -7,6 +7,7 @@ import {
   verifySession,
 } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
+import { consumeAuditBackfill } from '@/lib/audit/backfill';
 import { DashboardView, type StripeConnection } from './dashboard-view';
 
 export const metadata = {
@@ -35,6 +36,15 @@ export default async function DashboardPage({
   }
 
   const membership = await getMerchant();
+
+  // Audit-funnel backfill: if this merchant arrived from the public /audit
+  // funnel, their pre-signup audit data (keyed by email) is linked to the
+  // workspace as historical context. Idempotent + absence-safe — already-linked
+  // or missing leads are a no-op, and any failure never blocks the render.
+  if (membership) {
+    await consumeAuditBackfill(membership.merchant.id, user.email);
+  }
+
   const businessName = membership?.merchant?.business_name?.trim() || null;
   const fullName =
     typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null;

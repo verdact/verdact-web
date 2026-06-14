@@ -219,11 +219,29 @@
     --gap-tint: #2C1208;
     --gap-2: var(--gap-tint);
 
-    --panel-2: var(--paper-2);
-    --panel-3: #2A3430;
-    --rule: var(--hairline);
-    --rule-strong: #344039;
-    --mark: #2A2808;
+    /* Derived aliases must be re-declared in this scope. A var() reference is
+       resolved where its OWNING declaration is cascaded, not where it is read.
+       These aliases are declared in :root, so without re-declaring them here
+       they keep resolving against :root's LIGHT --verdict-tint / --gap-tint /
+       etc. — producing bright light-mode chips in dark mode (the --action-soft
+       bug). Re-declaring re-resolves them against the dark base above. */
+    --action-soft: var(--verdict-tint);
+    --action-rule: var(--mint);
+    --action-deep: var(--verdict-press);
+    --action-solid-hover: var(--verdict-press);
+    --accent-soft: var(--gap-tint);
+    --accent-deep: var(--gap-text);
+    --accent-solid-hover: var(--gap-text);
+    --trust-soft: var(--verdict-tint);
+    --trust-rule: var(--mint);
+    --trust-deep: var(--verdict-press);
+    --danger-soft: var(--gap-tint);
+    --danger-deep: var(--gap-text);
+    --app-action-hover: var(--verdict-press);
+    --app-action-tint: var(--verdict-tint);
+    --app-confirm-tint: var(--verdict-tint);
+    --app-gap-text: var(--gap-text);
+    --app-gap-tint: var(--gap-tint);
 
     --warning: #CFA828;
     --warning-soft: #231E08;
@@ -289,11 +307,26 @@ html[data-theme="dark"] .app-shell {
   --gap-tint: #2C1208;
   --gap-2: var(--gap-tint);
 
-  --panel-2: var(--paper-2);
-  --panel-3: #2A3430;
-  --rule: var(--hairline);
-  --rule-strong: #344039;
-  --mark: #2A2808;
+  /* Re-declare derived aliases in this scope so they resolve against the dark
+     base above, not :root's light values. See the matching note in the
+     prefers-color-scheme block. */
+  --action-soft: var(--verdict-tint);
+  --action-rule: var(--mint);
+  --action-deep: var(--verdict-press);
+  --action-solid-hover: var(--verdict-press);
+  --accent-soft: var(--gap-tint);
+  --accent-deep: var(--gap-text);
+  --accent-solid-hover: var(--gap-text);
+  --trust-soft: var(--verdict-tint);
+  --trust-rule: var(--mint);
+  --trust-deep: var(--verdict-press);
+  --danger-soft: var(--gap-tint);
+  --danger-deep: var(--gap-text);
+  --app-action-hover: var(--verdict-press);
+  --app-action-tint: var(--verdict-tint);
+  --app-confirm-tint: var(--verdict-tint);
+  --app-gap-text: var(--gap-text);
+  --app-gap-tint: var(--gap-tint);
 
   --warning: #CFA828;
   --warning-soft: #231E08;
