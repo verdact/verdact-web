@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import posthog, { type CaptureResult } from 'posthog-js';
 import { PostHogProvider as PHProvider } from '@posthog/react';
+import { createClient } from '@/lib/supabase/client';
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
@@ -75,6 +76,23 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       },
       before_send: sanitize,
     });
+
+    // Tie logged-in merchants to a person profile by their pseudonymous Supabase
+    // UUID — never email or name. Identify on load + sign-in; reset on sign-out
+    // so a shared browser never mixes two merchants. Anonymous visitors are
+    // never identified (person_profiles: 'identified_only').
+    const supabase = createClient();
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        posthog.identify(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        posthog.reset();
+      }
+    });
+
+    return () => {
+      authSub.subscription.unsubscribe();
+    };
   }, []);
 
   if (!POSTHOG_KEY) return <>{children}</>;
