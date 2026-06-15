@@ -211,7 +211,8 @@
 .hero .ledger {
   position: relative;
   z-index: 2;
-  margin-top: clamp(48px, 6vw, 96px);
+  /* sits a bit lower than the headline so the card straddles into the band below */
+  margin-top: clamp(72px, 7.5vw, 120px);
   margin-bottom: calc(-1 * clamp(48px, 6vw, 96px));
 }
 
@@ -1070,9 +1071,10 @@
 
 .tiers {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  max-width: 920px;
+  /* fills the wrap (no left-pinned 920px block) and gives Paid scale dominance */
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 20px;
+  align-items: start;
 }
 
 .tier {
@@ -1108,11 +1110,29 @@
 
 .tier.paid::after { box-shadow: 0 20px 48px -24px rgba(10, 92, 68, 0.45); }
 .tier.paid:hover { border-color: var(--verdict); }
-.tier.paid .tname { color: #fff; }
+.tier.paid .tname { color: #fff; font-size: 24px; }
 .tier.paid .tsub { color: var(--mint); }
 .tier.paid li { border-bottom-color: rgba(191, 227, 210, 0.22); }
 
-.tname { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+/* corner tag on the Paid (conversion) card — reframes the beta reality as the
+   reason to connect now, and signals Paid as the primary tier without shifting
+   the tier-name baseline across the two cards. */
+.tierTag {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verdict-deep);
+  background: var(--mint);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.tname { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .tsub { font-size: 14.5px; color: var(--ink-2); margin-top: 3px; }
 
 .tier ul { list-style: none; margin: 16px 0 0; padding: 0; }
@@ -1134,8 +1154,8 @@
 .tierCta { margin-top: 18px; width: 100%; }
 
 .betaLine {
-  margin-top: 20px;
-  max-width: 920px;
+  margin-top: 28px;
+  max-width: none;
   background: var(--verdict-tint);
   border-radius: 8px;
   padding: 14px 18px;
@@ -1152,31 +1172,39 @@
    Section 10 — PLAIN ANSWERS
    ==================================================================== */
 
-.answer {
-  background: var(--verdict-tint);
-  border-radius: 14px;
-  padding: 24px 26px;
-  max-width: 760px;
-}
+/* Plain answers = one "case index": a lead definition (plain prose, not a box),
+   the four dispute types as strong-anchored ruled rows, and a single tinted card
+   reserved for the key objection. One material, one measure. */
 
-.answer + .answer { margin-top: 16px; }
-.answer .q { font-weight: 700; font-size: 17px; margin-bottom: 8px; max-width: none; }
-.answer p { color: var(--ink-2); font-size: 16px; max-width: none; }
-.answer p strong { color: var(--ink); }
+.answerLead { max-width: 70ch; margin-top: 2px; }
+.answerLead p { color: var(--ink-2); font-size: 17px; line-height: 1.6; max-width: none; }
+.answerLead p strong { color: var(--ink); }
 
-.types { margin-top: 30px; border-top: 1px solid var(--hairline); max-width: 840px; }
+.types { margin-top: 36px; border-top: 1px solid var(--hairline); max-width: none; }
 
 .type {
   display: grid;
   grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
   gap: 24px;
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid var(--hairline);
   align-items: baseline;
 }
 
-.type .tn { font-weight: 600; font-size: 16px; }
-.type .td { color: var(--ink-2); font-size: 15px; max-width: none; }
+.type .tn { font-weight: 700; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+.type .td { color: var(--ink-2); font-size: 15px; max-width: none; line-height: 1.5; }
+
+/* the single tinted card — the highest-value objection */
+.answer {
+  background: var(--verdict-tint);
+  border-radius: 14px;
+  padding: 26px 28px;
+  max-width: none;
+  margin-top: 36px;
+}
+.answer .q { font-weight: 700; font-size: 18px; margin-bottom: 8px; max-width: none; }
+.answer p { color: var(--ink-2); font-size: 16px; max-width: none; line-height: 1.6; }
+.answer p strong { color: var(--ink); }
 
 @media (max-width: 680px) {
   .type { grid-template-columns: 1fr; gap: 3px; }

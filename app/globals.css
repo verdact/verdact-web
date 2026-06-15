@@ -448,7 +448,9 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* clip (not hidden) clips horizontal overflow WITHOUT creating a scroll
+     container — hidden forces overflow-y to auto and breaks the sticky header */
+  overflow-x: clip;
 }
 
 a {
@@ -458,7 +460,8 @@ a {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--space-header-height) + var(--space-4));
-  overflow-x: hidden;
+  /* clip, not hidden — keeps the sticky marketing header working (see body) */
+  overflow-x: clip;
 }
 
 section[id],
@@ -1623,6 +1626,8 @@ html.js .rv-row.in {
   grid-template-columns: 240px minmax(0, 1fr);
   grid-template-rows: 1fr;
   grid-template-areas: "rail content";
+  width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   /* Host for the dark tokens (scoped above); paints the surface so the body
      underneath never shows through on overscroll. */
@@ -1768,10 +1773,13 @@ html.js .rv-row.in {
 
 .app-content {
   grid-area: content;
+  box-sizing: border-box;
+  min-width: 0;
   min-height: 100dvh;
   background: var(--paper);
   color: var(--ink);
   outline: none;
+  overflow-x: clip;
 }
 
 /* ── Mobile top bar ───────────────────────────────────────────────────────── */
@@ -1779,6 +1787,7 @@ html.js .rv-row.in {
 .app-topbar {
   display: none;
   grid-area: topbar;
+  box-sizing: border-box;
   position: sticky;
   top: 0;
   z-index: var(--z-raised);
@@ -1811,6 +1820,7 @@ html.js .rv-row.in {
 .app-bottom-nav {
   display: none;
   grid-area: bottom-nav;
+  box-sizing: border-box;
   position: sticky;
   bottom: 0;
   z-index: var(--z-raised);
@@ -1821,16 +1831,22 @@ html.js .rv-row.in {
 }
 
 .app-bottom-nav__item {
+  min-width: 0;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 52px;
+  padding: 0 4px;
   font-size: 11px;
   font-weight: 500;
+  line-height: 1.1;
+  text-align: center;
   color: var(--ink-3);
   text-decoration: none;
   border-top: 2px solid transparent;
   transition: color 120ms, border-color 120ms;
+  overflow-wrap: anywhere;
 }
 
 .app-bottom-nav__item:hover { color: var(--ink); }
@@ -1844,6 +1860,10 @@ html.js .rv-row.in {
 
 @media (max-width: 1023px) {
   .app-shell {
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    overflow-x: hidden;
     grid-template-columns: 1fr;
     grid-template-rows: 52px minmax(0, 1fr) 56px;
     grid-template-areas:
@@ -1853,9 +1873,9 @@ html.js .rv-row.in {
   }
 
   .app-rail      { display: none; }
-  .app-topbar    { display: flex; }
-  .app-bottom-nav { display: flex; }
-  .app-content   { min-height: auto; }
+  .app-topbar    { display: flex; width: 100vw; max-width: 100vw; }
+  .app-bottom-nav { display: flex; width: 100vw; max-width: 100vw; overflow: hidden; }
+  .app-content   { width: 100vw; max-width: 100vw; min-height: auto; }
 }
 
 /* ─── THEME TOGGLE ──────────────────────────────────────────────────────────

@@ -281,8 +281,8 @@ export function HomepageClient() {
                   filed without your approval.
                 </p>
                 <div className={styles.heroCtas}>
-                  <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>
-                    Connect Stripe, see your winnable cases
+                  <Link href="/audit" className={`${styles.btn} ${styles.btnPrimary}`}>
+                    See your winnable cases, free
                   </Link>
                   <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>
                     See how it works
@@ -433,8 +433,8 @@ export function HomepageClient() {
               ))}
             </div>
             <div className={`${styles.belowTable} rv`}>
-              <Link href="/signup" className={styles.textlink}>
-                Connect Stripe and see your own dispute mapped this way, free
+              <Link href="/audit" className={styles.textlink}>
+                See your own disputes scored this way, free
               </Link>
             </div>
           </div>
@@ -533,7 +533,7 @@ export function HomepageClient() {
                 Email evidence is added by you: uploaded, pasted, or screenshotted.
                 You decide what goes in.
               </p>
-              <Link href="/signup" className={styles.textlink}>
+              <Link href="/audit" className={styles.textlink}>
                 Start at step one, free, no card required
               </Link>
             </div>
@@ -556,8 +556,8 @@ export function HomepageClient() {
                   </p>
                 </div>
                 <div className="rv">
-                  <Link href="/signup" className={styles.textlink}>
-                    Connect Stripe and see where your account stands, free
+                  <Link href="/audit" className={styles.textlink}>
+                    See where your account stands, free
                   </Link>
                   <p className={`${styles.micro} ${styles.muted}`} style={{ marginTop: 14 }}>
                     Just want a number?{' '}
@@ -640,11 +640,12 @@ export function HomepageClient() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`${styles.btn} ${styles.btnGhost} ${styles.tierCta}`}>
+                <Link href="/audit" className={`${styles.btn} ${styles.btnGhost} ${styles.tierCta}`}>
                   Get started
                 </Link>
               </div>
               <div className={`${styles.tier} ${styles.paid} rv-row`} style={iVar(1)}>
+                <p className={styles.tierTag}>Free during beta</p>
                 <p className={styles.tname}>Paid</p>
                 <p className={styles.tsub}>File it from Verdact, and never miss the next one.</p>
                 <ul>
@@ -655,7 +656,7 @@ export function HomepageClient() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`${styles.btn} ${styles.btnOndeep} ${styles.tierCta}`}>
+                <Link href="/audit" className={`${styles.btn} ${styles.btnOndeep} ${styles.tierCta}`}>
                   Start free
                 </Link>
               </div>
@@ -673,7 +674,7 @@ export function HomepageClient() {
               <p className="eyebrow">Plain answers</p>
               <h2 id="faq-h">What is a service chargeback?</h2>
             </div>
-            <aside className={`${styles.answer} rv`}>
+            <aside className={`${styles.answerLead} rv`}>
               <p>
                 A service chargeback is when a customer asks their card issuer to reverse a
                 payment for a service you already delivered, rather than a physical product.
@@ -690,7 +691,7 @@ export function HomepageClient() {
                 </div>
               ))}
             </div>
-            <aside className={`${styles.answer} rv`} style={{ marginTop: 30 }}>
+            <aside className={`${styles.answer} rv`}>
               <p className={styles.q}>Can&rsquo;t I just respond in the Stripe dashboard?</p>
               <p>
                 You can. Stripe gives you a form. Verdact gives you what the form does not:
@@ -732,7 +733,7 @@ export function HomepageClient() {
               anything is filed.
             </p>
             <div className={styles.closingCtas}>
-              <Link href="/signup" className={`${styles.btn} ${styles.btnOndeep}`}>
+              <Link href="/audit" className={`${styles.btn} ${styles.btnOndeep}`}>
                 Start your response, free
               </Link>
               <Link href="/#plans" className={`${styles.btn} ${styles.btnGhostOndeep}`}>

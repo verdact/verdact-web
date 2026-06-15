@@ -22,7 +22,7 @@ interface MarketingHeaderProps {
 
 export function MarketingHeader({
   ctaLabel = 'Start free',
-  ctaHref = '/signup',
+  ctaHref = '/audit',
 }: MarketingHeaderProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -228,6 +228,8 @@ export function MarketingHeader({
           href={ctaHref}
           style={{
             marginLeft: 'auto',
+            minHeight: 44,
+            alignItems: 'center',
             fontSize: 14,
             fontWeight: 600,
             color: 'var(--paper)',
@@ -253,6 +255,8 @@ export function MarketingHeader({
             background: 'none',
             border: 'none',
             cursor: 'pointer',
+            minWidth: 44,
+            minHeight: 44,
             padding: 8,
             color: 'var(--ink)',
             alignItems: 'center',
@@ -312,10 +316,9 @@ export function MarketingHeader({
                 top: 63,
                 right: 0,
                 bottom: 0,
-                width: 'min(320px, 100vw)',
+                width: '100vw',
                 zIndex: 'var(--z-overlay)' as string,
                 background: 'var(--paper)',
-                borderLeft: '1px solid var(--rule)',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '24px 20px',
@@ -332,7 +335,8 @@ export function MarketingHeader({
                         onClick={closeDrawer}
                         style={{
                           display: 'block',
-                          padding: '12px 4px',
+                          minHeight: 44,
+                          padding: '13px 4px',
                           fontSize: 16,
                           fontWeight: 500,
                           color: isActive(href) ? 'var(--verdict)' : 'var(--ink)',
@@ -353,6 +357,7 @@ export function MarketingHeader({
                   onClick={closeDrawer}
                   style={{
                     display: 'block',
+                    minHeight: 44,
                     padding: '11px 18px',
                     fontSize: 15,
                     fontWeight: 500,
@@ -370,6 +375,7 @@ export function MarketingHeader({
                   onClick={closeDrawer}
                   style={{
                     display: 'block',
+                    minHeight: 44,
                     padding: '12px 18px',
                     fontSize: 15,
                     fontWeight: 600,
