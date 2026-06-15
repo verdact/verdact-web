@@ -97,6 +97,7 @@ function RouteIcon({ kind }: { kind: ResolveRoute['kind'] }) {
   if (kind === 'upload') return <UploadIcon className="h-4 w-4" />;
   if (kind === 'paste') return <PasteIcon className="h-4 w-4" />;
   if (kind === 'profile') return <GearIcon className="h-4 w-4" />;
+  if (kind === 'connect') return <SlackIcon className="h-4 w-4" />;
   return <PencilIcon className="h-4 w-4" />;
 }
 
@@ -159,6 +160,14 @@ function SlashCircleIcon({ className }: { className?: string }) {
     <Glyph className={className}>
       <circle cx="12" cy="12" r="9" />
       <path d="m5.6 5.6 12.8 12.8" />
+    </Glyph>
+  );
+}
+
+function SlackIcon({ className }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <path d="M9 3a2 2 0 0 0 0 4h2V5a2 2 0 0 0-2-2zM5 13a2 2 0 1 0 0 4 2 2 0 0 0 2-2v-2H5zm6 6a2 2 0 1 0 4 0v-2h-2a2 2 0 0 0-2 2zm8-8a2 2 0 1 0 0-4h-2v2a2 2 0 0 0 2 2z" />
     </Glyph>
   );
 }

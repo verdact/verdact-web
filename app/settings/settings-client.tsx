@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from 'react';
 import { PERSONA_OPTIONS } from '@/lib/guidance';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
+import { disconnectSlackAction } from '@/lib/slack/actions';
 import { signOutAction } from '@/lib/auth/actions';
 import {
   updateBusinessAction,
@@ -420,6 +421,43 @@ export function DisconnectStripe({ accountLabel }: { accountLabel: string | null
             <form action={disconnectStripeAction}>
               <button type="submit" className={s.dialogConfirm}>
                 Disconnect Stripe
+              </button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
+}
+
+// ── Disconnect Slack (destructive confirm dialog) ────────────────────────────
+
+export function DisconnectSlack({ workspaceLabel }: { workspaceLabel: string | null }) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  return (
+    <>
+      <button type="button" className={s.linkBtn} onClick={() => ref.current?.showModal()}>
+        Disconnect
+      </button>
+
+      <dialog ref={ref} className={s.dialog} aria-labelledby="disconnect-slack-title">
+        <div className={s.dialogInner}>
+          <h2 id="disconnect-slack-title" className={s.dialogTitle}>
+            Disconnect Slack?
+          </h2>
+          <p className={s.dialogText}>
+            Verdact will forget {workspaceLabel ? `the ${workspaceLabel} workspace` : 'this workspace'}{' '}
+            and revoke its access token. Messages you already imported stay on your disputes. You can
+            reconnect any time.
+          </p>
+          <div className={s.dialogActions}>
+            <button type="button" className={s.dialogCancel} onClick={() => ref.current?.close()}>
+              Keep connected
+            </button>
+            <form action={disconnectSlackAction}>
+              <button type="submit" className={s.dialogConfirm}>
+                Disconnect Slack
               </button>
             </form>
           </div>
