@@ -10,6 +10,20 @@
 
 export { evaluateGuidance, type EvaluateOptions } from './engine';
 export { GUIDANCE_RULES } from './rules';
+export {
+  URGENT_DAYS,
+  REST_WINDOW_HOURS,
+  DISMISS_REST_DAYS,
+  computeSuppressedRuleIds,
+  ruleIdsShownOnDay,
+  type GuidanceImpression,
+} from './cadence';
+export {
+  PERSONA_IDS,
+  isPersona,
+  PERSONA_OPTIONS,
+  type PersonaOption,
+} from './persona';
 export type {
   GuidanceSignals,
   GuidanceItem,

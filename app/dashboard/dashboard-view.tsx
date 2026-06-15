@@ -1,8 +1,17 @@
 import { AppShell } from '../_components/app-chrome';
 import { ConnectStripePanel } from '../_components/connect-stripe-panel';
 import { type Dispute, type EfwAlert } from '@/lib/dal';
-import { evaluateGuidance, type GuidanceItem, type HealthBand } from '@/lib/guidance';
+import { URGENT_DAYS, type GuidanceItem, type GuidanceResult, type HealthBand } from '@/lib/guidance';
 import { AlertIcon, CheckIcon } from './dash-icons';
+import { dismissGuidanceAction } from './actions';
+import {
+  OPEN_STATUSES,
+  STRIPE_LINE_FRACTION,
+  GAUGE_MAX_FRACTION,
+  bandFor,
+  daysUntil,
+  byDeadlineThenCreated,
+} from './signals';
 import s from './dashboard.module.css';
 
 // ── Shared types ─────────────────────────────────────────────────────────────
@@ -22,13 +31,15 @@ export type DashboardViewProps = {
   efwAlerts: EfwAlert[];
   vampRatio: number | null;
   vampConfidence: 'low' | 'medium' | 'high' | null;
-  profileComplete: boolean;
   // Proof purposes on file per dispute id (e.g. ['Delivery','Policy']). Real
   // booleans from one batched evidence_files read — never fabricated.
   proofByDispute: Record<string, string[]>;
   stripeConnection: StripeConnection;
   justConnected: boolean;
   stripeError: string | null;
+  // Guidance band + primers, already evaluated (with persona + cadence) in the
+  // server wrapper. The view only renders it.
+  guidance: GuidanceResult;
 };
 
 const STRIPE_ERROR_MESSAGES: Record<string, string> = {
@@ -42,11 +53,9 @@ const STRIPE_ERROR_MESSAGES: Record<string, string> = {
   not_configured: 'Stripe Connect is not configured on this deployment.',
 };
 
-const OPEN_STATUSES = new Set(['needs_response', 'under_review']);
-// Stripe's operative dispute-rate line; gauge runs to 1.5% (the network ceiling).
-const STRIPE_LINE_FRACTION = 0.0075;
-const GAUGE_MAX_FRACTION = 0.015;
-const URGENT_DAYS = 3;
+// OPEN_STATUSES, STRIPE_LINE_FRACTION, GAUGE_MAX_FRACTION, URGENT_DAYS, bandFor,
+// daysUntil, and byDeadlineThenCreated now live in ./signals (+ lib/guidance for
+// URGENT_DAYS) so this view and page.tsx share one source of truth.
 
 type CssModuleStyles = Record<string, string>;
 
@@ -62,18 +71,17 @@ export function DashboardView({
   efwAlerts,
   vampRatio,
   vampConfidence,
-  profileComplete,
   proofByDispute,
   stripeConnection,
   justConnected,
   stripeError,
+  guidance,
 }: DashboardViewProps) {
   const hasStripe = !!stripeConnection;
 
   const openDisputes = disputes
     .filter((d) => OPEN_STATUSES.has(d.status))
     .sort(byDeadlineThenCreated);
-  const needsAction = disputes.filter((d) => d.status === 'needs_response');
   const nearestWithDeadline = openDisputes.find((d) => d.due_by) ?? null;
   const nearestDays = nearestWithDeadline?.due_by ? daysUntil(nearestWithDeadline.due_by) : null;
 
@@ -87,17 +95,6 @@ export function DashboardView({
   const actionableEfw = efwAlerts.filter(
     (e) => e.actionable === true && e.merchant_decision === 'pending',
   );
-
-  const guidance = evaluateGuidance({
-    hasStripe,
-    openDisputeCount: openDisputes.length,
-    needsActionCount: needsAction.length,
-    healthBand,
-    healthConfident,
-    actionableEfwCount: actionableEfw.length,
-    profileComplete,
-    nearestDeadlineDays: nearestDays,
-  });
 
   const standing = buildStandingSentence({
     healthBand,
@@ -498,7 +495,10 @@ function GuidanceBand({
   return (
     <section className={s.guide}>
       {band.map((item) => (
-        <p key={item.id} className={s.guideItem}>
+        // A div (not a p) so the dismiss <form> is valid flow content. Urgent
+        // tips (deadline / account-risk) never offer dismiss — they show until
+        // the underlying issue resolves.
+        <div key={item.id} className={s.guideItem}>
           <span className={s.guideStrong}>{item.text}</span>{' '}
           {item.actionHref ? (
             <a href={item.actionHref} className={s.guideLink}>
@@ -507,7 +507,14 @@ function GuidanceBand({
           ) : (
             <span className={s.guideLink}>{item.action}</span>
           )}
-        </p>
+          {!item.urgent && (
+            <form action={dismissGuidanceAction.bind(null, item.id)} className={s.guideDismissForm}>
+              <button type="submit" className={s.guideDismiss} aria-label={`Dismiss tip: ${item.text}`}>
+                Dismiss
+              </button>
+            </form>
+          )}
+        </div>
       ))}
       {primers.length > 0 && (
         <div className={s.primers}>
@@ -647,27 +654,7 @@ function summarizeAmount(disputes: Dispute[]): AmountSummary {
   };
 }
 
-function bandFor(ratio: number | null): HealthBand {
-  if (ratio === null) return 'unknown';
-  if (ratio < 0.005) return 'healthy';
-  if (ratio < STRIPE_LINE_FRACTION) return 'close';
-  return 'at-risk';
-}
-
-function byDeadlineThenCreated(a: Dispute, b: Dispute): number {
-  if (a.due_by && b.due_by) return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
-  if (a.due_by) return -1;
-  if (b.due_by) return 1;
-  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-}
-
 // ── Utility functions ────────────────────────────────────────────────────────
-
-function daysUntil(dueBy: string): number {
-  const now = new Date();
-  const due = new Date(dueBy);
-  return Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function deadlineLabel(days: number): string {
   if (days < 0) return 'Overdue';

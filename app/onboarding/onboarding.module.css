@@ -208,6 +208,52 @@
   margin: 0;
 }
 
+/* ── Persona select (skippable "about you" step) ────────────────── */
+
+.personaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.personaCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: var(--space-4);
+  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+
+.personaCard:hover {
+  border-color: var(--edge-green);
+  background: var(--verdict-tint);
+}
+
+.personaCard:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 1px;
+}
+
+.personaCard:disabled { opacity: 0.6; cursor: default; }
+
+.personaLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.personaHint {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
 /* ── Form fields ────────────────────────────────────────────────── */
 
 .field {
@@ -303,4 +349,5 @@
   .ledgerStep { padding: 6px 10px; }
   .actions { flex-direction: column; align-items: stretch; }
   .primaryBtn, .secondaryBtn { justify-content: center; }
+  .personaGrid { grid-template-columns: 1fr; }
 }

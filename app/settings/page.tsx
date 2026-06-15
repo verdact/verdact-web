@@ -14,6 +14,7 @@ type ProfileRow = {
   product_description: string | null;
   delivery_method: string | null;
   customer_type: string | null;
+  persona: string | null;
   refund_policy_text: string | null;
   refund_policy_url: string | null;
   cancellation_policy_text: string | null;
@@ -47,7 +48,7 @@ export default async function SettingsPage({
       supabase
         .from('merchant_profiles')
         .select(
-          'product_description, delivery_method, customer_type, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, tos_url, policy_disclosure_location, transaction_description_template, logs_user_activity',
+          'product_description, delivery_method, customer_type, persona, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, tos_url, policy_disclosure_location, transaction_description_template, logs_user_activity',
         )
         .eq('merchant_id', membership.merchant.id)
         .maybeSingle(),
@@ -68,6 +69,7 @@ export default async function SettingsPage({
     productDescription: profile?.product_description ?? '',
     deliveryMethod: profile?.delivery_method ?? '',
     customerType: profile?.customer_type ?? '',
+    persona: profile?.persona ?? '',
   };
 
   const policiesInitial: PoliciesInitial = {

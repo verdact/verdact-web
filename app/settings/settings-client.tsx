@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { PERSONA_OPTIONS } from '@/lib/guidance';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
 import { signOutAction } from '@/lib/auth/actions';
 import {
@@ -41,6 +42,7 @@ export type BusinessInitial = {
   productDescription: string;
   deliveryMethod: string;
   customerType: string;
+  persona: string;
 };
 
 export function BusinessForm({ initial }: { initial: BusinessInitial }) {
@@ -109,6 +111,21 @@ export function BusinessForm({ initial }: { initial: BusinessInitial }) {
             <option value="both">Both</option>
           </select>
         </div>
+      </div>
+
+      <div className={s.field}>
+        <label className={s.label} htmlFor="persona">
+          Which best describes your business?
+        </label>
+        <select id="persona" name="persona" className={s.select} defaultValue={initial.persona}>
+          <option value="">Prefer not to say</option>
+          {PERSONA_OPTIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span className={s.hint}>Tailors which tips Verdact surfaces on your dashboard.</span>
       </div>
 
       <div className={s.actions}>

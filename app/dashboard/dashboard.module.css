@@ -475,6 +475,22 @@
 
 .guideLink:hover { text-decoration: underline; }
 
+/* Dismiss: a faint inline text button after the action; only on non-urgent tips. */
+.guideDismissForm { display: inline; }
+
+.guideDismiss {
+  margin-left: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.guideDismiss:hover { color: var(--ink-2); text-decoration: underline; }
+
 .primers {
   display: flex;
   flex-wrap: wrap;

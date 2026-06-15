@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getMerchant, getUser, verifySession } from '@/lib/dal';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { PERSONA_IDS } from '@/lib/guidance';
 
 export type SettingsState =
   | {
@@ -68,12 +69,18 @@ export async function updateBusinessAction(
       if (nameError) throw nameError;
     }
 
+    // Persona is ask-only and editable here; clearing it back to null is allowed
+    // (unknown → generic guidance ranking). Setting it records 'self_select'.
+    const persona = optionalEnum(field(formData, 'persona'), PERSONA_IDS, 'business type');
+
     const { error } = await supabase.from('merchant_profiles').upsert(
       {
         merchant_id: merchantId,
         product_description: optional(field(formData, 'productDescription')),
         delivery_method: optionalEnum(field(formData, 'deliveryMethod'), DELIVERY_METHODS, 'delivery method'),
         customer_type: optionalEnum(field(formData, 'customerType'), CUSTOMER_TYPES, 'customer type'),
+        persona,
+        persona_source: persona ? 'self_select' : null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'merchant_id' },

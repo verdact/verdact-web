@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
+import { isPersona } from '@/lib/guidance';
 
 export type OnboardingState =
   | {
@@ -55,6 +56,43 @@ export async function saveOnboardingBasicsAction(
     }
 
     revalidatePath('/onboarding');
+    revalidatePath('/dashboard');
+    return { ok: true };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
+// Saves the merchant's self-selected persona (the skippable onboarding question).
+// Ask-only: there is no inference and no default — skipping leaves persona null
+// and the guidance engine ranks tips generically. Stored on merchant_profiles
+// (persona + persona_source='self_select') so server-side ranking can read it.
+export async function savePersonaAction(
+  _prev: OnboardingState,
+  formData: FormData,
+): Promise<OnboardingState> {
+  await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { error: 'Workspace not found. Sign out and back in.' };
+
+  const persona = field(formData, 'persona');
+  if (!isPersona(persona)) {
+    return { error: 'Pick one of the options, or skip this question.' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from('merchant_profiles').upsert(
+      {
+        merchant_id: membership.merchant.id,
+        persona,
+        persona_source: 'self_select',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'merchant_id' },
+    );
+    if (error) throw error;
+
     revalidatePath('/dashboard');
     return { ok: true };
   } catch (error: unknown) {

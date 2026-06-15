@@ -43,6 +43,9 @@ export interface GuidanceSignals {
   profileComplete: boolean;
   // Days to the nearest open deadline (null when none open). Negative = overdue.
   nearestDeadlineDays: number | null;
+  // Whether the merchant has a self-selected persona on file. False → the gentle
+  // "tailor your tips" re-prompt fires (persona is ask-only; never inferred).
+  personaKnown: boolean;
 }
 
 /** A rendered guidance item ready for a surface to display. */
@@ -57,6 +60,9 @@ export interface GuidanceItem {
   targetRef?: string;
   severity: GuidanceSeverity;
   weight: number;
+  // Resolved at evaluation from the rule's `urgent`. Urgent items are exempt
+  // from cadence suppression and never offer a dismiss control.
+  urgent: boolean;
 }
 
 /** What a rule's render returns (id/layer/target/weight come from the rule). */
@@ -82,6 +88,10 @@ export interface GuidanceRule {
   // Honesty gate (step 2): fire only when this merchant's condition is met.
   trigger: (signals: GuidanceSignals) => boolean;
   render: (signals: GuidanceSignals) => GuidanceRender;
+  // Deadline / account-risk urgency. true (or a predicate that returns true)
+  // marks the item urgent: it is exempt from cadence suppression and shows until
+  // the underlying issue resolves. Omitted → non-urgent (rests per cadence).
+  urgent?: boolean | ((signals: GuidanceSignals) => boolean);
   // Per-persona ranking weight multipliers. When set, the rule's effective weight
   // is `weight * (personaWeight[persona] ?? 1)` during evaluation.
   personaWeight?: Partial<Record<GuidancePersona, number>>;

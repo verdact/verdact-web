@@ -1,19 +1,22 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { PERSONA_OPTIONS } from '@/lib/guidance';
 import {
   saveOnboardingBasicsAction,
+  savePersonaAction,
   completeOnboardingAction,
   type OnboardingState,
 } from './actions';
 import s from './onboarding.module.css';
 
-type Step = 'welcome' | 'basics' | 'stripe' | 'finish';
+type Step = 'welcome' | 'persona' | 'basics' | 'stripe' | 'finish';
 
-const STEP_ORDER: Step[] = ['welcome', 'basics', 'stripe', 'finish'];
+const STEP_ORDER: Step[] = ['welcome', 'persona', 'basics', 'stripe', 'finish'];
 
 const STEP_LABELS: Record<Step, string> = {
   welcome: 'Welcome',
+  persona: 'About you',
   basics: 'Your details',
   stripe: 'Connect Stripe',
   finish: 'All set',
@@ -60,7 +63,8 @@ export function OnboardingClient({
         </ol>
 
         <section className={s.panel}>
-          {step === 'welcome' ? <WelcomeStep onNext={() => setStep('basics')} /> : null}
+          {step === 'welcome' ? <WelcomeStep onNext={() => setStep('persona')} /> : null}
+          {step === 'persona' ? <PersonaStep onNext={() => setStep('basics')} /> : null}
           {step === 'basics' ? (
             <BasicsStep
               initialFullName={initialFullName}
@@ -99,6 +103,56 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function PersonaStep({ onNext }: { onNext: () => void }) {
+  // Ask-only persona: each option is a submit button carrying its id; skipping
+  // advances without saving (persona stays null → generic guidance ranking).
+  const [state, formAction, pending] = useActionState<OnboardingState, FormData>(
+    async (prev, formData) => {
+      const result = await savePersonaAction(prev, formData);
+      if (result?.ok) onNext();
+      return result;
+    },
+    undefined,
+  );
+
+  return (
+    <form action={formAction} className={s.step}>
+      <h1 className={s.stepTitle}>Which best describes your business?</h1>
+      <p className={s.stepBody}>
+        This tailors the tips Verdact shows you. You can skip it — and change it later in Settings.
+      </p>
+
+      {state?.error ? (
+        <p className={`${s.formMsg} ${s.formMsgError}`} role="alert">
+          {state.error}
+        </p>
+      ) : null}
+
+      <div className={s.personaGrid}>
+        {PERSONA_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            type="submit"
+            name="persona"
+            value={option.id}
+            className={s.personaCard}
+            disabled={pending}
+          >
+            <span className={s.personaLabel}>{option.label}</span>
+            <span className={s.personaHint}>{option.hint}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className={s.actions}>
+        <button type="button" className={s.secondaryBtn} onClick={onNext} disabled={pending}>
+          Skip this question
+        </button>
+      </div>
+    </form>
   );
 }
 

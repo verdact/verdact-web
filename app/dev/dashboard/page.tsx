@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { DashboardView, type StripeConnection } from '../../dashboard/dashboard-view';
 import { type Dispute, type EfwAlert } from '@/lib/dal';
+import { evaluateGuidance, isPersona } from '@/lib/guidance';
+import { deriveGuidanceSignals } from '../../dashboard/signals';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEV-ONLY visual preview of the dashboard with sample data.
@@ -97,7 +99,7 @@ const MOCK_PROOF: Record<string, string[]> = {
 export default async function DashboardPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stripe?: string; cases?: string }>;
+  searchParams: Promise<{ stripe?: string; cases?: string; persona?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
@@ -112,6 +114,25 @@ export default async function DashboardPreviewPage({
       : params.cases === 'one'
         ? MOCK_DISPUTES.slice(0, 1)
         : MOCK_DISPUTES;
+  const efwAlerts = connected && params.cases !== 'one' ? MOCK_EFW : [];
+  const vampRatio = connected ? 0.0061 : null;
+  const vampConfidence: 'low' | 'medium' | 'high' | null = connected ? 'high' : null;
+
+  // ?persona=marcus|priya|david|aisha previews persona-weighted ranking; no
+  // param keeps it unknown (and shows the gentle "set your business type" primer).
+  const persona = isPersona(params.persona) ? params.persona : undefined;
+  const guidance = evaluateGuidance(
+    deriveGuidanceSignals({
+      hasStripe: connected,
+      disputes,
+      efwAlerts,
+      vampRatio,
+      vampConfidence,
+      profileComplete: connected,
+      personaKnown: persona !== undefined,
+    }),
+    { target: 'dashboard', persona },
+  );
 
   return (
     <DashboardView
@@ -119,14 +140,14 @@ export default async function DashboardPreviewPage({
       businessName="Acme Software"
       fullName="Rishi Verma"
       disputes={disputes}
-      efwAlerts={connected && params.cases !== 'one' ? MOCK_EFW : []}
-      vampRatio={connected ? 0.0061 : null}
-      vampConfidence={connected ? 'high' : null}
-      profileComplete={connected}
+      efwAlerts={efwAlerts}
+      vampRatio={vampRatio}
+      vampConfidence={vampConfidence}
       proofByDispute={MOCK_PROOF}
       stripeConnection={connected ? MOCK_CONNECTION : null}
       justConnected={false}
       stripeError={null}
+      guidance={guidance}
     />
   );
 }

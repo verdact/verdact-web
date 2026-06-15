@@ -45,6 +45,7 @@ export default async function SettingsPreviewPage({
         productDescription: 'A SaaS analytics platform billed monthly.',
         deliveryMethod: 'app',
         customerType: 'b2b',
+        persona: 'priya',
       }}
       policiesInitial={{
         refundPolicyText: 'Refunds available within 14 days of purchase.',
