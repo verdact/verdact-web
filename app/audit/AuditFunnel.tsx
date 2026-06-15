@@ -9,7 +9,7 @@ import { computeAuditScore } from '@/lib/audit/scoring';
 import type { AuditDispute, AuditScore } from '@/lib/audit/types';
 import { AuditResult } from './AuditResult';
 import { ManualDisputeRows, makeBlankRow } from './ManualEntry';
-import { track, identify } from '@/lib/analytics/track';
+import { track } from '@/lib/analytics/track';
 import styles from './audit.module.css';
 
 type Phase = 'landing' | 'entry' | 'result';
@@ -99,18 +99,13 @@ export function AuditFunnel() {
       return;
     }
 
-    // Reveal the result and capture the funnel event. Per Rishi's call this
-    // includes the merchant's email + the raw dispute rows. NOTE: audit rows are
-    // dispute metadata only — reason code, amount, date, outcome, proof flags
-    // (see AuditDispute). They carry no end-customer PII (no customer names,
-    // emails, or card data). Email identifies the merchant so the funnel ties to
-    // a known person.
+    // Reveal the result and capture a PII-free funnel event — aggregate score
+    // signals only. The email and the raw dispute rows are never sent to PostHog;
+    // they live only in Supabase `audit_leads` (the system of record).
     const reveal = (s: AuditScore, scoredBy: 'server' | 'client') => {
-      identify(email, { email });
       track('audit_result_viewed', {
         scored_by: scoredBy,
         entry_mode: mode,
-        email,
         window_days: parseInt(windowDays, 10) || 90,
         total_disputes: s.summary.totalDisputes,
         should_have_won: s.summary.shouldHaveWonCount,
@@ -120,7 +115,6 @@ export function AuditFunnel() {
           s.rate.ratioPercent == null
             ? null
             : Math.round(s.rate.ratioPercent * 100) / 100,
-        disputes: activeDisputes,
       });
       setScore(s);
       setPhase('result');
