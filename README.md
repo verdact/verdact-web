@@ -48,7 +48,23 @@ NEXTAUTH_SECRET=<random production secret>
 GOOGLE_CLIENT_ID=<Google OAuth client ID>
 GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
 REVIEWER_ACCESS_CODE=<optional reviewer gate code>
+NEXT_PUBLIC_POSTHOG_KEY=<PostHog project API key (US Cloud)>
 ```
+
+## Analytics (PostHog)
+
+PostHog is wired in via `app/_components/posthog-provider.tsx`. It is **inert until
+`NEXT_PUBLIC_POSTHOG_KEY` is set** — with no key the provider and `lib/analytics/track.ts`
+no-op, so local dev and key-less previews send nothing. To activate, set
+`NEXT_PUBLIC_POSTHOG_KEY` (US Cloud project key) on Vercel; no host var is needed because
+events are reverse-proxied through `/ingest` (see `next.config.ts` rewrites → US Cloud) to
+avoid ad-blockers.
+
+Privacy posture (Verdact handles dispute PII): session replay is **private by default**
+(`maskAllInputs` + `maskTextSelector: '*'` mask every input and all text), person profiles
+are `identified_only`, and a `before_send` guard strips autocaptured element text on
+`/dashboard|/settings|/onboarding` and query strings on auth routes. Replay records in
+production/preview only, never local dev.
 
 Google Cloud OAuth redirect URI:
 

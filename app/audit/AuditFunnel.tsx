@@ -9,6 +9,7 @@ import { computeAuditScore } from '@/lib/audit/scoring';
 import type { AuditDispute, AuditScore } from '@/lib/audit/types';
 import { AuditResult } from './AuditResult';
 import { ManualDisputeRows, makeBlankRow } from './ManualEntry';
+import { track, identify } from '@/lib/analytics/track';
 import styles from './audit.module.css';
 
 type Phase = 'landing' | 'entry' | 'result';
@@ -98,6 +99,34 @@ export function AuditFunnel() {
       return;
     }
 
+    // Reveal the result and capture the funnel event. Per Rishi's call this
+    // includes the merchant's email + the raw dispute rows. NOTE: audit rows are
+    // dispute metadata only — reason code, amount, date, outcome, proof flags
+    // (see AuditDispute). They carry no end-customer PII (no customer names,
+    // emails, or card data). Email identifies the merchant so the funnel ties to
+    // a known person.
+    const reveal = (s: AuditScore, scoredBy: 'server' | 'client') => {
+      identify(email, { email });
+      track('audit_result_viewed', {
+        scored_by: scoredBy,
+        entry_mode: mode,
+        email,
+        window_days: parseInt(windowDays, 10) || 90,
+        total_disputes: s.summary.totalDisputes,
+        should_have_won: s.summary.shouldHaveWonCount,
+        comms_hinged: s.summary.commsHingedCount,
+        standing_band: s.rate.band,
+        dispute_rate_pct:
+          s.rate.ratioPercent == null
+            ? null
+            : Math.round(s.rate.ratioPercent * 100) / 100,
+        disputes: activeDisputes,
+      });
+      setScore(s);
+      setPhase('result');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     setSubmitting(true);
     try {
       const res = await fetch('/audit/api/score', {
@@ -113,28 +142,26 @@ export function AuditFunnel() {
 
       if (!res.ok) {
         // Fall back to a client-side score so the merchant still gets a result.
-        const fallback = computeAuditScore(activeDisputes, {
-          settledTransactionCount: settledNum,
-          windowDays: parseInt(windowDays, 10) || 90,
-        });
-        setScore(fallback);
-        setPhase('result');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        reveal(
+          computeAuditScore(activeDisputes, {
+            settledTransactionCount: settledNum,
+            windowDays: parseInt(windowDays, 10) || 90,
+          }),
+          'client',
+        );
         return;
       }
 
       const data = (await res.json()) as { score: AuditScore };
-      setScore(data.score);
-      setPhase('result');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      reveal(data.score, 'server');
     } catch {
-      const fallback = computeAuditScore(activeDisputes, {
-        settledTransactionCount: settledNum,
-        windowDays: parseInt(windowDays, 10) || 90,
-      });
-      setScore(fallback);
-      setPhase('result');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      reveal(
+        computeAuditScore(activeDisputes, {
+          settledTransactionCount: settledNum,
+          windowDays: parseInt(windowDays, 10) || 90,
+        }),
+        'client',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +171,14 @@ export function AuditFunnel() {
     <>
       <MarketingHeader ctaLabel="Start free" ctaHref="/signup" />
       <main id="main" className={styles.page}>
-        {phase === 'landing' && <Landing onStart={() => setPhase('entry')} />}
+        {phase === 'landing' && (
+          <Landing
+            onStart={() => {
+              track('audit_started');
+              setPhase('entry');
+            }}
+          />
+        )}
 
         {phase === 'entry' && (
           <Entry

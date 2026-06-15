@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
+import { PostHogProvider } from "./_components/posthog-provider";
 
 const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -49,7 +50,7 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );
