@@ -7,6 +7,7 @@ import {
   PasswordForm,
   SignOutButton,
   DisconnectStripe,
+  DisconnectSlack,
   DeleteAccount,
   type BusinessInitial,
   type PoliciesInitial,
@@ -29,6 +30,13 @@ export type SettingsStripe = {
   connected_at: string | null;
 } | null;
 
+export type SettingsSlack = {
+  team_name: string | null;
+  connected_at: string | null;
+} | null;
+
+export type SlackNotice = 'connected' | 'disconnected' | null;
+
 export type SettingsViewProps = {
   email: string;
   fullName: string;
@@ -38,6 +46,9 @@ export type SettingsViewProps = {
   businessInitial: BusinessInitial;
   policiesInitial: PoliciesInitial;
   stripe: SettingsStripe;
+  slack: SettingsSlack;
+  slackNotice: SlackNotice;
+  slackError: string | null;
 };
 
 export function isTabKey(value: string | undefined): value is TabKey {
@@ -61,6 +72,9 @@ export function SettingsView({
   businessInitial,
   policiesInitial,
   stripe,
+  slack,
+  slackNotice,
+  slackError,
 }: SettingsViewProps) {
   return (
     <AppShell email={email} businessName={businessName} active="settings">
@@ -89,7 +103,27 @@ export function SettingsView({
           </div>
         ) : null}
 
-        {activeTab === 'connections' ? <ConnectionsPanel stripe={stripe} /> : null}
+        {slackNotice === 'connected' && activeTab === 'connections' ? (
+          <div className={s.banner} role="status">
+            Slack connected. Open any dispute to import the messages where the customer agreed,
+            accepted, or used the work.
+          </div>
+        ) : null}
+        {slackNotice === 'disconnected' && activeTab === 'connections' ? (
+          <div className={s.banner} role="status">
+            Slack disconnected. Imported messages stay on your disputes, and you can reconnect any
+            time.
+          </div>
+        ) : null}
+        {slackError && activeTab === 'connections' ? (
+          <div className={s.banner} role="status">
+            {slackError}
+          </div>
+        ) : null}
+
+        {activeTab === 'connections' ? (
+          <ConnectionsPanel stripe={stripe} slack={slack} />
+        ) : null}
         {activeTab === 'business' ? (
           <section className={s.panel}>
             <div className={s.panelHead}>
@@ -123,7 +157,7 @@ export function SettingsView({
 
 // ── Connections panel ────────────────────────────────────────────────────────
 
-function ConnectionsPanel({ stripe }: { stripe: SettingsStripe }) {
+function ConnectionsPanel({ stripe, slack }: { stripe: SettingsStripe; slack: SettingsSlack }) {
   return (
     <section className={s.panel}>
       <div className={s.panelHead}>
@@ -177,13 +211,31 @@ function ConnectionsPanel({ stripe }: { stripe: SettingsStripe }) {
           <div>
             <p className={s.connName}>Slack</p>
             <p className={s.connDesc}>
-              Import delivery and support threads as evidence. Coming soon. You will be able to
-              connect a workspace and pull selected threads per dispute.
+              Import the messages where a customer agreed, accepted, or used the work, per dispute.
+              Verdact reads only the channel you open and saves only the messages you pick.
             </p>
+            {slack ? (
+              <p className={s.connMeta}>
+                {slack.team_name ? slack.team_name : 'Workspace connected'}
+                {slack.connected_at ? ` · connected ${formatDate(slack.connected_at)}` : ''}
+              </p>
+            ) : null}
           </div>
         </div>
         <div className={s.connRight}>
-          <span className={s.disabledTag}>Coming soon</span>
+          {slack ? (
+            <>
+              <span className={`${s.statusPill} ${s.statusPillConnected}`}>
+                <span className={`${s.statusDot} ${s.statusDotOn}`} aria-hidden="true" />
+                Connected
+              </span>
+              <DisconnectSlack workspaceLabel={slack.team_name} />
+            </>
+          ) : (
+            <a href="/api/slack/connect/start" className={s.connectBtn}>
+              Connect Slack
+            </a>
+          )}
         </div>
       </div>
     </section>

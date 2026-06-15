@@ -14,6 +14,7 @@ import {
 import { NoProfileFirstOpen } from './no-profile-first-open';
 import { EvidenceAnalysisPanels, QaPanel } from './evidence-analysis-panels';
 import { EvidenceUploader } from './evidence-uploader';
+import { SlackImportPicker } from './slack-import-picker';
 import { NarrativeEditor } from './narrative-editor';
 import { RemoveFileButton } from './evidence-file-actions';
 import { AcceptanceUnavailable } from './acceptance-unavailable';
@@ -72,6 +73,8 @@ type EvidenceFile = {
   processor_file_id: string | null;
   processor_uploaded_at: string | null;
   supabase_path: string | null;
+  source_kind: string | null;
+  source_thread_id: string | null;
   created_at: string;
 };
 
@@ -105,6 +108,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     { data: profileRow },
     vampSnapshot,
     { data: connectionRow },
+    { data: slackConnectionRow },
   ] = await Promise.all([
       supabase
         .from('disputes')
@@ -139,7 +143,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       supabase
         .from('evidence_files')
         .select(
-          'id, purpose, upload_status, mime_type, content_size_bytes, processor_file_id, processor_uploaded_at, supabase_path, created_at',
+          'id, purpose, upload_status, mime_type, content_size_bytes, processor_file_id, processor_uploaded_at, supabase_path, source_kind, source_thread_id, created_at',
         )
         .eq('dispute_id', id)
         .eq('merchant_id', membership.merchant.id)
@@ -163,6 +167,16 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         .eq('processor', 'stripe')
         .eq('connection_status', 'connected')
         .maybeSingle(),
+      // Is a Slack workspace connected? Drives the in-dispute import picker's
+      // connect-vs-browse state. No workspace read happens here.
+      supabase
+        .from('slack_connections')
+        .select('id')
+        .eq('merchant_id', membership.merchant.id)
+        .eq('status', 'connected')
+        .order('connected_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   if (!dispute) {
@@ -173,6 +187,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const files = (evidenceFiles ?? []) as unknown as EvidenceFile[];
   const profile = (profileRow as ProfileRow) ?? null;
   const hasProfile = profileHasContent(profile);
+  const slackConnected = Boolean(slackConnectionRow);
 
   // ── Real geo signal: enrich from the underlying Stripe charge (best-effort) ──
   // Falls back to the stored billing-address country; degrades to null silently
@@ -349,8 +364,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
           {resolutionPlan && <ResolveMissingProof plan={resolutionPlan} />}
 
-          <div id="add-evidence" className="scroll-mt-24">
+          <div id="add-evidence" className="scroll-mt-24 space-y-5">
             <EvidenceUploader disputeId={record.id} tone={resolutionPlan ? 'tool' : 'lead'} />
+            <SlackImportPicker disputeId={record.id} slackConnected={slackConnected} />
           </div>
 
           <EvidenceRecord
@@ -917,24 +933,36 @@ function buildEvidenceItems(
   files: EvidenceFile[],
   approved: boolean,
 ): EvidenceItem[] {
-  const fileItems: EvidenceItem[] = files.map((file) => ({
-    source: 'file',
-    label: formatPurpose(file.purpose),
-    fileId: file.id,
-    title: `${formatPurpose(file.purpose)} file`,
-    detail: [
-      file.mime_type ? `Type: ${file.mime_type}` : null,
-      file.content_size_bytes ? `Size: ${formatFileSize(file.content_size_bytes)}` : null,
-      file.upload_status ? `Status: ${file.upload_status.replaceAll('_', ' ')}` : null,
-    ]
-      .filter(Boolean)
-      .join(' · '),
-    relevance: purposeRelevance(file.purpose),
-    status: 'confirmed',
-    when: formatDate(file.created_at),
-  }));
+  const fileItems: EvidenceItem[] = files.map((file) => {
+    const isSlack = file.source_kind === 'slack';
+    return {
+      source: isSlack ? 'slack' : 'file',
+      label: isSlack ? 'SLACK' : formatPurpose(file.purpose),
+      fileId: file.id,
+      title: isSlack ? 'Slack messages' : `${formatPurpose(file.purpose)} file`,
+      detail: [
+        isSlack ? 'Imported from Slack' : file.mime_type ? `Type: ${file.mime_type}` : null,
+        file.content_size_bytes ? `Size: ${formatFileSize(file.content_size_bytes)}` : null,
+        file.upload_status ? `Status: ${file.upload_status.replaceAll('_', ' ')}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      relevance: isSlack
+        ? 'Customer messages where they agreed, accepted, or used the work. Filed under customer communication.'
+        : purposeRelevance(file.purpose),
+      status: 'confirmed',
+      when: formatDate(file.created_at),
+    };
+  });
 
-  const hasAcceptance = files.some((f) => f.purpose === 'service_documentation');
+  // Mirror buildEvidencePacket's delivery_proof check (packet.ts): a
+  // communication file (an imported Slack thread or a pasted message) satisfies
+  // acceptance proof too, so the acceptance-gap row clears in lockstep with the
+  // readiness dial. Keeping these in sync avoids a "dial up but still missing"
+  // contradiction.
+  const hasAcceptance = files.some(
+    (f) => f.purpose === 'service_documentation' || f.purpose === 'communication',
+  );
   const hasPolicyFile = files.some(
     (f) => f.purpose === 'refund_policy' || f.purpose === 'cancellation_policy',
   );

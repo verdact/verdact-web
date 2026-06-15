@@ -1,5 +1,11 @@
 import { notFound } from 'next/navigation';
-import { SettingsView, isTabKey, type SettingsStripe, type TabKey } from '../../settings/settings-view';
+import {
+  SettingsView,
+  isTabKey,
+  type SettingsSlack,
+  type SettingsStripe,
+  type TabKey,
+} from '../../settings/settings-view';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEV-ONLY visual preview of /settings with sample data. The real /settings is
@@ -20,10 +26,15 @@ const MOCK_STRIPE: SettingsStripe = {
   connected_at: new Date(Date.now() - 42 * 86400000).toISOString(),
 };
 
+const MOCK_SLACK: SettingsSlack = {
+  team_name: 'Acme Software HQ',
+  connected_at: new Date(Date.now() - 9 * 86400000).toISOString(),
+};
+
 export default async function SettingsPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; stripe?: string }>;
+  searchParams: Promise<{ tab?: string; stripe?: string; slack?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
@@ -32,6 +43,7 @@ export default async function SettingsPreviewPage({
   const params = await searchParams;
   const activeTab: TabKey = isTabKey(params.tab) ? params.tab : 'connections';
   const stripe: SettingsStripe = params.stripe === 'off' ? null : MOCK_STRIPE;
+  const slack: SettingsSlack = params.slack === 'off' ? null : MOCK_SLACK;
 
   return (
     <SettingsView
@@ -58,6 +70,9 @@ export default async function SettingsPreviewPage({
         logsUserActivity: 'yes',
       }}
       stripe={stripe}
+      slack={slack}
+      slackNotice={null}
+      slackError={null}
     />
   );
 }

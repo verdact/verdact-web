@@ -9,9 +9,10 @@
  *  - The strength label is evidence COMPLETENESS, never a win prediction
  *    (S41 wording lock: no guarantees, no win-rate claims).
  *  - Manual-first intake only: routes are upload / paste / profile / narrative /
- *    "mark unavailable, with a reason". NO Gmail/Slack auto-pull options
- *    (Gmail-manual-first lock) and NO one-click customer sign-off link (no
- *    inbound infra yet).
+ *    Slack selected-message import / "mark unavailable, with a reason". Slack
+ *    import is merchant SELECTION of specific messages, never auto-pull; Gmail
+ *    auto-pull stays out (Gmail-manual-first lock), and there is NO one-click
+ *    customer sign-off link (no inbound infra yet).
  *  - Nothing is fabricated. "Mark unavailable" records a gap; it never invents
  *    proof or inflates readiness.
  */
@@ -38,7 +39,7 @@ export function strengthFromPercent(percent: number): EvidenceStrength {
 
 // ─── Resolution plan ─────────────────────────────────────────────────────────
 
-export type ResolveRouteKind = 'upload' | 'paste' | 'profile' | 'narrative';
+export type ResolveRouteKind = 'upload' | 'paste' | 'profile' | 'narrative' | 'connect';
 
 export interface ResolveRoute {
   kind: ResolveRouteKind;
@@ -103,7 +104,37 @@ export function buildResolutionPlan(input: ResolutionInput): ResolutionPlan | nu
   const eyebrow = `Resolve ${count} ${count === 1 ? 'item' : 'items'} to strengthen this record`;
 
   switch (target) {
-    case 'delivery_proof':
+    case 'delivery_proof': {
+      const routes: ResolveRoute[] = [
+        {
+          kind: 'upload',
+          primary: true,
+          badge: 'Fastest',
+          label: 'Upload a signed document',
+          detail:
+            'PDF or image of a signed acceptance, SOW completion, delivery confirmation, or milestone sign-off.',
+          href: UPLOAD_ANCHOR,
+        },
+        {
+          kind: 'paste',
+          label: 'Paste a screenshot or message',
+          detail:
+            'Paste an email, chat, or screenshot that shows the work was delivered or accepted.',
+          href: UPLOAD_ANCHOR,
+        },
+      ];
+      // Slack selected-message import is an ADDITIONAL manual-first route for the
+      // comms-wedge codes, where the agreement / acceptance / usage typically
+      // lives in chat. Merchant selection of specific messages, never auto-pull;
+      // it deep-links to the same #add-evidence picker.
+      if (profile.isCommsWedge) {
+        routes.push({
+          kind: 'connect',
+          label: 'Import from Slack',
+          detail: 'Pick the exact messages where the customer agreed, accepted, or used the work.',
+          href: UPLOAD_ANCHOR,
+        });
+      }
       return {
         key: target,
         actionableCount: count,
@@ -112,26 +143,10 @@ export function buildResolutionPlan(input: ResolutionInput): ResolutionPlan | nu
         why: profile.isCommsWedge
           ? `For ${profile.networkLabel} (${profile.shortReason}), issuers expect dated proof the service was delivered or accepted. A delivery confirmation or signed acceptance is the single strongest item for this code.`
           : `Issuers expect evidence the customer received what they paid for. A delivery confirmation or signed acceptance is the strongest item to add.`,
-        routes: [
-          {
-            kind: 'upload',
-            primary: true,
-            badge: 'Fastest',
-            label: 'Upload a signed document',
-            detail:
-              'PDF or image of a signed acceptance, SOW completion, delivery confirmation, or milestone sign-off.',
-            href: UPLOAD_ANCHOR,
-          },
-          {
-            kind: 'paste',
-            label: 'Paste a screenshot or message',
-            detail:
-              'Paste an email, chat, or screenshot that shows the work was delivered or accepted.',
-            href: UPLOAD_ANCHOR,
-          },
-        ],
+        routes,
         allowUnavailable: true,
       };
+    }
     case 'policy':
       return {
         key: target,
