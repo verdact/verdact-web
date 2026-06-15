@@ -31,7 +31,15 @@ interface UploadItem {
   message?: string;
 }
 
-export function EvidenceUploader({ disputeId }: { disputeId: string }) {
+export function EvidenceUploader({
+  disputeId,
+  tone = 'lead',
+}: {
+  disputeId: string;
+  // 'lead' = prominent accent treatment (when it is the primary action).
+  // 'tool' = neutral surface (when the guided Resolve card leads above it).
+  tone?: 'lead' | 'tool';
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const counter = useRef(0);
@@ -110,17 +118,30 @@ export function EvidenceUploader({ disputeId }: { disputeId: string }) {
     }
   };
 
+  const lead = tone === 'lead';
   return (
     <section
-      className="overflow-hidden rounded-md border border-accent-rule border-l-[4px] border-l-accent bg-surface-2"
+      className={`overflow-hidden rounded-md bg-surface-2 ${
+        lead
+          ? 'border border-accent-rule border-l-[4px] border-l-accent'
+          : 'border border-rule-strong'
+      }`}
       onPaste={onPaste}
     >
-      <header className="flex items-center gap-4 bg-accent-soft px-5 py-4">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-accent text-white">
+      <header
+        className={`flex items-center gap-4 px-5 py-4 ${lead ? 'bg-accent-soft' : 'bg-surface-3/60'}`}
+      >
+        <span
+          className={`grid h-8 w-8 flex-none place-items-center rounded-full ${
+            lead ? 'bg-accent text-white' : 'border border-rule-strong bg-surface text-ink-mute'
+          }`}
+        >
           <UploadGlyph className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="label-mono-strong text-accent">Add evidence</span>
+          <span className={`label-mono-strong ${lead ? 'text-accent' : 'text-ink-mute'}`}>
+            Add evidence
+          </span>
           <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
             Upload, drag and drop, or paste a screenshot
           </span>

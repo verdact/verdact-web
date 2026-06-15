@@ -3,6 +3,9 @@ import { AppShell } from '../../_components/app-chrome';
 import { EvidenceUploader } from '../../dashboard/disputes/[id]/evidence-uploader';
 import { NarrativeEditor } from '../../dashboard/disputes/[id]/narrative-editor';
 import { PacketView } from '../../dashboard/disputes/[id]/packet-view';
+import { ResolveMissingProof } from '../../dashboard/disputes/[id]/resolve-missing-proof';
+import { AcceptanceUnavailable } from '../../dashboard/disputes/[id]/acceptance-unavailable';
+import { EvidenceAnalysisPanels, QaPanel } from '../../dashboard/disputes/[id]/evidence-analysis-panels';
 import { analyzeEvidence } from '@/lib/evidence';
 import type { EvidenceSignals, SessionSignal } from '@/lib/evidence';
 import {
@@ -10,6 +13,7 @@ import {
   serializePacketText,
   type PacketFileInput,
 } from '@/lib/evidence/packet';
+import { buildResolutionPlan, strengthFromPercent } from '@/lib/evidence/resolution';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEV-ONLY preview of the R2 S1 evidence-intake surfaces (uploader, narrative
@@ -144,22 +148,59 @@ export default async function EvidencePacketPreview({
 
   const packetText = serializePacketText(packet, 'Verdact evidence packet — dispute dp_test_packet');
 
+  // Stage 1E derived values (mirrors the real workbench).
+  const plan = buildResolutionPlan({
+    missingKeys: packet.readiness.missingKeys,
+    reasonCode: 'product_not_received',
+    acceptanceNoted: false,
+  });
+  const strength = strengthFromPercent(packet.readiness.percent);
+
   return (
     <AppShell email="founder@acmesoftware.com" businessName="Acme Software" active="disputes">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-6 py-8 md:px-10">
-        <p className="label-mono">
+      <div className="mx-auto w-full max-w-[1280px] px-6 py-8 md:px-10">
+        <p className="label-mono mb-5">
           Preview: <strong>{isEmpty ? 'empty' : 'populated'}</strong> · download gate:{' '}
           <strong>{canDownload ? 'open' : 'gated'}</strong> · filing blocked:{' '}
-          <strong>{String(packet.filingBlocked)}</strong>
+          <strong>{String(packet.filingBlocked)}</strong> · strength:{' '}
+          <strong>{strength.label}</strong> · resolve plan:{' '}
+          <strong>{plan ? `${plan.key} (${plan.actionableCount})` : 'none'}</strong>
         </p>
-        <EvidenceUploader disputeId={DISPUTE_ID} />
-        <NarrativeEditor disputeId={DISPUTE_ID} initialNarrative={isEmpty ? '' : NARRATIVE_POPULATED} />
-        <PacketView
-          packet={packet}
-          canDownload={canDownload}
-          packetText={packetText}
-          downloadFilename="verdact-packet-dp_test_packet.txt"
-        />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-5">
+            {plan && <ResolveMissingProof plan={plan} />}
+            <EvidenceUploader disputeId={DISPUTE_ID} tone={plan ? 'tool' : 'lead'} />
+            <NarrativeEditor
+              disputeId={DISPUTE_ID}
+              initialNarrative={isEmpty ? '' : NARRATIVE_POPULATED}
+            />
+            <EvidenceAnalysisPanels analysis={analysis} />
+            <PacketView
+              packet={packet}
+              canDownload={canDownload}
+              packetText={packetText}
+              downloadFilename="verdact-packet-dp_test_packet.txt"
+            />
+            <section className="surface-card overflow-hidden">
+              <header className="border-b border-rule px-5 py-4">
+                <p className="label-mono-strong">Acceptance control · both states (dev)</p>
+              </header>
+              <div className="px-5 py-4">
+                <p className="text-sm font-semibold text-ink">Not noted</p>
+                <AcceptanceUnavailable disputeId={DISPUTE_ID} noted={false} reason={null} />
+                <p className="mt-5 text-sm font-semibold text-ink">Noted</p>
+                <AcceptanceUnavailable
+                  disputeId={DISPUTE_ID}
+                  noted
+                  reason="Approved verbally on a call; no signed document was ever produced."
+                />
+              </div>
+            </section>
+          </div>
+          <aside className="space-y-5 lg:sticky lg:top-6">
+            <QaPanel analysis={analysis} />
+          </aside>
+        </div>
       </div>
     </AppShell>
   );

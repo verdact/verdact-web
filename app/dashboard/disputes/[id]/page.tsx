@@ -7,19 +7,28 @@ import {
   CheckIcon,
   ChevronRightIcon,
   ClockIcon,
+  InfoCircleIcon,
   LockIcon,
   ShieldIcon,
 } from '../../dash-icons';
 import { NoProfileFirstOpen } from './no-profile-first-open';
-import { EvidenceAnalysisPanels } from './evidence-analysis-panels';
+import { EvidenceAnalysisPanels, QaPanel } from './evidence-analysis-panels';
 import { EvidenceUploader } from './evidence-uploader';
 import { NarrativeEditor } from './narrative-editor';
 import { RemoveFileButton } from './evidence-file-actions';
+import { AcceptanceUnavailable } from './acceptance-unavailable';
+import { ResolveMissingProof } from './resolve-missing-proof';
 import { PacketView } from './packet-view';
 import { analyzeEvidence } from '@/lib/evidence';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
+import {
+  buildResolutionPlan,
+  strengthFromPercent,
+  type EvidenceStrength,
+} from '@/lib/evidence/resolution';
+import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
 import { PaidGate } from '../../../_components/ui/paid-gate';
 
@@ -76,6 +85,9 @@ type EvidenceItem = {
   when?: string;
   // Present for uploaded files — enables the inline Remove control.
   fileId?: string;
+  // The delivery/acceptance gap — rendered as a first-class, actionable row that
+  // hosts the "mark unavailable, with a reason" control.
+  acceptanceGap?: boolean;
 };
 
 export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageProps) {
@@ -267,6 +279,25 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   );
   const downloadFilename = `verdact-packet-${record.processor_dispute_id}.txt`;
 
+  // ── Stage 1E: guided resolution + honest strength + case context ────────────
+  // The merchant may have recorded that no formal delivery/acceptance proof
+  // exists; that notes the gap (it never inflates readiness). The resolution
+  // plan then guides the next real gap, or is null when nothing is actionable.
+  const acceptance = readAcceptanceUnavailable(record.evidence_draft);
+  const acceptanceNoted = Boolean(acceptance);
+  const reasonProfile = getReasonProfile(reasonCode);
+  const strength = strengthFromPercent(readiness);
+  const confirmedCount = packet.readiness.checks.filter((c) => c.done).length;
+  const totalChecks = packet.readiness.checks.length;
+  const resolutionPlan = submitted
+    ? null
+    : buildResolutionPlan({
+        missingKeys: packet.readiness.missingKeys,
+        reasonCode,
+        acceptanceNoted,
+      });
+  const customerName = pii?.customer_name?.trim() || null;
+
   return (
     <AppShell email={user.email} businessName={businessName} active="disputes">
       <div className="border-b border-rule-strong bg-surface-2 px-6 py-6 md:px-10">
@@ -280,11 +311,14 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             </a>
             <p className="label-mono mt-5">
               Dispute <span className="chip-rc mx-1">{record.processor_dispute_id}</span>{' '}
-              {formatReason(record.reason)}
+              {reasonProfile.networkLabel} · {reasonProfile.shortReason}
             </p>
             <h1 className="font-display mt-3 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-ink">
-              Evidence record workbench
+              {customerName ?? 'Evidence record'}
             </h1>
+            <p className="mt-2 text-sm leading-6 text-ink-soft">
+              Source-linked evidence record. Nothing is sent to the bank until you approve.
+            </p>
           </div>
           <StatusPill status={record.status} />
         </div>
@@ -307,13 +341,28 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             firstMissing={firstMissing}
             submitted={submitted}
             dueBy={record.due_by}
+            strength={strength}
+            confirmedCount={confirmedCount}
+            totalChecks={totalChecks}
+            networkLabel={reasonProfile.networkLabel}
           />
 
-          <EvidenceUploader disputeId={record.id} />
+          {resolutionPlan && <ResolveMissingProof plan={resolutionPlan} />}
 
-          <EvidenceRecord items={evidenceItems} disputeId={record.id} />
+          <div id="add-evidence" className="scroll-mt-24">
+            <EvidenceUploader disputeId={record.id} tone={resolutionPlan ? 'tool' : 'lead'} />
+          </div>
 
-          <NarrativeEditor disputeId={record.id} initialNarrative={narrative} />
+          <EvidenceRecord
+            items={evidenceItems}
+            disputeId={record.id}
+            acceptanceNoted={acceptanceNoted}
+            acceptanceReason={acceptance?.reason ?? null}
+          />
+
+          <div id="your-account" className="scroll-mt-24">
+            <NarrativeEditor disputeId={record.id} initialNarrative={narrative} />
+          </div>
 
           <EvidenceAnalysisPanels analysis={evidenceAnalysis} />
 
@@ -326,6 +375,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-6">
+          <QaPanel analysis={evidenceAnalysis} />
           <AccountRiskPanel ratio={vampSnapshot?.estimated_vamp_ratio ?? null} />
         </aside>
       </section>
@@ -335,6 +385,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         submitted={submitted}
         canExport={exportGate.allowed}
         canSubmit={submitGate.allowed}
+        resolveCount={resolutionPlan?.actionableCount ?? 0}
       />
     </AppShell>
   );
@@ -346,20 +397,32 @@ function ReadinessCard({
   firstMissing,
   submitted,
   dueBy,
+  strength,
+  confirmedCount,
+  totalChecks,
+  networkLabel,
 }: {
   readiness: number;
   missingCount: number;
   firstMissing?: string;
   submitted: boolean;
   dueBy: string | null;
+  strength: EvidenceStrength;
+  confirmedCount: number;
+  totalChecks: number;
+  networkLabel: string;
 }) {
   const ready = submitted || missingCount === 0;
   const title = submitted
-    ? 'Submitted record.'
-    : missingCount === 0
+    ? 'This record has been submitted.'
+    : ready
       ? 'Filing-ready record.'
-      : `Draft record. ${missingCount} ${missingCount === 1 ? 'item' : 'items'} left for filing readiness.`;
-  const badge = submitted ? 'Submitted' : missingCount === 0 ? 'Ready' : 'Needs evidence';
+      : `${confirmedCount} of ${totalChecks} expected items confirmed.`;
+  const sub = submitted
+    ? 'The evidence below is the record that was submitted to the processor.'
+    : ready
+      ? 'All expected items are confirmed and source-linked. Review the controls below before you file.'
+      : 'Resolve the open items below to strengthen this record. Each item is source-linked, and nothing is sent until you approve.';
 
   return (
     <section className="surface-card overflow-hidden border-t-[3px] border-t-action">
@@ -367,26 +430,29 @@ function ReadinessCard({
         <ReadinessDial value={readiness} />
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className={`pill-${ready ? 'trust' : 'warning'} w-fit`}>
-              {ready ? (
+            {submitted ? (
+              <span className="pill-trust w-fit">
                 <CheckIcon className="h-3 w-3" />
-              ) : (
-                <AlertIcon className="h-3 w-3" />
-              )}
-              {badge}
-            </span>
+                Submitted
+              </span>
+            ) : (
+              <span className={`${strengthPillClass(strength.tone)} w-fit`}>
+                {strength.tone === 'trust' ? (
+                  <CheckIcon className="h-3 w-3" />
+                ) : (
+                  <AlertIcon className="h-3 w-3" />
+                )}
+                {strength.label}
+              </span>
+            )}
             <span className="label-mono">
-              RC 13.1 service-delivery record
+              Evidence completeness for {networkLabel}. Not a win prediction.
             </span>
           </div>
           <h2 className="font-display mt-4 text-[1.45rem] font-semibold leading-tight tracking-[-0.01em] text-ink">
             {title}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-            Verdact keeps this screen decision-first: readiness, missing proof,
-            source-linked evidence, QA, and filing controls are visible before any
-            action can happen.
-          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">{sub}</p>
         </div>
       </div>
 
@@ -450,12 +516,22 @@ function ReadinessDial({ value }: { value: number }) {
   );
 }
 
+function strengthPillClass(tone: EvidenceStrength['tone']): string {
+  if (tone === 'trust') return 'pill-trust';
+  if (tone === 'warning') return 'pill-warning';
+  return 'pill-neutral';
+}
+
 function EvidenceRecord({
   items,
   disputeId,
+  acceptanceNoted,
+  acceptanceReason,
 }: {
   items: EvidenceItem[];
   disputeId: string;
+  acceptanceNoted: boolean;
+  acceptanceReason: string | null;
 }) {
   const confirmed = items.filter((item) => item.status === 'confirmed').length;
   const missing = items.filter((item) => item.status === 'missing').length;
@@ -475,15 +551,95 @@ function EvidenceRecord({
         </div>
       </header>
       <div className="px-6 py-2">
-        {items.map((item) => (
-          <EvidenceItemRow
-            key={item.fileId ? `file-${item.fileId}` : `${item.source}-${item.title}`}
-            item={item}
-            disputeId={disputeId}
-          />
-        ))}
+        {items.map((item) =>
+          item.acceptanceGap ? (
+            <AcceptanceGapRow
+              key="acceptance-gap"
+              item={item}
+              disputeId={disputeId}
+              noted={acceptanceNoted}
+              reason={acceptanceReason}
+            />
+          ) : (
+            <EvidenceItemRow
+              key={item.fileId ? `file-${item.fileId}` : `${item.source}-${item.title}`}
+              item={item}
+              disputeId={disputeId}
+            />
+          ),
+        )}
       </div>
     </section>
+  );
+}
+
+function AcceptanceGapRow({
+  item,
+  disputeId,
+  noted,
+  reason,
+}: {
+  item: EvidenceItem;
+  disputeId: string;
+  noted: boolean;
+  reason: string | null;
+}) {
+  return (
+    <details
+      id="acceptance-gap"
+      className={`scroll-mt-24 border-b border-rule last:border-b-0 ${
+        noted ? '' : 'surface-missing -mx-6 my-2 px-6'
+      }`}
+      open
+    >
+      <summary className="grid cursor-pointer list-none grid-cols-[1.5rem_1fr_auto] items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
+        {noted ? (
+          <span
+            className="grid h-5 w-5 flex-none place-items-center rounded-full border border-rule-strong bg-surface-2 text-ink-mute"
+            aria-hidden="true"
+          >
+            <InfoCircleIcon className="h-3 w-3" />
+          </span>
+        ) : (
+          <span className="status-dot miss h-5 w-5" aria-hidden="true">
+            <AlertIcon className="h-3 w-3" />
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className={`src-tag ${noted ? 'policy' : 'missing'}`}>
+              {noted ? 'NOTED · UNAVAILABLE' : item.label}
+            </span>
+          </span>
+          <span
+            className={`mt-1.5 block text-sm font-semibold leading-snug ${
+              noted ? 'text-ink' : 'font-display text-[1rem] text-accent'
+            }`}
+          >
+            {item.title}
+          </span>
+        </span>
+        <span className={noted ? 'pill-neutral' : 'pill-accent'}>
+          {noted ? <InfoCircleIcon className="h-3 w-3" /> : <AlertIcon className="h-3 w-3" />}
+          {noted ? 'Noted' : 'Action needed'}
+        </span>
+      </summary>
+      <div className="pb-5 pl-10">
+        <p className="border-l-2 border-rule-strong pl-3 text-sm leading-6 text-ink-soft">
+          {item.detail}
+        </p>
+        {!noted ? (
+          <a
+            href="#resolve"
+            className="mt-3 inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-white"
+          >
+            <ChevronRightIcon className="h-3.5 w-3.5" />
+            Resolve this above
+          </a>
+        ) : null}
+        <AcceptanceUnavailable disputeId={disputeId} noted={noted} reason={reason} />
+      </div>
+    </details>
   );
 }
 
@@ -580,11 +736,13 @@ function BottomActionBar({
   submitted,
   canExport,
   canSubmit,
+  resolveCount,
 }: {
   approved: boolean;
   submitted: boolean;
   canExport: boolean;
   canSubmit: boolean;
+  resolveCount: number;
 }) {
   return (
     <div className="sticky bottom-0 z-10 border-t border-[#1e293b] bg-[#0f172a] text-[#cbd5e1]">
@@ -604,6 +762,15 @@ function BottomActionBar({
             ? 'Submission actions will be wired in the filing workflow stage.'
             : 'Submit unlocks only after the missing item is resolved and the merchant approves.'}
         </p>
+        {resolveCount > 0 && !submitted ? (
+          <a
+            href="#resolve"
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white"
+          >
+            <ChevronRightIcon className="h-3.5 w-3.5" />
+            Resolve {resolveCount} {resolveCount === 1 ? 'issue' : 'issues'}
+          </a>
+        ) : null}
         {/* Free→Paid gate routes through `can()`; beta-unlocked today so the real
             buttons render unchanged, gated affordance appears once billing lands. */}
         <PaidGate action="export_packet" allowed={canExport}>
@@ -800,17 +967,20 @@ function buildEvidenceItems(
     },
   ];
 
-  // Only surface the acceptance gap when it is genuinely missing.
+  // Only surface the acceptance gap when it is genuinely missing. Rendered as a
+  // first-class, actionable row (AcceptanceGapRow) that can be resolved above or
+  // marked unavailable with a reason.
   if (!acceptanceConfirmed) {
     items.push({
       source: 'missing',
       label: 'MISSING · RECOMMENDED',
       title: 'Delivery or acceptance proof',
       detail:
-        'A dated delivery confirmation or signed acceptance is the strongest proof for a services dispute. Add one above.',
+        'A dated delivery confirmation or signed acceptance is the strongest proof for a services dispute. Resolve it above, or record why it is unavailable.',
       relevance:
         'For services-not-rendered disputes, this is the strongest acceptance proof and lifts filing readiness.',
       status: 'missing',
+      acceptanceGap: true,
     });
   }
 
@@ -859,6 +1029,19 @@ function readNarrative(draft: unknown): string {
     return typeof n === 'string' ? n : '';
   }
   return '';
+}
+
+// The merchant may have recorded that no formal delivery/acceptance proof exists,
+// stored on disputes.evidence_draft.acceptanceUnavailable. Read it defensively;
+// an empty/cleared reason reads as "not noted".
+function readAcceptanceUnavailable(draft: unknown): { reason: string } | null {
+  if (!draft || typeof draft !== 'object') return null;
+  const v = (draft as { acceptanceUnavailable?: unknown }).acceptanceUnavailable;
+  if (!v || typeof v !== 'object') return null;
+  const reason = (v as { reason?: unknown }).reason;
+  return typeof reason === 'string' && reason.trim().length > 0
+    ? { reason: reason.trim() }
+    : null;
 }
 
 function formatReason(reason: string | null) {

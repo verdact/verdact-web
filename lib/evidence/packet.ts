@@ -92,7 +92,18 @@ export interface PacketExhibit {
   mime: string | null;
 }
 
+// Stable identifiers for each readiness check. UI copy can change freely; the
+// resolution layer keys off these, never off display labels.
+export type ReadinessKey =
+  | 'charge_attached'
+  | 'delivery_proof'
+  | 'policy'
+  | 'product_description'
+  | 'narrative'
+  | 'qa_clear';
+
 export interface PacketReadinessCheck {
+  key: ReadinessKey;
   label: string;
   done: boolean;
 }
@@ -111,6 +122,9 @@ export interface EvidencePacket {
     percent: number;
     checks: PacketReadinessCheck[];
     missing: string[];
+    // Stable keys for the undone checks, in the same order as `missing`. The
+    // resolution layer consumes these; `missing` stays for display.
+    missingKeys: ReadinessKey[];
   };
   filingBlocked: boolean;
 }
@@ -237,15 +251,16 @@ export function buildEvidencePacket(input: PacketInput): EvidencePacket {
     hasText(cancellationDisclosure);
 
   const checks: PacketReadinessCheck[] = [
-    { label: 'Charge attached', done: input.dispute.hasChargeAttached },
-    { label: 'Delivery or acceptance proof attached', done: hasDeliveryProof },
-    { label: 'Policy on file', done: hasPolicy },
-    { label: 'Product description set', done: hasText(productDescription) },
-    { label: 'Your account written', done: hasText(input.narrative) },
-    { label: 'QA clear', done: !input.analysis.filingBlocked },
+    { key: 'charge_attached', label: 'Charge attached', done: input.dispute.hasChargeAttached },
+    { key: 'delivery_proof', label: 'Delivery or acceptance proof attached', done: hasDeliveryProof },
+    { key: 'policy', label: 'Policy on file', done: hasPolicy },
+    { key: 'product_description', label: 'Product description set', done: hasText(productDescription) },
+    { key: 'narrative', label: 'Your account written', done: hasText(input.narrative) },
+    { key: 'qa_clear', label: 'QA clear', done: !input.analysis.filingBlocked },
   ];
   const doneCount = checks.filter((c) => c.done).length;
   const percent = Math.round((doneCount / checks.length) * 100);
+  const undone = checks.filter((c) => !c.done);
 
   return {
     fields,
@@ -260,7 +275,8 @@ export function buildEvidencePacket(input: PacketInput): EvidencePacket {
     readiness: {
       percent,
       checks,
-      missing: checks.filter((c) => !c.done).map((c) => c.label),
+      missing: undone.map((c) => c.label),
+      missingKeys: undone.map((c) => c.key),
     },
     filingBlocked: input.analysis.filingBlocked,
   };

@@ -12,22 +12,30 @@ const MIN_ACTIVITY_BAR_PCT = 8;
  * features). Pure props in, UI out — the workbench server component computes the
  * `EvidenceAnalysis` and passes it here. No data fetching, no state.
  *
- * Sections:
- *   - Pre-submission QA findings (block / warn / ok) — Revano #5
+ * Argument column (main):
  *   - Argument narratives (geo consistency, activity, policy binding) — #1/#2/#3
  *   - Founder → bank translation side-by-side — #4
+ *
+ * Pre-submission QA (#5) is exported separately as `QaPanel`; the workbench
+ * renders it in the right rail next to Account risk (decision-first IA).
  */
 export function EvidenceAnalysisPanels({ analysis }: { analysis: EvidenceAnalysis }) {
   return (
     <>
-      <QaFindingsPanel qa={analysis.qa} summary={analysis.qaSummary} blocked={analysis.filingBlocked} />
       <ArgumentNarratives narratives={analysis.narratives} timeline={analysis.timeline} />
       <TranslationPanel pairs={analysis.translation} />
     </>
   );
 }
 
-// ─── Pre-submission QA (real engine, replaces the hardcoded panel) ───────────
+// ─── Pre-submission QA (rail panel) ──────────────────────────────────────────
+
+/** Rail-placed QA panel. Pulls block/warn/ok findings from the analysis. */
+export function QaPanel({ analysis }: { analysis: EvidenceAnalysis }) {
+  return (
+    <QaFindingsPanel qa={analysis.qa} summary={analysis.qaSummary} blocked={analysis.filingBlocked} />
+  );
+}
 
 function QaFindingsPanel({
   qa,

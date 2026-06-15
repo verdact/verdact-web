@@ -7,15 +7,19 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * Workbench mutations (R2 sub-stage 1).
  *
- *   saveNarrativeAction      — persist the merchant's draft narrative into
- *                              disputes.evidence_draft (JSONB), merge-safe.
- *   deleteEvidenceFileAction — remove an attached evidence file (row + blob).
+ *   saveNarrativeAction          — persist the merchant's draft narrative into
+ *                                  disputes.evidence_draft (JSONB), merge-safe.
+ *   deleteEvidenceFileAction     — remove an attached evidence file (row + blob).
+ *   setAcceptanceUnavailableAction — record (or clear) that no formal delivery /
+ *                                  acceptance proof exists, with a reason. Honest:
+ *                                  it notes the gap, it never fabricates proof.
  *
  * Every call re-verifies the session + merchant and scopes the query by
  * merchant_id; RLS is the backstop. Never called with service-role.
  */
 
 const MAX_NARRATIVE_CHARS = 20_000;
+const MAX_REASON_CHARS = 500;
 const BUCKET = 'evidence-files';
 
 export interface SaveNarrativeResult {
@@ -114,6 +118,72 @@ export async function deleteEvidenceFileAction(input: {
   if (path) {
     await supabase.storage.from(BUCKET).remove([path]);
   }
+
+  revalidatePath(`/dashboard/disputes/${disputeId}`);
+  return { ok: true };
+}
+
+export interface SetAcceptanceUnavailableResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Record (reason provided) or clear (reason omitted/empty) that no formal
+ * delivery or acceptance proof exists for this dispute. Stored on
+ * disputes.evidence_draft.acceptanceUnavailable, merge-safe. This de-escalates
+ * the Resolve card and the Evidence Record gap from "action needed" to a noted
+ * gap; it never inflates readiness or invents evidence.
+ */
+export async function setAcceptanceUnavailableAction(input: {
+  disputeId: string;
+  reason: string;
+}): Promise<SetAcceptanceUnavailableResult> {
+  const disputeId = input.disputeId?.trim();
+  if (!disputeId) return { ok: false, error: 'Missing dispute reference.' };
+  const rawReason = typeof input.reason === 'string' ? input.reason : '';
+  const reason = rawReason.trim().slice(0, MAX_REASON_CHARS);
+
+  await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { ok: false, error: 'No merchant account found.' };
+
+  const supabase = await createClient();
+
+  const { data: row } = await supabase
+    .from('disputes')
+    .select('evidence_draft')
+    .eq('id', disputeId)
+    .eq('merchant_id', membership.merchant.id)
+    .maybeSingle();
+  if (!row) return { ok: false, error: 'Dispute not found.' };
+
+  const existing =
+    row.evidence_draft && typeof row.evidence_draft === 'object'
+      ? (row.evidence_draft as Record<string, unknown>)
+      : {};
+
+  // Clearing: drop the key entirely so the gap returns to "action needed".
+  let draft: Record<string, unknown>;
+  if (!reason) {
+    draft = { ...existing };
+    delete draft.acceptanceUnavailable;
+  } else {
+    // acceptanceUnavailable is a UI-layer gap note only. It is never mapped into
+    // a PacketField or serialized into the submission packet (serializePacketText
+    // iterates packet.fields, not evidence_draft) — keep it that way.
+    draft = {
+      ...existing,
+      acceptanceUnavailable: { reason, notedAt: new Date().toISOString() },
+    };
+  }
+
+  const { error } = await supabase
+    .from('disputes')
+    .update({ evidence_draft: draft })
+    .eq('id', disputeId)
+    .eq('merchant_id', membership.merchant.id);
+  if (error) return { ok: false, error: 'Could not save your note.' };
 
   revalidatePath(`/dashboard/disputes/${disputeId}`);
   return { ok: true };
