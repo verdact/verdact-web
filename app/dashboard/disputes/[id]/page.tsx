@@ -103,7 +103,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   const supabase = await createClient();
   const [
-    { data: dispute },
+    { data: dispute, error: disputeError },
     { data: evidenceFiles },
     { data: profileRow },
     vampSnapshot,
@@ -179,6 +179,15 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         .maybeSingle(),
     ]);
 
+  // Surface a real query failure (e.g. a 403 from a missing grant / RLS) as a
+  // visible, logged error instead of masking it as a 404. A genuine "no such
+  // dispute for this merchant" still falls through to notFound() below. This is
+  // the observability gap that made the dispute_pii grant bug present as a
+  // silent 404.
+  if (disputeError) {
+    console.error('[workbench] dispute query failed:', disputeError.message);
+    throw new Error(`Could not load this dispute: ${disputeError.message}`);
+  }
   if (!dispute) {
     notFound();
   }

@@ -113,10 +113,15 @@ export async function deleteEvidenceFileAction(input: {
     .eq('merchant_id', membership.merchant.id);
   if (error) return { ok: false, error: 'Could not remove the file.' };
 
-  // Best-effort blob cleanup; the metadata row is already gone.
+  // Best-effort blob cleanup; the metadata row is already gone. Log (do not
+  // fail) if the remove errors, so an orphaned blob is visible to ops instead
+  // of silently consuming storage.
   const path = (file as { supabase_path: string | null }).supabase_path;
   if (path) {
-    await supabase.storage.from(BUCKET).remove([path]);
+    const { error: blobError } = await supabase.storage.from(BUCKET).remove([path]);
+    if (blobError) {
+      console.error('[evidence/delete] blob cleanup failed (row already removed):', blobError.message);
+    }
   }
 
   revalidatePath(`/dashboard/disputes/${disputeId}`);
