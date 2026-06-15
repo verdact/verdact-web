@@ -222,29 +222,29 @@ export function AuditResult({ score, email, onRestart }: AuditResultProps) {
       <section className={styles.convert}>
         <div className="wrap">
           <div className={styles.convertCard}>
-            <p className={styles.convertKicker}>Carry this into your account</p>
+            <p className={styles.convertKicker}>Verdact is launching soon</p>
             <h2 className={styles.convertHead}>
-              Build the proof packet Stripe can&rsquo;t &mdash; for the disputes you should win.
+              Be first in line to fight the disputes you should win.
             </h2>
             <p className={styles.convertSub}>
-              Create your workspace and we pre-load these {summary.totalDisputes} disputes as your
-              starting history. You build and view the evidence packet for free. Nothing is ever filed
-              without your sign-off.
+              New workspaces are not open to the public yet. Join the waitlist and we&rsquo;ll tell you
+              the moment you can create yours &mdash; then pre-load these {summary.totalDisputes}{' '}
+              disputes as your starting history. You build and view the evidence packet for free, and
+              nothing is ever filed without your sign-off.
             </p>
             <div className={styles.convertCtas}>
               <Link
                 href={`/signup?from=audit&email=${encodeURIComponent(email)}`}
                 className={styles.ctaPrimary}
               >
-                Create your workspace
+                Join the waitlist
               </Link>
               <button type="button" className={styles.linkGhost} onClick={onRestart}>
                 Edit my numbers
               </button>
             </div>
             <p className={styles.convertNote}>
-              We emailed a copy to {email}. Free builds and views the packet; download, export, and
-              filing are on the paid plan.
+              We emailed a copy of this audit to {email}.
             </p>
           </div>
         </div>

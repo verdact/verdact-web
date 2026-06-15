@@ -163,7 +163,7 @@ export function AuditFunnel() {
 
   return (
     <>
-      <MarketingHeader ctaLabel="Start free" ctaHref="/signup" />
+      <MarketingHeader ctaLabel="Join the waitlist" ctaHref="/signup" />
       <main id="main" className={styles.page}>
         {phase === 'landing' && (
           <Landing
@@ -226,7 +226,7 @@ function Landing({ onStart }: { onStart: () => void }) {
       <section className={styles.hero}>
         <div className="wrap">
           <div className={styles.heroInner}>
-            <p className="eyebrow">Free dispute audit &middot; no signup</p>
+            <p className="eyebrow">Launching soon &middot; free dispute audit, no signup</p>
             <h1 className={styles.heroHeadline}>
               Find the Stripe disputes you <span className={styles.key}>should have won</span>.
             </h1>
