@@ -7,15 +7,19 @@ import {
   CheckIcon,
   ChevronRightIcon,
   ClockIcon,
-  DocIcon,
   LockIcon,
   ShieldIcon,
 } from '../../dash-icons';
 import { NoProfileFirstOpen } from './no-profile-first-open';
 import { EvidenceAnalysisPanels } from './evidence-analysis-panels';
+import { EvidenceUploader } from './evidence-uploader';
+import { NarrativeEditor } from './narrative-editor';
+import { RemoveFileButton } from './evidence-file-actions';
+import { PacketView } from './packet-view';
 import { analyzeEvidence } from '@/lib/evidence';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
+import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
 import { can } from '@/lib/entitlements';
 import { PaidGate } from '../../../_components/ui/paid-gate';
 
@@ -70,6 +74,8 @@ type EvidenceItem = {
   relevance: string;
   status: 'confirmed' | 'missing' | 'draft';
   when?: string;
+  // Present for uploaded files — enables the inline Remove control.
+  fileId?: string;
 };
 
 export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageProps) {
@@ -110,8 +116,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             'created_at',
             'updated_at',
             // Nested customer PII (linked via disputes.pii_id) — billing country
-            // feeds the geo/network consistency analyzer.
-            'dispute_pii ( billing_address )',
+            // feeds the geo/network consistency analyzer; name + email populate
+            // the generated packet's Stripe customer fields.
+            'dispute_pii ( billing_address, customer_name, customer_email )',
           ].join(', '),
         )
         .eq('id', id)
@@ -172,17 +179,16 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   // ── Entitlements seam (decision #3): resolve the Free→Paid gate per action.
   // Beta-unlocked by default, so these are true today; the gate flips here, with
   // zero changes at the call sites in BottomActionBar, once billing turns on.
-  const [exportGate, submitGate] = await Promise.all([
+  const [exportGate, submitGate, downloadGate] = await Promise.all([
     can(user, 'export_packet'),
     can(user, 'submit_to_stripe'),
+    can(user, 'download_packet'),
   ]);
   const approved = Boolean(record.evidence_approved_at);
   const submitted = Boolean(record.submitted_at);
-  const hasFiles = files.length > 0;
-  const readiness = submitted ? 100 : approved ? 92 : hasFiles ? 78 : 58;
-  const missingCount = approved ? 0 : 1;
   const evidenceItems = buildEvidenceItems(record, files, approved);
   const businessName = membership.merchant.business_name?.trim() || null;
+  const narrative = readNarrative(record.evidence_draft);
 
   // ── Per-dispute evidence analysis (Revano-adopted features) ────────────────
   // Proof is derived conservatively from attached evidence files until the
@@ -212,6 +218,54 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     hasChargeAttached: Boolean(record.processor_charge_id),
     approved,
   });
+
+  // ── Generated packet (free to build + view) ────────────────────────────────
+  // Pure assembly of dispute + real files + narrative + analyzer output into
+  // Stripe-native evidence fields. Readiness now comes from REAL evidence, not a
+  // fixed ladder.
+  const packet = buildEvidencePacket({
+    dispute: {
+      processorDisputeId: record.processor_dispute_id,
+      processorChargeId: record.processor_charge_id,
+      amount: record.amount,
+      currency: record.currency,
+      reasonLabel: formatReason(record.reason),
+      network: record.network,
+      serviceDate: enrichment.purchaseAt ?? null,
+      hasChargeAttached: Boolean(record.processor_charge_id),
+    },
+    customer: {
+      name: pii?.customer_name ?? null,
+      email: pii?.customer_email ?? null,
+      billingCountry,
+    },
+    profile: profile
+      ? {
+          productDescription: profile.product_description,
+          refundPolicyText: profile.refund_policy_text,
+          refundPolicyUrl: profile.refund_policy_url,
+          cancellationPolicyText: profile.cancellation_policy_text,
+          cancellationPolicyUrl: profile.cancellation_policy_url,
+        }
+      : null,
+    files: files.map((f) => ({
+      id: f.id,
+      purpose: f.purpose,
+      mime_type: f.mime_type,
+      content_size_bytes: f.content_size_bytes,
+      created_at: f.created_at,
+    })),
+    narrative,
+    analysis: evidenceAnalysis,
+  });
+  const readiness = submitted ? 100 : packet.readiness.percent;
+  const missingCount = packet.readiness.missing.length;
+  const firstMissing = packet.readiness.missing[0];
+  const packetText = serializePacketText(
+    packet,
+    `Verdact evidence packet — dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
+  );
+  const downloadFilename = `verdact-packet-${record.processor_dispute_id}.txt`;
 
   return (
     <AppShell email={user.email} businessName={businessName} active="disputes">
@@ -250,16 +304,25 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
           <ReadinessCard
             readiness={readiness}
             missingCount={missingCount}
-            approved={approved}
+            firstMissing={firstMissing}
             submitted={submitted}
             dueBy={record.due_by}
           />
 
-          <ResolveMissingProof open={!approved} />
+          <EvidenceUploader disputeId={record.id} />
 
-          <EvidenceRecord items={evidenceItems} missingCount={missingCount} />
+          <EvidenceRecord items={evidenceItems} disputeId={record.id} />
+
+          <NarrativeEditor disputeId={record.id} initialNarrative={narrative} />
 
           <EvidenceAnalysisPanels analysis={evidenceAnalysis} />
+
+          <PacketView
+            packet={packet}
+            canDownload={downloadGate.allowed}
+            packetText={packetText}
+            downloadFilename={downloadFilename}
+          />
         </div>
 
         <aside className="space-y-5 lg:sticky lg:top-6">
@@ -280,22 +343,23 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 function ReadinessCard({
   readiness,
   missingCount,
-  approved,
+  firstMissing,
   submitted,
   dueBy,
 }: {
   readiness: number;
   missingCount: number;
-  approved: boolean;
+  firstMissing?: string;
   submitted: boolean;
   dueBy: string | null;
 }) {
+  const ready = submitted || missingCount === 0;
   const title = submitted
     ? 'Submitted record.'
-    : approved
+    : missingCount === 0
       ? 'Filing-ready record.'
-      : 'Draft record. One issue blocks filing readiness.';
-  const badge = submitted ? 'Submitted' : approved ? 'Ready' : 'Needs evidence';
+      : `Draft record. ${missingCount} ${missingCount === 1 ? 'item' : 'items'} left for filing readiness.`;
+  const badge = submitted ? 'Submitted' : missingCount === 0 ? 'Ready' : 'Needs evidence';
 
   return (
     <section className="surface-card overflow-hidden border-t-[3px] border-t-action">
@@ -303,10 +367,8 @@ function ReadinessCard({
         <ReadinessDial value={readiness} />
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <span
-              className={`pill-${approved || submitted ? 'trust' : 'warning'} w-fit`}
-            >
-              {approved || submitted ? (
+            <span className={`pill-${ready ? 'trust' : 'warning'} w-fit`}>
+              {ready ? (
                 <CheckIcon className="h-3 w-3" />
               ) : (
                 <AlertIcon className="h-3 w-3" />
@@ -332,13 +394,13 @@ function ReadinessCard({
         <ReadinessFact
           icon={<AlertIcon className="h-3.5 w-3.5" />}
           label="Blocker"
-          value={missingCount > 0 ? 'Missing acceptance proof' : 'None open'}
+          value={missingCount > 0 ? (firstMissing ?? 'Open item') : 'None open'}
           tone={missingCount > 0 ? 'warn' : 'ok'}
         />
         <ReadinessFact
           icon={<ChevronRightIcon className="h-3.5 w-3.5" />}
           label="Next action"
-          value={missingCount > 0 ? 'Resolve missing item' : 'Review controls'}
+          value={missingCount > 0 ? 'Add the missing item' : 'Review controls'}
         />
         <ReadinessFact
           icon={<ClockIcon className="h-3.5 w-3.5" />}
@@ -388,69 +450,15 @@ function ReadinessDial({ value }: { value: number }) {
   );
 }
 
-function ResolveMissingProof({ open }: { open: boolean }) {
-  return (
-    <details
-      className="overflow-hidden rounded-md border border-accent-rule border-l-[4px] border-l-accent bg-surface-2"
-      open={open}
-    >
-      <summary className="flex cursor-pointer items-center gap-4 bg-accent-soft px-5 py-4">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-accent text-white">
-          <AlertIcon className="h-4 w-4" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="label-mono-strong text-accent">Resolve to unlock filing</span>
-          <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
-            Add the missing milestone sign-off
-          </span>
-        </span>
-      </summary>
-      <div className="px-5 pb-5 pt-3">
-        <p className="border-b border-dashed border-rule-strong pb-4 text-sm leading-6 text-ink-soft">
-          For a services-not-rendered dispute, an informal message helps, but a dated
-          acceptance record is the strongest proof. This is a guided design scaffold:
-          uploads and source search are intentionally not wired in this pass.
-        </p>
-        <div className="mt-4 grid gap-2.5">
-          {RESOLVE_OPTIONS.map((option, index) => (
-            <button
-              key={option.title}
-              className={`flex cursor-not-allowed items-center gap-3 rounded-md border px-4 py-3 text-left ${
-                index === 0
-                  ? 'border-action-rule bg-action-soft'
-                  : 'border-rule-strong bg-surface-2'
-              }`}
-              type="button"
-              disabled
-            >
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-md border border-rule-strong bg-surface text-action">
-                <DocIcon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold leading-snug text-ink">
-                  {option.title}
-                </span>
-                <span className="mt-0.5 block text-xs leading-5 text-ink-mute">
-                  {option.body}
-                </span>
-              </span>
-              {index === 0 ? <span className="pill-action">Fastest</span> : null}
-            </button>
-          ))}
-        </div>
-      </div>
-    </details>
-  );
-}
-
 function EvidenceRecord({
   items,
-  missingCount,
+  disputeId,
 }: {
   items: EvidenceItem[];
-  missingCount: number;
+  disputeId: string;
 }) {
   const confirmed = items.filter((item) => item.status === 'confirmed').length;
+  const missing = items.filter((item) => item.status === 'missing').length;
   return (
     <section className="surface-card overflow-hidden">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule bg-surface-3/60 px-6 py-4">
@@ -463,21 +471,23 @@ function EvidenceRecord({
             <CheckIcon className="h-3 w-3" />
             {confirmed} confirmed
           </span>
-          <span className={missingCount > 0 ? 'pill-accent' : 'pill-neutral'}>
-            {missingCount} missing
-          </span>
+          <span className={missing > 0 ? 'pill-accent' : 'pill-neutral'}>{missing} missing</span>
         </div>
       </header>
       <div className="px-6 py-2">
         {items.map((item) => (
-          <EvidenceItemRow key={`${item.source}-${item.title}`} item={item} />
+          <EvidenceItemRow
+            key={item.fileId ? `file-${item.fileId}` : `${item.source}-${item.title}`}
+            item={item}
+            disputeId={disputeId}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function EvidenceItemRow({ item }: { item: EvidenceItem }) {
+function EvidenceItemRow({ item, disputeId }: { item: EvidenceItem; disputeId: string }) {
   const isMissing = item.status === 'missing';
   const dotClass = isMissing ? 'miss' : 'ok';
   const tagClass = item.source === 'file' ? 'policy' : item.source;
@@ -516,6 +526,11 @@ function EvidenceItemRow({ item }: { item: EvidenceItem }) {
           <span className="label-mono flex-none">Relevance</span>
           <span>{item.relevance}</span>
         </p>
+        {item.fileId ? (
+          <div className="mt-3 flex justify-end">
+            <RemoveFileButton fileId={item.fileId} disputeId={disputeId} />
+          </div>
+        ) : null}
       </div>
     </details>
   );
@@ -707,9 +722,11 @@ type ProfileRow = {
 } | null;
 
 // Nested customer PII selected via the disputes.pii_id relationship. billing_address
-// is jsonb; only the country is read for the geo/network consistency analyzer.
+// is jsonb; the country feeds the geo/network analyzer, name + email the packet.
 type DisputePiiRow = {
   billing_address: { country?: string | null } | null;
+  customer_name: string | null;
+  customer_email: string | null;
 };
 
 // A profile "exists" for first-open purposes only if it carries the context the
@@ -725,29 +742,38 @@ function profileHasContent(profile: ProfileRow): boolean {
   );
 }
 
+// The Evidence Record is driven by REAL attached files: every uploaded file is a
+// confirmed, source-linked, removable row; the policy + acceptance lines reflect
+// what is actually on file, and the acceptance gap only shows when it is real.
 function buildEvidenceItems(
   record: WorkbenchDispute,
   files: EvidenceFile[],
   approved: boolean,
 ): EvidenceItem[] {
-  const fileItems = files.map((file) => ({
-    source: 'file' as const,
+  const fileItems: EvidenceItem[] = files.map((file) => ({
+    source: 'file',
     label: formatPurpose(file.purpose),
+    fileId: file.id,
     title: `${formatPurpose(file.purpose)} file`,
     detail: [
       file.mime_type ? `Type: ${file.mime_type}` : null,
       file.content_size_bytes ? `Size: ${formatFileSize(file.content_size_bytes)}` : null,
       file.upload_status ? `Status: ${file.upload_status.replaceAll('_', ' ')}` : null,
-      file.processor_file_id ? `Processor file: ${file.processor_file_id}` : null,
     ]
       .filter(Boolean)
       .join(' · '),
-    relevance: 'Attached evidence file available for the draft record.',
-    status: 'confirmed' as const,
+    relevance: purposeRelevance(file.purpose),
+    status: 'confirmed',
     when: formatDate(file.created_at),
   }));
 
-  return [
+  const hasAcceptance = files.some((f) => f.purpose === 'service_documentation');
+  const hasPolicyFile = files.some(
+    (f) => f.purpose === 'refund_policy' || f.purpose === 'cancellation_policy',
+  );
+  const acceptanceConfirmed = hasAcceptance || approved;
+
+  const items: EvidenceItem[] = [
     {
       source: 'stripe',
       label: 'STRIPE',
@@ -763,25 +789,46 @@ function buildEvidenceItems(
     {
       source: 'policy',
       label: 'POLICY',
-      title: 'Terms, refund, and cancellation policy',
-      detail:
-        'Policy evidence is part of the record scaffold. The actual captured policy artifact is not attached in this UI pass.',
+      title: hasPolicyFile
+        ? 'Refund or cancellation policy'
+        : 'Terms, refund, and cancellation policy',
+      detail: hasPolicyFile
+        ? 'A policy document is attached to this record.'
+        : 'No policy document is attached yet. Add the refund or cancellation terms the customer agreed to.',
       relevance: 'Shows what the customer agreed to before the disputed engagement.',
-      status: 'draft',
-    },
-    {
-      source: 'missing',
-      label: approved ? 'RESOLVED' : 'MISSING · REQUIRED',
-      title: 'Milestone sign-off document',
-      detail: approved
-        ? 'Merchant approval is recorded for this evidence workflow.'
-        : 'A dated, signed milestone sign-off is not present in connected or uploaded sources yet.',
-      relevance: approved
-        ? 'This record can move to the filing workflow.'
-        : 'For services-not-rendered disputes, this is the strongest acceptance proof and blocks filing readiness.',
-      status: approved ? 'confirmed' : 'missing',
+      status: hasPolicyFile ? 'confirmed' : 'draft',
     },
   ];
+
+  // Only surface the acceptance gap when it is genuinely missing.
+  if (!acceptanceConfirmed) {
+    items.push({
+      source: 'missing',
+      label: 'MISSING · RECOMMENDED',
+      title: 'Delivery or acceptance proof',
+      detail:
+        'A dated delivery confirmation or signed acceptance is the strongest proof for a services dispute. Add one above.',
+      relevance:
+        'For services-not-rendered disputes, this is the strongest acceptance proof and lifts filing readiness.',
+      status: 'missing',
+    });
+  }
+
+  return items;
+}
+
+function purposeRelevance(purpose: string): string {
+  switch (purpose) {
+    case 'service_documentation':
+      return 'Demonstrates the work was delivered or accepted.';
+    case 'communication':
+      return 'Shows the customer engaged, agreed, or accepted in writing.';
+    case 'refund_policy':
+    case 'cancellation_policy':
+      return 'Shows the terms the customer agreed to before the engagement.';
+    default:
+      return 'Supporting evidence attached to the record.';
+  }
 }
 
 // Conservative proof read from attached evidence files, until the workbench's
@@ -802,24 +849,17 @@ function deriveProofFromFiles(files: EvidenceFile[]): {
   return { delivery, usage, comms };
 }
 
-const RESOLVE_OPTIONS = [
-  {
-    title: 'Upload a signed document',
-    body: 'PDF or image of a signed acceptance, SOW completion, or milestone sign-off.',
-  },
-  {
-    title: 'Request sign-off from the customer',
-    body: 'Future flow: send a one-click acceptance link and file the reply as proof.',
-  },
-  {
-    title: 'Search Gmail or Slack again',
-    body: 'Future flow: rescan connected sources for a stronger acceptance artifact.',
-  },
-  {
-    title: 'Mark unavailable, with a reason',
-    body: 'Future flow: record why the proof does not exist and file the remaining case.',
-  },
-] as const;
+// The merchant's draft narrative lives on disputes.evidence_draft (JSONB). Read
+// it defensively — the column may be null, a legacy string, or an object.
+function readNarrative(draft: unknown): string {
+  if (!draft) return '';
+  if (typeof draft === 'string') return draft;
+  if (typeof draft === 'object' && 'narrative' in draft) {
+    const n = (draft as { narrative?: unknown }).narrative;
+    return typeof n === 'string' ? n : '';
+  }
+  return '';
+}
 
 function formatReason(reason: string | null) {
   if (!reason) return 'Reason pending';
