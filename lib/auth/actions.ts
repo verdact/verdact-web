@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { BETA_ACCESS_MESSAGE, emailHasBetaAccess } from './admission';
 
 export type AuthFormState =
   | {
@@ -71,6 +72,14 @@ export async function signupAction(
   if (password.length < 8) {
     return {
       error: 'Password must be at least 8 characters.',
+      email,
+      businessName,
+      fullName,
+    };
+  }
+  if (!(await emailHasBetaAccess(email))) {
+    return {
+      error: BETA_ACCESS_MESSAGE,
       email,
       businessName,
       fullName,

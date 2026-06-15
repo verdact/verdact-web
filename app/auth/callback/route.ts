@@ -24,6 +24,10 @@ function redirectAfterAuth(origin: string, next: string, isRecoveryFlow: boolean
   return response;
 }
 
+function isAdmissionError(message: string): boolean {
+  return message.toLowerCase().includes('invite-only');
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      if (isAdmissionError(error.message)) {
+        return NextResponse.redirect(`${origin}/signup?access=pending`);
+      }
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(error.message)}`,
       );
@@ -50,6 +57,9 @@ export async function GET(request: NextRequest) {
       token_hash: tokenHash,
     });
     if (error) {
+      if (isAdmissionError(error.message)) {
+        return NextResponse.redirect(`${origin}/signup?access=pending`);
+      }
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(error.message)}`,
       );
