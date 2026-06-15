@@ -228,8 +228,11 @@ export function AuditResult({ score, email, onRestart }: AuditResultProps) {
             </h2>
             <p className={styles.convertSub}>
               New workspaces are not open to the public yet. Join the waitlist and we&rsquo;ll tell you
-              the moment you can create yours &mdash; then pre-load these {summary.totalDisputes}{' '}
-              disputes as your starting history. You build and view the evidence packet for free, and
+              the moment you can create yours &mdash; then pre-load{' '}
+              {summary.totalDisputes === 1
+                ? 'this dispute'
+                : `these ${summary.totalDisputes} disputes`}{' '}
+              as your starting history. You build and view the evidence packet for free, and
               nothing is ever filed without your sign-off.
             </p>
             <div className={styles.convertCtas}>
