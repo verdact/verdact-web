@@ -375,7 +375,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
           <div id="add-evidence" className="scroll-mt-24 space-y-5">
             <EvidenceUploader disputeId={record.id} tone={resolutionPlan ? 'tool' : 'lead'} />
-            <SlackImportPicker disputeId={record.id} slackConnected={slackConnected} />
+            <div id="import-slack" className="scroll-mt-24">
+              <SlackImportPicker disputeId={record.id} slackConnected={slackConnected} />
+            </div>
           </div>
 
           <EvidenceRecord
