@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { AuthFrame } from '../_components/auth-chrome';
 import { getUser } from '@/lib/dal';
 import { WaitlistForm } from './_components/WaitlistForm';
+import { BETA_ACCESS_MESSAGE } from '@/lib/auth/admission';
 
 export const metadata = {
   title: 'Launching soon',
@@ -12,11 +13,17 @@ export const metadata = {
 // here on a launching-soon panel and can leave an email for the waitlist.
 // Existing team members who are already signed in still continue to /dashboard;
 // the team signs in directly at /login (auth is unchanged there).
-export default async function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ access?: string }>;
+}) {
   const user = await getUser();
   if (user) {
     redirect('/dashboard');
   }
+  const params = await searchParams;
+  const pendingAccess = params.access === 'pending';
 
   return (
     <AuthFrame>
@@ -27,8 +34,9 @@ export default async function SignupPage() {
             Verdact is almost ready<span className="auth-dot">.</span>
           </h1>
           <p className="auth-sub">
-            New workspaces are not open to the public yet. Leave your email and we
-            will let you know the moment you can create yours.
+            {pendingAccess
+              ? BETA_ACCESS_MESSAGE
+              : 'New workspaces are not open to the public yet. Leave your email and we will let you know the moment you can create yours.'}
           </p>
         </div>
 
@@ -36,6 +44,12 @@ export default async function SignupPage() {
           className="auth-card auth-rise"
           style={{ '--i': 1, marginTop: 'var(--space-6)' } as React.CSSProperties}
         >
+          {pendingAccess ? (
+            <div className="notice notice--info" style={{ marginBottom: 'var(--space-5)' }}>
+              Your email can stay on the waitlist while beta access is closed.
+            </div>
+          ) : null}
+
           <WaitlistForm />
 
           <p className="auth-trust" style={{ marginTop: 'var(--space-6)' }}>
