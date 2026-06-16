@@ -1,0 +1,64 @@
+/* Activity surface — extras only. Shared structure comes from admin.module.css. */
+
+.rangeChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.chipCount {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.feedList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventRow {
+  align-items: center;
+}
+
+.eventKind {
+  flex: 0 0 auto;
+  min-width: 116px;
+}
+
+.eventDetail {
+  color: var(--ink-3);
+}
+
+.loadMoreRow {
+  display: flex;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+.truncatedNote {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.empty {
+  padding: 32px 8px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .eventRow {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .eventKind {
+    min-width: 0;
+  }
+}

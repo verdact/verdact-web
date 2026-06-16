@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { waitlistSignupSchema } from '@/lib/waitlist/schema';
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/audit/rate-limit';
 import { createServiceClient } from '@/lib/supabase/server';
+import { captureGeoBestEffort } from '@/lib/geo/capture';
 
 // Node runtime: uses node:crypto (rate-limit) and the service-role client.
 export const runtime = 'nodejs';
@@ -82,6 +83,9 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+
+    // Best-effort, env-gated geo capture. Never blocks or fails the signup.
+    await captureGeoBestEffort(supabase, 'waitlist_signups', 'email', email, request.headers);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
     console.error('[api/waitlist] insert threw:', message);

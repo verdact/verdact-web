@@ -1,0 +1,90 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   LEADS surface — extras only. Shared layout, tabs, worklist, filter, table,
+   drawer, and draft styling all come from admin.module.css. This file holds the
+   few presentation bits specific to the convert console.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.empty {
+  margin: var(--space-5) 0 var(--space-3);
+  padding: var(--space-5);
+  border: 1px dashed var(--hairline);
+  border-radius: 10px;
+  background: var(--panel-wash);
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Make a table row behave like a clickable target without breaking the cell
+   layout. The first cell also holds a real <button> so keyboard users get a
+   proper focus target. */
+.clickRow {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.clickRow:hover {
+  background: var(--panel-wash);
+}
+
+.rowButton {
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+.rowButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+  border-radius: 4px;
+}
+
+.scoreInline {
+  display: inline-flex;
+  align-items: center;
+}
+
+.signalList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.signalItem {
+  position: relative;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.signalItem::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--ink-3);
+}
+
+.actionText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}

@@ -1,0 +1,649 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Economics cockpit — interactive FP&A surface. Cockpit-specific styles only;
+   shared primitives come from ../admin.module.css. Colors are tokens, never
+   hardcoded palette. Status color is meaningful: verdict-green = profit/healthy,
+   gap-vermilion = burn/shortfall, amber = watch.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Sticky hero metric band (breaks the card grid) ─────────────────────────── */
+
+.heroBand {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.45);
+}
+
+.heroCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--panel);
+}
+
+.heroLabel {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.heroValue {
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: color 120ms ease;
+}
+
+.heroValueGood {
+  color: var(--verdict);
+}
+.heroValueBad {
+  color: var(--gap-text);
+}
+.heroValueWarn {
+  color: var(--amber-text, #9a6700);
+}
+
+.heroSub {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 880px) {
+  .heroBand {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 460px) {
+  .heroBand {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Cockpit two-column layout: sliders rail + visuals ──────────────────────── */
+
+.cockpitGrid {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) 1fr;
+  gap: var(--space-5, 20px);
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .cockpitGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.visualsCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 20px);
+  min-width: 0;
+}
+
+/* ── Driver sliders ─────────────────────────────────────────────────────────── */
+
+.sliderStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sliderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sliderHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sliderLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sliderReadout {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.sliderReadoutDim {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.sliderInput {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--hairline);
+  outline: none;
+  cursor: pointer;
+}
+
+.sliderInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--verdict);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--verdict);
+  cursor: grab;
+  transition: transform 80ms ease;
+}
+.sliderInput::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.12);
+}
+.sliderInput::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--verdict);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--verdict);
+  cursor: grab;
+}
+.sliderInput:focus-visible {
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+}
+
+.sliderHint {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* Collapsible "all inputs" disclosure */
+.disclosure {
+  margin-top: 6px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 12px;
+}
+
+.disclosureSummary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.disclosureSummary::-webkit-details-marker {
+  display: none;
+}
+.disclosureSummary::before {
+  content: '▸';
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.disclosure[open] .disclosureSummary::before {
+  content: '▾';
+}
+
+.allInputsGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.miniField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.miniFieldLabel {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.miniFieldInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.miniFieldAffix {
+  position: absolute;
+  left: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.miniFieldInput {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  background: var(--panel);
+}
+.miniFieldInputPad {
+  padding-left: 18px;
+}
+.miniFieldInput:focus {
+  outline: none;
+  border-color: var(--verdict);
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.resetBtn {
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--ink-2);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.resetBtn:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+/* ── Projection-to-target line chart (SVG) ──────────────────────────────────── */
+
+.projChart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.projGrid {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+
+.projAxisLabel {
+  font-size: 10px;
+  fill: var(--ink-3);
+  font-family: var(--font-mono);
+}
+
+.shortfallBand {
+  fill: var(--gap);
+  opacity: 0.1;
+}
+
+.projArea {
+  fill: var(--verdict);
+  opacity: 0.1;
+}
+
+.projLine {
+  fill: none;
+  stroke: var(--verdict);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.projZeroLine {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.targetLine {
+  stroke: var(--ink-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.targetTick {
+  fill: var(--ink-2);
+}
+
+.projDot {
+  fill: var(--verdict);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.projDotBad {
+  fill: var(--gap-text);
+}
+
+.projLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.projLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.projSwatch {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.projSwatchLine {
+  background: var(--verdict);
+}
+.projSwatchShortfall {
+  background: var(--gap);
+  opacity: 0.5;
+  height: 10px;
+}
+.projSwatchTarget {
+  background: var(--ink-2);
+  height: 0;
+  border-top: 1.5px dashed var(--ink-2);
+}
+
+/* ── Tornado sensitivity ────────────────────────────────────────────────────── */
+
+.tornado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tornadoRow {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.tornadoLabel {
+  font-size: 12.5px;
+  color: var(--ink);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tornadoBars {
+  position: relative;
+  height: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.tornadoAxis {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--hairline);
+}
+
+.tornadoNeg,
+.tornadoPos {
+  height: 16px;
+  align-self: center;
+  border-radius: 3px;
+}
+.tornadoNeg {
+  justify-self: end;
+  background: var(--gap);
+  opacity: 0.65;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.tornadoPos {
+  justify-self: start;
+  background: var(--verdict);
+  opacity: 0.65;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.tornadoValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.tornadoCol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tornadoColNeg {
+  justify-content: flex-end;
+}
+
+.targetPicker {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.targetPickerBtn {
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.targetPickerBtn + .targetPickerBtn {
+  border-left: 1px solid var(--hairline);
+}
+.targetPickerActive {
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+
+/* ── Scenarios ──────────────────────────────────────────────────────────────── */
+
+.scenarioRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.scenarioCard {
+  flex: 1 1 200px;
+  min-width: 180px;
+  text-align: left;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 100ms ease, box-shadow 100ms ease, transform 100ms ease;
+}
+.scenarioCard:hover {
+  border-color: var(--ink-3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -12px rgba(0, 0, 0, 0.4);
+}
+.scenarioCardActive {
+  border-color: var(--verdict);
+  box-shadow: 0 0 0 1px var(--verdict);
+}
+
+.scenarioName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.scenarioMeta {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.scenarioKind {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  color: var(--ink-2);
+  width: fit-content;
+}
+.scenarioKindBase {
+  color: var(--verdict);
+  border-color: var(--verdict-deep, var(--verdict));
+}
+.scenarioKindUpside {
+  color: var(--verdict);
+  border-color: var(--verdict-deep, var(--verdict));
+}
+.scenarioKindRisk {
+  color: var(--gap-text);
+  border-color: var(--gap);
+}
+
+.compareControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.compareToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  background: transparent;
+}
+.compareToggleActive {
+  border-color: var(--verdict);
+  color: var(--verdict);
+  background: var(--verdict-tint);
+}
+
+.compareTableWrap {
+  overflow-x: auto;
+}
+
+.emptyState {
+  border: 1px dashed var(--hairline);
+  border-radius: 10px;
+  padding: 18px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* ── Save scenario form ─────────────────────────────────────────────────────── */
+
+.saveForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.saveField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.saveFieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.saveInput {
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+  min-width: 200px;
+}
+.saveInput:focus {
+  outline: none;
+  border-color: var(--verdict);
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+}
+.saveSelect {
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+}
+
+.dirtyDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber-text, #9a6700);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.cockpitMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.cockpitMeta strong {
+  color: var(--ink);
+  font-weight: 600;
+}

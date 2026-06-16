@@ -1,0 +1,178 @@
+/* Disputes surface — extras only. Shared layout/tokens come from admin.module.css.
+   Everything here is scoped to this surface; nothing leaks into the shared sheet. */
+
+.summaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.summaryBadges {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.summaryStat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.summaryStatValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  font-size: 1.05rem;
+}
+
+.honestyNote {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-subtle, #6b7280);
+  border-top: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  padding-top: 0.75rem;
+}
+
+/* What's working / leaking ------------------------------------------------- */
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.themeCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.themeTitle {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.themeTitleGood {
+  color: var(--color-verdict, #1f9d63);
+}
+
+.themeTitleBad {
+  color: var(--color-gap, #d24b3a);
+}
+
+.themeItems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.themeItem {
+  position: relative;
+  padding-left: 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text, inherit);
+}
+
+.themeItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+/* Worklist amount tag ------------------------------------------------------- */
+
+.amountTag {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-subtle, #6b7280);
+}
+
+/* Table row affordances ----------------------------------------------------- */
+
+.clickRow {
+  cursor: pointer;
+}
+
+.clickRow:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.clickRow:focus-visible {
+  outline: 2px solid var(--color-accent, #2f6fed);
+  outline-offset: -2px;
+}
+
+.reasonCell {
+  display: inline-block;
+  max-width: 26ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* Drawer extras ------------------------------------------------------------- */
+
+.readinessKeys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.improveList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.improveItem {
+  position: relative;
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.improveItem::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--color-accent, #2f6fed);
+  font-weight: 700;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mutedNote,
+.themeEmpty {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-subtle, #6b7280);
+}

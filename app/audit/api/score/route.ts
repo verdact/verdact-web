@@ -3,6 +3,7 @@ import { auditSubmissionSchema } from '@/lib/audit/schema';
 import { computeAuditScore } from '@/lib/audit/scoring';
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/audit/rate-limit';
 import { createServiceClient } from '@/lib/supabase/server';
+import { readEdgeGeo, geoColumns } from '@/lib/geo/edge';
 import type { AuditDispute } from '@/lib/audit/types';
 
 // Node runtime: uses node:crypto (rate-limit) and the service-role client.
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     score,
     ipHash: clientKey,
     userAgent: request.headers.get('user-agent'),
+    headers: request.headers,
   });
 
   return NextResponse.json({ score });
@@ -87,14 +89,18 @@ async function captureLead({
   score,
   ipHash,
   userAgent,
+  headers,
 }: {
   submission: import('@/lib/audit/schema').AuditSubmission;
   score: ReturnType<typeof computeAuditScore>;
   ipHash: string;
   userAgent: string | null;
+  headers: Headers;
 }): Promise<void> {
   try {
     const supabase = createServiceClient();
+    // Env-gated coarse geo (off until ADMIN_GEO_CAPTURE='on' + migration applied).
+    const geo = process.env.ADMIN_GEO_CAPTURE === 'on' ? geoColumns(readEdgeGeo(headers)) : {};
     // estimated_dispute_rate is stored as a FRACTION (e.g. 0.0042), matching
     // vamp_snapshots.estimated_vamp_ratio. score.rate.ratioPercent is a percent,
     // so divide by 100 here. Never store the percent in the fraction column.
@@ -121,6 +127,7 @@ async function captureLead({
       source: 'audit_funnel',
       ip_hash: ipHash,
       user_agent: userAgent?.slice(0, 400) ?? null,
+      ...geo,
     });
 
     if (error) {

@@ -1,0 +1,228 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Access cockpit — surface-specific extras only. Shared structure (panel, table,
+   drawer, badge, chip, filterBar, etc.) comes from admin.module.css. Anything
+   here is unique to the access control surface and not worth promoting globally.
+   Color is used for STATUS only (verdict-green good / vermilion bad).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Admission state hero — the platform's front door, framed as a deliberate,
+   reversible decision. Two states sit side by side so the consequence of each
+   is legible at a glance. */
+.admissionHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+@media (max-width: 1023px) {
+  .admissionHero {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admissionState {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admissionStateValue {
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.admissionConsequence {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 46ch;
+}
+
+.admissionMeta {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.admissionMeta strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* The toggle column: switching modes is a control, not a casual click. The
+   open-beta form gates behind a typed confirmation; invite-only is one click
+   back. */
+.admissionControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-left: 1px solid var(--hairline);
+  padding-left: var(--space-5);
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .admissionControl {
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+    padding-left: 0;
+    padding-top: var(--space-4);
+  }
+}
+
+.admissionControlLead {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.confirmStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirmRow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+@media (max-width: 560px) {
+  .confirmRow {
+    flex-direction: column;
+  }
+}
+
+/* Owner-only lock note when an admin (non-owner) views the admission control. */
+.lockNote {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--ink-3);
+  background: var(--panel-wash);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+/* Quick-approve form sits at the top of the invites panel where it's actually
+   used. Mirrors the inviteForm grid but is self-contained here. */
+.quickApprove {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(220px, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+@media (max-width: 1023px) {
+  .quickApprove {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Last-seen presence dot in the admin roster. */
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.presenceDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--ink-3);
+}
+
+.presenceActive {
+  background: var(--verdict);
+}
+
+/* "You" tag on the current admin's own row. */
+.selfTag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--verdict-deep);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+  vertical-align: middle;
+}
+
+/* A subtle clickable affordance on rows that open the drawer. Keeps table
+   semantics but signals interactivity. */
+.rowButton {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.rowButton:hover .rowButtonLabel {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--edge-green);
+}
+
+.rowButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+  border-radius: 4px;
+}
+
+.rowButtonLabel {
+  display: block;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Event metadata key/value pairs inside the audit drawer. */
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.metaPair {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.metaKey {
+  color: var(--ink-3);
+}
+
+/* Empty-state block for the audit drawer / filtered lists. */
+.inlineEmpty {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  padding: 4px 0;
+}

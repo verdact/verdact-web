@@ -1863,7 +1863,12 @@ html.js .rv-row.in {
     width: 100vw;
     max-width: 100vw;
     min-width: 0;
-    overflow-x: hidden;
+    /* Cap the shell to the viewport so the CONTENT row scrolls internally and
+       the topbar + bottom-nav stay fixed rows. Without this the whole document
+       scrolls and the sticky bottom-nav floats over the content band, hiding the
+       last rows behind the "task bar". 100dvh tracks the mobile URL-bar. */
+    height: 100dvh;
+    overflow: hidden;
     grid-template-columns: 1fr;
     grid-template-rows: 52px minmax(0, 1fr) 56px;
     grid-template-areas:
@@ -1875,7 +1880,7 @@ html.js .rv-row.in {
   .app-rail      { display: none; }
   .app-topbar    { display: flex; width: 100vw; max-width: 100vw; }
   .app-bottom-nav { display: flex; width: 100vw; max-width: 100vw; overflow: hidden; }
-  .app-content   { width: 100vw; max-width: 100vw; min-height: auto; }
+  .app-content   { width: 100vw; max-width: 100vw; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ─── THEME TOGGLE ──────────────────────────────────────────────────────────

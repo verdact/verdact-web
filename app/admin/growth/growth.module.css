@@ -1,0 +1,197 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Growth surface extras. Anything not already in admin.module.css lives here.
+   The shared trend primitives (.barSeries / .bar / .barIncomplete / .rangeBar)
+   come from admin.module.css; these classes only add the framing the rebuilt
+   trend + funnel reading needs.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Header row: title block on the left, range selector on the right. */
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.toolbarMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.rangeNote {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* Trend grid: one tile per acquisition metric. */
+.trendGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+@media (max-width: 720px) {
+  .trendGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trendTile {
+  border: 1px solid var(--hairline);
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
+}
+.trendTile:hover {
+  border-color: var(--verdict-deep);
+  box-shadow: 0 1px 0 var(--hairline), 0 6px 18px -12px rgba(0, 0, 0, 0.45);
+}
+.trendTile:focus-visible {
+  outline: none;
+  border-color: var(--verdict);
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+}
+
+.trendTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.trendValue {
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin: 2px 0 0;
+}
+
+.trendRangeCount {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.trendRangeCount strong {
+  color: var(--ink-2);
+  font-weight: 700;
+}
+
+/* The bar chart wrapper holds the bars + a baseline axis row. */
+.chartWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.axisRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.incompleteNote {
+  font-size: 11px;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.incompleteSwatch {
+  width: 16px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--ink-3);
+  opacity: 0.45;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.4) 3px,
+    rgba(255, 255, 255, 0.4) 6px
+  );
+  flex: none;
+}
+
+/* Conversion read-out under the funnel. */
+.convRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+@media (max-width: 560px) {
+  .convRow {
+    grid-template-columns: 1fr;
+  }
+}
+.convCard {
+  border: 1px solid var(--hairline);
+  background: var(--panel-wash);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.convValue {
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+.convLabel {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* "What changed" read — plain-English summary of the active window. */
+.changeList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.changeRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.changeRow:last-child {
+  border-bottom: 0;
+}
+.changeMetric {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 150px;
+  flex: none;
+}
+.changeText {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+/* Drawer chart re-uses the chartWrap; this just gives it breathing room. */
+.drawerChart {
+  margin-top: 6px;
+}
