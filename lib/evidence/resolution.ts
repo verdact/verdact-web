@@ -78,6 +78,7 @@ const RESOLVE_PRIORITY: ResolvableKey[] = [
 ];
 
 const UPLOAD_ANCHOR = '#add-evidence';
+const SLACK_ANCHOR = '#import-slack';
 const NARRATIVE_ANCHOR = '#your-account';
 const SETTINGS_HREF = '/settings';
 
@@ -132,7 +133,7 @@ export function buildResolutionPlan(input: ResolutionInput): ResolutionPlan | nu
           kind: 'connect',
           label: 'Import from Slack',
           detail: 'Pick the exact messages where the customer agreed, accepted, or used the work.',
-          href: UPLOAD_ANCHOR,
+          href: SLACK_ANCHOR,
         });
       }
       return {

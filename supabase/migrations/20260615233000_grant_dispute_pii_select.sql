@@ -1,0 +1,12 @@
+-- dispute_pii was created with RLS enabled and a correct merchant-scoped SELECT
+-- policy (dispute_pii_select: merchant_id in merchant_ids_for_user()), but the
+-- table was never GRANTed to the authenticated role. As a result the dispute
+-- workbench query
+--   disputes?select=...,dispute_pii(billing_address,customer_name,customer_email)
+-- returned 403 (permission denied for table dispute_pii) on the embed, so the
+-- per-dispute workbench page 404'd for EVERY dispute. It went unnoticed because
+-- no real dispute had ever loaded that page (the test Stripe account has charges
+-- disabled). Grant the missing SELECT privilege; the existing RLS policy still
+-- scopes every row to the caller's own merchant. Writes to dispute_pii happen
+-- via the service-role webhook path, so authenticated needs SELECT only.
+grant select on public.dispute_pii to authenticated;

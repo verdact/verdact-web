@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SlackChannel, SlackMessageSnapshot } from '@/lib/slack/api';
 
@@ -79,6 +79,19 @@ export function SlackImportPicker({
     setOpen(true);
     if (!channels) void loadChannels();
   }, [channels, loadChannels]);
+
+  // When the Stage 1E Resolve card's "Import from Slack" route deep-links here
+  // (#import-slack), open the picker straight away so the merchant lands on the
+  // channel browser instead of a collapsed card.
+  useEffect(() => {
+    if (!slackConnected) return;
+    const openIfTargeted = () => {
+      if (window.location.hash === '#import-slack') openPicker();
+    };
+    openIfTargeted();
+    window.addEventListener('hashchange', openIfTargeted);
+    return () => window.removeEventListener('hashchange', openIfTargeted);
+  }, [slackConnected, openPicker]);
 
   const loadMessages = useCallback(
     async (channel: SlackChannel, cursor?: string) => {
