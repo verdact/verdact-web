@@ -180,6 +180,7 @@ export default async function EvidencePacketPreview({
               canDownload={canDownload}
               packetText={packetText}
               downloadFilename="verdact-packet-dp_test_packet.txt"
+              reasonLabel="Visa product not received"
             />
             <section className="surface-card overflow-hidden">
               <header className="border-b border-rule px-5 py-4">

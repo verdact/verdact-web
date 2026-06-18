@@ -1,5 +1,6 @@
 import type { ResolutionPlan, ResolveRoute } from '@/lib/evidence/resolution';
 import { AlertIcon, ChevronRightIcon, DocIcon } from '../../dash-icons';
+import styles from './workbench.module.css';
 
 /**
  * Guided "Resolve missing proof" card (Stage 1E) — the decision-first centerpiece
@@ -22,8 +23,8 @@ export function ResolveMissingProof({ plan }: { plan: ResolutionPlan }) {
           <AlertIcon className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="label-mono-strong text-accent">{plan.eyebrow}</span>
-          <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
+          <span className={`${styles.labelMonoStrong} text-accent-deep`}>{plan.eyebrow}</span>
+          <span className={`${styles.fontDisplay} mt-1 block text-[1.05rem] font-semibold leading-tight text-ink`}>
             {plan.title}
           </span>
         </span>

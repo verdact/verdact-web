@@ -1,0 +1,556 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   WRITE-FEEDBACK widget — FAB + centered dialog + periodic prompt.
+
+   Tokens only (no new hex). Works signed-out on marketing/auth (light) and
+   inside the app shell (theme-aware: dark tokens are scoped to .app-shell, so
+   these rules inherit them automatically when rendered under it).
+
+   Two-color law: verdict green = action/verified (selected category, sent
+   state). Vermilion (--gap) ONLY for a genuine validation gap (the inline
+   error). Status is always icon + text, never color alone.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Floating action button (bottom-right) ─────────────────────────────────── */
+.fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--verdict);
+  color: var(--on-verdict);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--elev-2);
+  transition:
+    transform var(--d-fast) var(--ease),
+    background var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
+}
+.fab svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.fab:hover {
+  background: var(--verdict-press);
+  box-shadow: var(--elev-pop);
+}
+.fab:active {
+  transform: translateY(1px);
+}
+.fab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Collapse to an icon-only 44px target under 560px. */
+@media (max-width: 560px) {
+  .fab {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .fabLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ── Centered dialog overlay (clones the cmdk overlay mechanics) ────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  opacity: 0;
+  transition: opacity var(--d-fast) var(--ease);
+}
+.overlay.isOpen {
+  opacity: 1;
+}
+
+.panel {
+  width: min(520px, 100%);
+  max-height: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+  background: var(--panel);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-pop);
+  padding: var(--space-6);
+  transform: translateY(8px) scale(0.99);
+  opacity: 0;
+  transition:
+    transform var(--d-normal) var(--ease),
+    opacity var(--d-fast) var(--ease);
+}
+.overlay.isOpen .panel {
+  transform: none;
+  opacity: 1;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+.eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--verdict);
+}
+.title {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.sub {
+  margin: 0 0 var(--space-5);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.x {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
+}
+.x svg {
+  width: 18px;
+  height: 18px;
+}
+.x:hover {
+  background: var(--panel-wash);
+  color: var(--ink);
+}
+.x:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* ── Form fields ───────────────────────────────────────────────────────────── */
+.field {
+  margin-bottom: var(--space-4);
+}
+.field:last-of-type {
+  margin-bottom: 0;
+}
+.groupLabel,
+.label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.optional {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.lblRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.counter {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* Category radio cards (real radiogroup, arrow-key nav). Selection = verdict
+   tint, NOT vermilion even for "Something is broken": picking a category is an
+   action, not a risk. */
+.cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-wash);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    background var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
+}
+.catInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.catCheck {
+  display: inline-grid;
+  place-items: center;
+  width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: width var(--d-fast) var(--ease), opacity var(--d-fast) var(--ease);
+}
+.catCheck svg {
+  width: 14px;
+  height: 14px;
+}
+.cat:hover {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+.catInput:checked + .cat,
+.catSelected {
+  background: var(--verdict-tint);
+  color: var(--verdict-press);
+  box-shadow: inset 0 0 0 1px var(--mint);
+}
+.catSelected .catCheck {
+  width: 14px;
+  opacity: 1;
+}
+.catInput:focus-visible + .cat {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Inputs / textarea reuse the .inp visual but scoped locally so the widget is
+   self-contained whether or not it sits inside an .inp-bearing surface. */
+.input,
+.textarea {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  transition: box-shadow var(--d-fast) var(--ease);
+}
+.textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--ink-3);
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--verdict), 0 0 0 3px var(--verdict-tint);
+}
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  box-shadow: inset 0 0 0 1px var(--gap);
+}
+
+/* Auto-captured context (editable). A quiet notice block. */
+.context {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--panel-wash);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.contextRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.contextKey {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.contextRoute {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  word-break: break-all;
+}
+
+/* Screenshot note checkbox + privacy line. */
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 0;
+}
+.checkRow input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--verdict);
+  flex: 0 0 auto;
+}
+.checkText {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.checkText strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.privacy {
+  margin: var(--space-4) 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* Honeypot — visually + semantically removed from real users + AT. */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Inline validation (vermilion is correct: a genuine gap). */
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-input);
+  background: var(--gap-tint);
+  box-shadow: inset 0 0 0 1px var(--gap);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--gap-text);
+}
+.error svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* ── Thank-you state ───────────────────────────────────────────────────────── */
+.thanks {
+  text-align: center;
+  padding: var(--space-4) 0 var(--space-2);
+}
+.thanksIc {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--verdict-tint);
+  box-shadow: inset 0 0 0 1px var(--mint);
+  color: var(--verdict);
+}
+.thanksIc svg {
+  width: 28px;
+  height: 28px;
+}
+.thanksTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.thanksBody {
+  margin: var(--space-2) auto 0;
+  max-width: 38ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.thanksClose {
+  margin-top: var(--space-5);
+}
+
+/* ── Periodic prompt (bottom-LEFT, non-modal) ──────────────────────────────── */
+.prompt {
+  position: fixed;
+  left: var(--space-5);
+  bottom: var(--space-5);
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: min(320px, calc(100vw - var(--space-8)));
+  padding: var(--space-4);
+  background: var(--panel);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-2);
+  transform: translateY(12px);
+  opacity: 0;
+  transition: transform var(--d-normal) var(--ease), opacity var(--d-fast) var(--ease);
+}
+.prompt.isOpen {
+  transform: none;
+  opacity: 1;
+}
+.promptIc {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-input);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+.promptIc svg {
+  width: 18px;
+  height: 18px;
+}
+.promptBody {
+  flex: 1;
+  min-width: 0;
+}
+.promptH {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.promptP {
+  margin: 2px 0 var(--space-3);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.promptAct {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.promptYes {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--verdict);
+  cursor: pointer;
+}
+.promptYes:hover {
+  text-decoration: underline;
+}
+.promptLater {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.promptLater:hover {
+  color: var(--ink-2);
+}
+.promptX {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.promptX svg {
+  width: 14px;
+  height: 14px;
+}
+.promptX:hover {
+  background: var(--panel-wash);
+  color: var(--ink);
+}
+
+/* ── Reduced motion: instant state swaps, no rises ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .fab,
+  .overlay,
+  .panel,
+  .prompt,
+  .catCheck,
+  .x,
+  .input,
+  .textarea {
+    transition: none;
+  }
+  .panel {
+    transform: none;
+  }
+  .prompt {
+    transform: none;
+  }
+}

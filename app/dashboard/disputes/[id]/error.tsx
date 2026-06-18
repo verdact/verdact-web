@@ -4,6 +4,7 @@
 // with live Stripe charge data, so a transient upstream hiccup is the most
 // likely cause: lead with a retry. Honest, no blame, no stack trace in prod.
 import { useEffect } from 'react';
+import styles from './workbench.module.css';
 
 export default function WorkbenchError({
   error,
@@ -22,8 +23,8 @@ export default function WorkbenchError({
       className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 py-16 text-ink"
     >
       <div className="w-full max-w-md text-center">
-        <p className="label-mono mb-4">Evidence record interrupted</p>
-        <h1 className="font-display text-[clamp(1.6rem,4vw,2.25rem)] font-semibold leading-tight tracking-[-0.02em] text-ink">
+        <p className={`${styles.labelMono} mb-4`}>Evidence record interrupted</p>
+        <h1 className={`${styles.fontDisplay} text-[clamp(1.6rem,4vw,2.25rem)] font-semibold leading-tight tracking-[-0.02em] text-ink`}>
           We could not open this record
         </h1>
         <p className="mt-3 text-sm leading-6 text-ink-soft">
@@ -40,7 +41,7 @@ export default function WorkbenchError({
         </p>
 
         {error.digest ? (
-          <p className="label-mono mt-5 text-ink-mute">Reference {error.digest}</p>
+          <p className={`${styles.labelMono} mt-5`}>Reference {error.digest}</p>
         ) : null}
 
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">

@@ -1,6 +1,7 @@
 import type { EvidenceAnalysis } from '@/lib/evidence';
 import type { NarrativeBlock, QaFinding, Severity } from '@/lib/evidence';
 import { AlertIcon, CheckIcon, InfoCircleIcon } from '../../dash-icons';
+import styles from './workbench.module.css';
 
 // Cap the rendered activity bars so a long history stays a compact strip.
 const MAX_ACTIVITY_DAYS_SHOWN = 40;
@@ -14,7 +15,7 @@ const MIN_ACTIVITY_BAR_PCT = 8;
  *
  * Argument column (main):
  *   - Argument narratives (geo consistency, activity, policy binding) — #1/#2/#3
- *   - Founder → bank translation side-by-side — #4
+ *   - Founder → bank translation side-by-side — #4 (C-E1 raw -> bank-ready)
  *
  * Pre-submission QA (#5) is exported separately as `QaPanel`; the workbench
  * renders it in the right rail next to Account risk (decision-first IA).
@@ -29,6 +30,16 @@ export function EvidenceAnalysisPanels({ analysis }: { analysis: EvidenceAnalysi
 }
 
 // ─── Pre-submission QA (rail panel) ──────────────────────────────────────────
+
+// R5: each finding is one of Revano's three failure modes. The kind label is
+// surfaced explicitly so a merchant sees WHY a flag blocks (missing / weak /
+// mismatched), each tied to the reason code via the finding detail.
+const QA_KIND_LABEL: Record<QaFinding['kind'], string> = {
+  missing: 'Missing',
+  weak: 'Weak',
+  mismatch: 'Mismatched',
+  ok: 'Clear',
+};
 
 /** Rail-placed QA panel. Pulls block/warn/ok findings from the analysis. */
 export function QaPanel({ analysis }: { analysis: EvidenceAnalysis }) {
@@ -47,10 +58,10 @@ function QaFindingsPanel({
   blocked: boolean;
 }) {
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex items-center justify-between gap-3 border-b border-rule px-5 py-4">
-        <p className="label-mono-strong">Pre-submission QA</p>
-        <span className={blocked ? 'pill-accent' : summary.warns > 0 ? 'pill-warning' : 'pill-trust'}>
+        <p className={styles.labelMonoStrong}>Pre-submission QA</p>
+        <span className={blocked ? styles.pillGap : summary.warns > 0 ? styles.pillWarning : styles.pillVerdict}>
           {blocked ? <AlertIcon className="h-3 w-3" /> : <CheckIcon className="h-3 w-3" />}
           {blocked
             ? `${summary.blocks} to resolve`
@@ -59,12 +70,19 @@ function QaFindingsPanel({
               : 'Clear'}
         </span>
       </header>
+      <p className={`${styles.labelMono} px-5 pt-3`}>
+        Checks for missing, weak, and mismatched evidence before you file.
+      </p>
       <ul className="px-5 py-1">
         {qa.map((f) => (
           <li className="flex gap-3 border-b border-rule py-3 last:border-b-0" key={f.id}>
             <span
-              className={`mt-0.5 grid h-[18px] w-[18px] flex-none place-items-center rounded-[4px] text-white ${
-                f.status === 'block' ? 'bg-accent' : f.status === 'warn' ? 'bg-warning' : 'bg-trust'
+              className={`mt-0.5 grid h-[18px] w-[18px] flex-none place-items-center rounded-[4px] ${
+                f.status === 'block'
+                  ? styles.statusDotGap
+                  : f.status === 'warn'
+                    ? styles.statusDotNeutral
+                    : styles.statusDotOk
               }`}
             >
               {f.status === 'ok' ? (
@@ -76,7 +94,12 @@ function QaFindingsPanel({
               )}
             </span>
             <span>
-              <span className="block text-sm font-semibold leading-snug text-ink">{f.title}</span>
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold leading-snug text-ink">{f.title}</span>
+                {f.kind !== 'ok' ? (
+                  <span className={styles.labelMono}>{QA_KIND_LABEL[f.kind]}</span>
+                ) : null}
+              </span>
               <span className="mt-1 block text-xs leading-5 text-ink-mute">{f.detail}</span>
             </span>
           </li>
@@ -89,10 +112,10 @@ function QaFindingsPanel({
 // ─── Argument narratives (geo / activity / policy) ───────────────────────────
 
 const SEVERITY_PILL: Record<Severity, string> = {
-  strong: 'pill-trust',
-  present: 'pill-neutral',
-  missing: 'pill-neutral',
-  mismatch: 'pill-accent',
+  strong: styles.pillVerdict,
+  present: styles.pillNeutral,
+  missing: styles.pillNeutral,
+  mismatch: styles.pillGap,
 };
 
 const SEVERITY_LABEL: Record<Severity, string> = {
@@ -110,11 +133,13 @@ function ArgumentNarratives({
   timeline: { day: string; count: number }[];
 }) {
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-surface-3/60 px-6 py-4">
         <div>
-          <p className="font-display text-lg font-semibold text-ink">The argument, in bank language</p>
-          <p className="label-mono mt-1.5">Built only from what your evidence actually supports</p>
+          <p className={`${styles.fontDisplay} text-lg font-semibold text-ink`}>The argument, in bank language</p>
+          <p className={`${styles.labelMono} mt-1.5`}>
+            Built only from what your evidence actually supports
+          </p>
         </div>
       </header>
       <div className="px-6 py-2">
@@ -122,7 +147,16 @@ function ArgumentNarratives({
           <div key={n.id} className="border-b border-rule py-4 last:border-b-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold text-ink">{n.heading}</span>
-              <span className={SEVERITY_PILL[n.severity]}>{SEVERITY_LABEL[n.severity]}</span>
+              <span className={SEVERITY_PILL[n.severity]}>
+                {n.severity === 'strong' ? (
+                  <CheckIcon className="h-3 w-3" />
+                ) : n.severity === 'mismatch' ? (
+                  <AlertIcon className="h-3 w-3" />
+                ) : (
+                  <InfoCircleIcon className="h-3 w-3" />
+                )}
+                {SEVERITY_LABEL[n.severity]}
+              </span>
             </div>
             <p className="mt-2 text-sm leading-6 text-ink-soft">{n.body}</p>
           </div>
@@ -138,7 +172,7 @@ function ActivityBars({ timeline }: { timeline: { day: string; count: number }[]
   const shown = timeline.slice(-MAX_ACTIVITY_DAYS_SHOWN);
   return (
     <div className="border-t border-rule py-4">
-      <p className="label-mono mb-3">Activity over time</p>
+      <p className={`${styles.labelMono} mb-3`}>Activity over time</p>
       <div className="flex h-16 items-end gap-[2px]" aria-hidden="true">
         {shown.map((t) => (
           <span
@@ -157,15 +191,17 @@ function ActivityBars({ timeline }: { timeline: { day: string; count: number }[]
   );
 }
 
-// ─── Founder → bank translation ──────────────────────────────────────────────
+// ─── Founder → bank translation (C-E1 raw in / bank-ready out) ────────────────
 
 function TranslationPanel({ pairs }: { pairs: { founder: string; bank: string }[] }) {
   if (pairs.length === 0) return null;
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="border-b border-rule bg-surface-3/60 px-6 py-4">
-        <p className="font-display text-lg font-semibold text-ink">From your words to the bank&rsquo;s</p>
-        <p className="label-mono mt-1.5">What you have, restated as the bank reads it</p>
+        <p className={`${styles.fontDisplay} text-lg font-semibold text-ink`}>From your words to the bank&rsquo;s</p>
+        <p className={`${styles.labelMono} mt-1.5`}>
+          Raw on the left, mapped to the required field on the right
+        </p>
       </header>
       <div className="px-6 py-2">
         {pairs.map((p) => (
@@ -174,11 +210,14 @@ function TranslationPanel({ pairs }: { pairs: { founder: string; bank: string }[
             className="grid gap-3 border-b border-rule py-4 last:border-b-0 sm:grid-cols-2"
           >
             <div className="rounded-md border border-rule bg-surface-2 px-4 py-3">
-              <p className="label-mono mb-1.5">You said</p>
+              <p className={`${styles.labelMono} mb-1.5`}>You said (raw)</p>
               <p className="text-sm leading-6 text-ink-soft">{p.founder}</p>
             </div>
-            <div className="rounded-md border border-action-rule bg-action-soft px-4 py-3">
-              <p className="label-mono mb-1.5 text-action-deep">The bank reads</p>
+            <div className="rounded-md border border-trust-rule bg-trust-soft px-4 py-3">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-trust-deep">
+                <CheckIcon className="h-3 w-3" />
+                Mapped to required field
+              </p>
               <p className="text-sm leading-6 text-ink">{p.bank}</p>
             </div>
           </div>

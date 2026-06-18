@@ -8,6 +8,7 @@ export type AdminTab =
   | 'merchants'
   | 'disputes'
   | 'economics'
+  | 'feedback'
   | 'access'
   | 'activity';
 
@@ -18,6 +19,7 @@ const NAV: { tab: AdminTab; label: string; href: string }[] = [
   { tab: 'merchants', label: 'Merchants', href: '/admin/merchants' },
   { tab: 'disputes', label: 'Disputes', href: '/admin/disputes' },
   { tab: 'economics', label: 'Economics', href: '/admin/economics' },
+  { tab: 'feedback', label: 'Feedback', href: '/admin/feedback' },
   { tab: 'access', label: 'Access', href: '/admin/access' },
   { tab: 'activity', label: 'Activity', href: '/admin/activity' },
 ];
@@ -27,12 +29,15 @@ export function AdminShell({
   active,
   children,
   hrefFor,
+  /** A NEW-items count rendered on the Feedback tab (vermilion needs-attention). */
+  feedbackNewCount,
 }: {
   email: string;
   active: AdminTab;
   children: React.ReactNode;
   /** Override tab link targets (e.g. the dev preview points them at ?view=). */
   hrefFor?: (tab: AdminTab) => string;
+  feedbackNewCount?: number;
 }) {
   const tabHref = (tab: AdminTab): string =>
     hrefFor ? hrefFor(tab) : NAV.find((n) => n.tab === tab)?.href ?? '/admin';
@@ -49,16 +54,38 @@ export function AdminShell({
           </a>
         </div>
         <nav className="app-rail__nav" aria-label="Admin navigation">
-          {NAV.map((item) => (
-            <a
-              key={item.tab}
-              className={`app-rail__link${active === item.tab ? ' is-active' : ''}`}
-              href={tabHref(item.tab)}
-              aria-current={active === item.tab ? 'page' : undefined}
-            >
-              {item.label}
-            </a>
-          ))}
+          {NAV.map((item) => {
+            const showCount = item.tab === 'feedback' && (feedbackNewCount ?? 0) > 0;
+            return (
+              <a
+                key={item.tab}
+                className={`app-rail__link${active === item.tab ? ' is-active' : ''}`}
+                href={tabHref(item.tab)}
+                aria-current={active === item.tab ? 'page' : undefined}
+              >
+                <span>{item.label}</span>
+                {showCount ? (
+                  <span
+                    aria-label={`${feedbackNewCount} new`}
+                    style={{
+                      marginLeft: 'auto',
+                      minWidth: 18,
+                      padding: '1px 6px',
+                      borderRadius: 'var(--radius-pill)',
+                      background: 'var(--gap-tint)',
+                      color: 'var(--gap-text)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      lineHeight: '16px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {feedbackNewCount}
+                  </span>
+                ) : null}
+              </a>
+            );
+          })}
           <a className="app-rail__link" href="/dashboard">
             App dashboard
           </a>

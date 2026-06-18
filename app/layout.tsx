@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { PostHogProvider } from "./_components/posthog-provider";
+import { FeedbackWidget } from "./_components/feedback/FeedbackWidget";
 
 const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -52,7 +53,12 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
-        <PostHogProvider>{children}</PostHogProvider>
+        <PostHogProvider>
+          {children}
+          {/* Single mount: "send feedback from anywhere". Works signed-out on
+              marketing/auth (light) and inside the app shell (theme-aware). */}
+          <FeedbackWidget />
+        </PostHogProvider>
       </body>
     </html>
   );

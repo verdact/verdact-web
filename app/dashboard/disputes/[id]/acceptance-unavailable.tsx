@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { setAcceptanceUnavailableAction } from './actions';
+import styles from './workbench.module.css';
 
 /**
  * The single home for the "mark delivery/acceptance proof unavailable" control
@@ -79,7 +80,7 @@ export function AcceptanceUnavailable({
 
   return (
     <div className="mt-3 rounded-md border border-rule-strong bg-surface px-3 py-3">
-      <label className="label-mono mb-1.5 block" htmlFor={`unavail-${disputeId}`}>
+      <label className={`${styles.labelMono} mb-1.5 block`} htmlFor={`unavail-${disputeId}`}>
         Why is it unavailable?
       </label>
       <textarea
