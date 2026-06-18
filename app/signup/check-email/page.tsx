@@ -23,12 +23,12 @@ export default async function CheckEmailPage({
         <div className="auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
           <p className="eyebrow auth-eyebrow-row">Check your email</p>
           <h1 className="auth-h1">
-            Confirm your Verdact account<span className="auth-dot">.</span>
+            Confirm your email<span className="auth-dot">.</span>
           </h1>
           <p className="auth-sub">
             We sent a confirmation link to{' '}
-            {email ? <strong>{email}</strong> : 'your email'}. Open it to finish
-            creating your workspace.
+            {email ? <strong>{email}</strong> : 'your email'}. Click it to finish
+            setting up your workspace.
           </p>
         </div>
 
@@ -38,10 +38,7 @@ export default async function CheckEmailPage({
         >
           <div className="notice notice--info">
             <MailIcon className="h-4 w-4" />
-            <span>
-              After confirmation, you will return to sign in and continue to
-              your dashboard.
-            </span>
+            <span>After you confirm, you will come back here to sign in.</span>
           </div>
 
           <div className="space-y-3" style={{ marginTop: 'var(--space-5)' }}>

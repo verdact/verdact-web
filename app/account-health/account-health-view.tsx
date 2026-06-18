@@ -4,6 +4,7 @@ import { HEALTHY_LINE, STRIPE_LINE, GAUGE_MAX } from '@/lib/account-health/lines
 import { MeasuredPopup } from './_components/measured-popup';
 import { ExportButton } from './_components/export-button';
 import { RefreshButton } from './_components/refresh-button';
+import { IconCheck, IconAlert } from '../_components/ui/icons';
 import s from './account-health.module.css';
 
 // ── Constants (mirror the server writer; STRIPE_LINE/GAUGE_MAX are percents) ──
@@ -87,7 +88,10 @@ export function AccountHealthView({
             <>
               <div className={s.standingTop}>
                 <p className={s.readNumber}>{formatPct(ratio as number)}</p>
-                <p className={`${s.readBand} ${bandClass(band, 'readBand')}`}>{bandLabel(band)}</p>
+                <p className={`${s.readBand} ${bandClass(band, 'readBand')}`}>
+                  <BandIcon band={band as Band} className={s.readBandIcon} />
+                  {bandLabel(band)}
+                </p>
               </div>
               <p className={s.headroom}>{headroomLine(ratio as number, band)}</p>
 
@@ -97,6 +101,13 @@ export function AccountHealthView({
                     className={`${s.gaugeFill} ${bandClass(band, 'gaugeFill')}`}
                     style={{ width: `${gaugePct(ratio as number)}%` }}
                   />
+                  {band !== 'at-risk' ? (
+                    <span
+                      className={s.gaugeGhost}
+                      style={{ left: `${markerPct(nextDisputeFraction(snapshot, ratio as number))}%` }}
+                      aria-hidden="true"
+                    />
+                  ) : null}
                   <span className={s.gaugeMarker} style={{ left: `${markerPct(LINE_FRACTION)}%` }} />
                 </div>
                 <div className={s.gaugeScale}>
@@ -139,16 +150,35 @@ export function AccountHealthView({
         </section>
 
         {/* ── Zone E: monitoring reassurance ───────────────────────── */}
-        <section className={s.panel}>
-          <p className={s.panelLabel}>What Verdact is watching</p>
-          <ul className={s.monitorList}>
-            {MONITOR_ITEMS.map((item) => (
-              <li key={item} className={s.monitorItem}>
-                <TickIcon className={s.monitorTick} />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+        <section className={s.panel} aria-labelledby="watching-label">
+          <div className={s.watchHead}>
+            <div className={s.watchTitle}>
+              <p className={s.eyebrow}>Always on</p>
+              <p className={s.panelLabel} id="watching-label">
+                What Verdact is watching
+              </p>
+            </div>
+            {MONITOR_ITEMS.length > 0 ? (
+              <span className={s.watchCount}>
+                <span className={s.watchCountNum}>{MONITOR_ITEMS.length}</span> things we are watching
+              </span>
+            ) : null}
+          </div>
+          {MONITOR_ITEMS.length > 0 ? (
+            <ul className={s.monitorList}>
+              {MONITOR_ITEMS.map((item) => (
+                <li key={item} className={s.monitorItem}>
+                  <TickIcon className={s.monitorTick} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={s.watchEmpty}>
+              Nothing needs a change right now. We are watching your rate and your
+              evidence patterns, and will surface anything worth a small fix here.
+            </p>
+          )}
           <p className={s.foot}>
             Reference lines from Stripe and the card networks, not a verdict on your
             account. Verdact advises, you decide.
@@ -195,10 +225,17 @@ function StatusChip({
   }
   return (
     <span className={`${s.statusChip} ${chipClass(band)}`}>
-      <span className={`${s.statusDot} ${dotClass(band)}`} aria-hidden="true" />
+      <BandIcon band={band} className={s.statusIcon} />
       {bandLabel(band)}
     </span>
   );
+}
+
+// Status is carried by icon + text, never color alone (brand law). Healthy uses
+// the verdict check; getting-close and over-the-line use the alert glyph.
+function BandIcon({ band, className }: { band: Band; className?: string }) {
+  if (band === 'healthy') return <IconCheck className={className} />;
+  return <IconAlert className={className} />;
 }
 
 function LiveCounts({ disputes, efwAlerts }: { disputes: Dispute[]; efwAlerts: EfwAlert[] }) {
@@ -332,10 +369,6 @@ function chipClass(band: Band): string {
   return band === 'healthy' ? s.statusChipHealthy : band === 'close' ? s.statusChipClose : s.statusChipAtRisk;
 }
 
-function dotClass(band: Band): string {
-  return band === 'healthy' ? s.statusDotHealthy : band === 'close' ? s.statusDotClose : s.statusDotAtRisk;
-}
-
 function markClass(mark: 'gap' | 'verdict' | 'neutral'): string {
   return mark === 'gap' ? s.driverMarkGap : mark === 'verdict' ? s.driverMarkVerdict : '';
 }
@@ -350,6 +383,18 @@ function gaugePct(ratio: number): number {
 
 function markerPct(fraction: number): number {
   return Math.min((fraction / GAUGE_MAX_FRACTION) * 100, 100);
+}
+
+// Where the rate would sit if one more dispute landed, using the real settled
+// denominator from the snapshot. The ghost marker shows this "one more dispute"
+// position so the headroom feels concrete. Falls back to the current rate when
+// we have no denominator (no false precision).
+function nextDisputeFraction(snapshot: VampSnapshot | null, ratio: number): number {
+  const settled = snapshot?.visa_settled_transaction_count ?? 0;
+  const disputes = snapshot?.visa_dispute_count ?? 0;
+  const efw = snapshot?.visa_efw_count ?? 0;
+  if (settled <= 0) return ratio;
+  return Math.min((disputes + efw + 1) / settled, GAUGE_MAX_FRACTION);
 }
 
 function headroomLine(ratio: number, band: Band | null): string {

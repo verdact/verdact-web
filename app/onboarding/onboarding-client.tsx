@@ -40,61 +40,115 @@ export function OnboardingClient({
   const [step, setStep] = useState<Step>(stripeConnected ? 'finish' : 'welcome');
 
   const currentIndex = STEP_ORDER.indexOf(step);
+  const totalSteps = STEP_ORDER.length;
 
   return (
     <div className={s.shell}>
       <header className={s.topbar}>
-        <span className={s.brand}>Verdact</span>
+        <span className={s.brand}>
+          <span className={s.brandMark} aria-hidden="true">
+            V
+          </span>
+          Verdact
+        </span>
         <SkipButton />
       </header>
 
       <main className={s.main} id="main" tabIndex={-1}>
-        {initialError ? (
-          <p className={`${s.formMsg} ${s.formMsgError} ${s.pageError}`} role="alert">
-            {initialError}
-          </p>
-        ) : null}
+        <div className={`${s.wiz} ${s.rise}`}>
+          {initialError ? (
+            <p className={`${s.formMsg} ${s.formMsgError} ${s.pageError}`} role="alert">
+              {initialError}
+            </p>
+          ) : null}
 
-        <ol className={s.ledger} aria-label="Setup progress">
-          {STEP_ORDER.map((key, i) => (
-            <li
-              key={key}
-              className={`${s.ledgerStep} ${i === currentIndex ? s.ledgerCurrent : ''} ${
-                i < currentIndex ? s.ledgerDone : ''
-              }`}
-              aria-current={i === currentIndex ? 'step' : undefined}
-            >
-              <span className={s.ledgerNum}>{i + 1}</span>
-              <span className={s.ledgerLabel}>{STEP_LABELS[key]}</span>
-            </li>
-          ))}
-        </ol>
+          <ol className={s.prog} aria-label="Setup progress">
+            {STEP_ORDER.map((key, i) => (
+              <li
+                key={key}
+                className={`${s.progStep} ${i === currentIndex ? s.progCurrent : ''} ${
+                  i < currentIndex ? s.progDone : ''
+                }`}
+                aria-current={i === currentIndex ? 'step' : undefined}
+              >
+                <span className="sr-only">
+                  {`Step ${i + 1}: ${STEP_LABELS[key]}${
+                    i < currentIndex ? ', done' : i === currentIndex ? ', current step' : ''
+                  }`}
+                </span>
+              </li>
+            ))}
+          </ol>
 
-        <section className={s.panel}>
-          {step === 'welcome' ? <WelcomeStep onNext={() => setStep('persona')} /> : null}
-          {step === 'persona' ? <PersonaStep onNext={() => setStep('basics')} /> : null}
+          {step === 'welcome' ? (
+            <WelcomeStep
+              stepNumber={currentIndex + 1}
+              totalSteps={totalSteps}
+              onNext={() => setStep('persona')}
+            />
+          ) : null}
+          {step === 'persona' ? (
+            <PersonaStep
+              stepNumber={currentIndex + 1}
+              totalSteps={totalSteps}
+              onNext={() => setStep('basics')}
+            />
+          ) : null}
           {step === 'basics' ? (
             <BasicsStep
+              stepNumber={currentIndex + 1}
+              totalSteps={totalSteps}
               initialFullName={initialFullName}
               initialBusinessName={initialBusinessName}
               onNext={() => setStep('stripe')}
             />
           ) : null}
           {step === 'stripe' ? (
-            <StripeStep stripeConnected={stripeConnected} onSkip={() => setStep('finish')} />
+            <StripeStep
+              stepNumber={currentIndex + 1}
+              totalSteps={totalSteps}
+              stripeConnected={stripeConnected}
+              onSkip={() => setStep('finish')}
+            />
           ) : null}
-          {step === 'finish' ? <FinishStep stripeConnected={stripeConnected} /> : null}
-        </section>
+          {step === 'finish' ? (
+            <FinishStep
+              stepNumber={currentIndex + 1}
+              totalSteps={totalSteps}
+              stripeConnected={stripeConnected}
+            />
+          ) : null}
+        </div>
       </main>
+
+      <footer className={s.foot}>
+        <span>Verdact: merchant-controlled dispute defense</span>
+        <span className={s.footLinks}>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="mailto:support@verdact.io">support@verdact.io</a>
+        </span>
+      </footer>
     </div>
+  );
+}
+
+// ── Shared step header ─────────────────────────────────────────────────────────
+
+type StepMeta = { stepNumber: number; totalSteps: number };
+
+function StepEyebrow({ stepNumber, totalSteps }: StepMeta) {
+  return (
+    <p className={s.eyebrow}>{`Step ${stepNumber} of ${totalSteps}`}</p>
   );
 }
 
 // ── Steps ────────────────────────────────────────────────────────────────────
 
-function WelcomeStep({ onNext }: { onNext: () => void }) {
+function WelcomeStep({ stepNumber, totalSteps, onNext }: StepMeta & { onNext: () => void }) {
   return (
     <div className={s.step}>
+      <StepEyebrow stepNumber={stepNumber} totalSteps={totalSteps} />
       <h1 className={s.stepTitle}>Set up your dispute workbench</h1>
       <p className={s.stepBody}>
         Verdact uses your business context and Stripe data to assemble stronger dispute records. You
@@ -114,7 +168,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function PersonaStep({ onNext }: { onNext: () => void }) {
+function PersonaStep({ stepNumber, totalSteps, onNext }: StepMeta & { onNext: () => void }) {
   // Ask-only persona: each option is a submit button carrying its id; skipping
   // advances without saving (persona stays null → generic guidance ranking).
   const [state, formAction, pending] = useActionState<OnboardingState, FormData>(
@@ -128,6 +182,7 @@ function PersonaStep({ onNext }: { onNext: () => void }) {
 
   return (
     <form action={formAction} className={s.step}>
+      <StepEyebrow stepNumber={stepNumber} totalSteps={totalSteps} />
       <h1 className={s.stepTitle}>Which best describes your business?</h1>
       <p className={s.stepBody}>
         This tailors the tips Verdact shows you. You can skip it, and change it later in Settings.
@@ -165,10 +220,12 @@ function PersonaStep({ onNext }: { onNext: () => void }) {
 }
 
 function BasicsStep({
+  stepNumber,
+  totalSteps,
   initialFullName,
   initialBusinessName,
   onNext,
-}: {
+}: StepMeta & {
   initialFullName: string;
   initialBusinessName: string;
   onNext: () => void;
@@ -184,6 +241,7 @@ function BasicsStep({
 
   return (
     <form action={formAction} className={s.step}>
+      <StepEyebrow stepNumber={stepNumber} totalSteps={totalSteps} />
       <h1 className={s.stepTitle}>Tell Verdact who you are</h1>
       <p className={s.stepBody}>
         Your name is how Verdact greets you. Your business name labels the workspace and your
@@ -236,50 +294,75 @@ function BasicsStep({
 }
 
 function StripeStep({
+  stepNumber,
+  totalSteps,
   stripeConnected,
   onSkip,
-}: {
+}: StepMeta & {
   stripeConnected: boolean;
   onSkip: () => void;
 }) {
   return (
     <div className={s.step}>
-      <h1 className={s.stepTitle}>Connect Stripe</h1>
+      <StepEyebrow stepNumber={stepNumber} totalSteps={totalSteps} />
+      <h1 className={s.stepTitle}>Connect Stripe to see your dispute rate</h1>
       <p className={s.stepBody}>
-        Verdact uses your Stripe dispute, charge, and early-fraud-warning data to show what needs
-        action and to assemble the record you review. This is the activation moment, everything
-        populates from here.
+        This is how Verdact reads your disputes and account health. It takes about a minute, and
+        everything populates from here.
       </p>
-      <ul className={s.scopeList}>
-        <li className={s.scopeItem}>Stores your connected account ID, not your Stripe password.</li>
-        <li className={s.scopeItem}>Uses Verdact’s platform key for your account. No API keys are kept.</li>
-        <li className={s.scopeItem}>You can disconnect later from Settings.</li>
-        <li className={s.scopeItem}>Nothing is filed without your approval.</li>
+
+      <ul className={s.trust} aria-label="What to expect">
+        <li className={s.trustRow}>
+          <LockIcon />
+          <span>
+            We store your Stripe account ID only, never your keys, and never train on your data.
+          </span>
+        </li>
+        <li className={s.trustRow}>
+          <EyeIcon />
+          <span>
+            Read-only access to your Stripe account. Verdact advises, you decide, nothing is filed
+            without you.
+          </span>
+        </li>
+        <li className={s.trustRow}>
+          <ShieldIcon />
+          <span>You can disconnect later from Settings.</span>
+        </li>
       </ul>
 
       {stripeConnected ? (
-        <p className={s.connectedNote}>Stripe is connected. You can move on.</p>
+        <p className={s.connectedNote}>
+          <CheckIcon />
+          Stripe is connected. You can move on.
+        </p>
       ) : null}
 
       <div className={s.actions}>
         <a href="/api/stripe/connect/start" className={s.primaryBtn}>
+          <LinkIcon />
           {stripeConnected ? 'Reconnect Stripe' : 'Connect Stripe'}
         </a>
-        <button type="button" className={s.secondaryBtn} onClick={onSkip}>
-          {stripeConnected ? 'Continue' : 'Skip for now'}
+        <button type="button" className={s.skipLink} onClick={onSkip}>
+          {stripeConnected ? 'Continue' : 'Skip for now, I will connect later'}
         </button>
       </div>
     </div>
   );
 }
 
-function FinishStep({ stripeConnected }: { stripeConnected: boolean }) {
+function FinishStep({
+  stepNumber,
+  totalSteps,
+  stripeConnected,
+}: StepMeta & { stripeConnected: boolean }) {
   return (
     <form action={completeOnboardingAction} className={s.step}>
-      <h1 className={s.stepTitle}>You’re set up</h1>
+      <StepEyebrow stepNumber={stepNumber} totalSteps={totalSteps} />
+      <h1 className={s.stepTitle}>You are set up</h1>
       <p className={s.stepBody}>
         {stripeConnected
-          ? 'Stripe is connected and Verdact is watching your account. Your first account-health reading is on its way.'
+          ? 'Stripe is connected and Verdact is watching your account. Here is what Verdact is watching, your first account-health reading is on its way.'
           : 'Your workspace is ready. Connect Stripe from the dashboard whenever you want Verdact to start watching disputes and account health.'}
       </p>
       <div className={s.actions}>
@@ -299,8 +382,55 @@ function SkipButton() {
   return (
     <form action={completeOnboardingAction}>
       <button type="submit" className={s.skipBtn}>
-        Skip for now
+        Skip setup
       </button>
     </form>
+  );
+}
+
+// ── Icons (inline, decorative; rows carry the text label) ─────────────────────
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 018 0v3" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12l2.5 2.5L16 9" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1" />
+      <path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1" />
+    </svg>
   );
 }

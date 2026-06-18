@@ -51,7 +51,16 @@ function Feedback({ state }: { state: MergeActionState }) {
   );
 }
 
-// "Confirm same customer" on a doubtful prompt.
+// Merge icon for the primary "Yes, merge" affordance.
+const MERGE_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path d="M8 7L4 11l4 4" />
+    <path d="M16 17l4-4-4-4" />
+    <path d="M4 11h13a3 3 0 003-3" />
+  </svg>
+);
+
+// "Yes, merge" on a doubtful prompt (confirms the two are the same customer).
 export function ConfirmMergeForm({ suggestion }: { suggestion: MergeSuggestion }) {
   const [state, formAction, pending] = useActionState<MergeActionState, FormData>(
     confirmMergeAction,
@@ -61,14 +70,15 @@ export function ConfirmMergeForm({ suggestion }: { suggestion: MergeSuggestion }
     <form action={formAction} className={s.inlineForm}>
       <SuggestionFields suggestion={suggestion} includeReason />
       <button type="submit" className={s.suggestConfirm} disabled={pending} aria-busy={pending}>
-        {pending ? 'Linking…' : 'Confirm same customer'}
+        {!pending && MERGE_ICON}
+        {pending ? 'Linking…' : 'Yes, merge'}
       </button>
       <Feedback state={state} />
     </form>
   );
 }
 
-// "Not the same" on a doubtful prompt (records a split).
+// "Keep separate" on a doubtful prompt (records a split so we will not ask again).
 export function RejectMergeForm({ suggestion }: { suggestion: MergeSuggestion }) {
   const [state, formAction, pending] = useActionState<MergeActionState, FormData>(
     rejectMergeAction,
@@ -78,14 +88,14 @@ export function RejectMergeForm({ suggestion }: { suggestion: MergeSuggestion })
     <form action={formAction} className={s.inlineForm}>
       <SuggestionFields suggestion={suggestion} />
       <button type="submit" className={s.suggestReject} disabled={pending} aria-busy={pending}>
-        {pending ? 'Saving…' : 'Not the same'}
+        {pending ? 'Saving…' : 'Keep separate'}
       </button>
       <Feedback state={state} />
     </form>
   );
 }
 
-// "Not the same" undo on an auto-linked pair (a labeled false positive).
+// "Undo" on an auto-linked pair (a labeled false positive). Reversible, neutral.
 export function AutoSplitForm({ suggestion }: { suggestion: MergeSuggestion }) {
   const [state, formAction, pending] = useActionState<MergeActionState, FormData>(
     rejectMergeAction,
@@ -94,8 +104,14 @@ export function AutoSplitForm({ suggestion }: { suggestion: MergeSuggestion }) {
   return (
     <form action={formAction} className={s.inlineForm}>
       <SuggestionFields suggestion={suggestion} source="auto" />
-      <button type="submit" className={s.autoSplit} disabled={pending} aria-busy={pending}>
-        {pending ? 'Saving…' : 'Not the same'}
+      <button
+        type="submit"
+        className={s.autoSplit}
+        disabled={pending}
+        aria-busy={pending}
+        aria-label={`Undo auto-link for ${suggestion.primaryLabel}`}
+      >
+        {pending ? 'Saving…' : 'Undo'}
       </button>
       <Feedback state={state} />
     </form>

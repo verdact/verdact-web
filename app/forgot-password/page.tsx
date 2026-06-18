@@ -33,6 +33,16 @@ export default function ForgotPasswordPage() {
             Reset links expire quickly and work only once.
           </p>
         </div>
+
+        <p
+          className="auth-trust auth-rise"
+          style={{ '--i': 2, justifyContent: 'center' } as React.CSSProperties}
+        >
+          Remembered it?{' '}
+          <a className="underline hover:text-ink" href="/login">
+            Back to sign in
+          </a>
+        </p>
       </div>
     </AuthFrame>
   );

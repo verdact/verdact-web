@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PERSONA_OPTIONS } from '@/lib/guidance';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
 import { disconnectSlackAction } from '@/lib/slack/actions';
@@ -34,6 +35,84 @@ function FormMessage({ state }: { state: SettingsState }) {
     );
   }
   return null;
+}
+
+// ── Settings tablist (URL-as-state + roving arrow-key focus) ─────────────────
+// Tabs stay anchor-based so the active section lives in the URL (?tab=…), which
+// keeps deep-links and the back button working. On top of that we layer the
+// WAI-ARIA tabs pattern: role=tablist/tab, aria-selected, roving tabIndex (only
+// the active tab is in the tab order), and Arrow/Home/End to move between tabs.
+
+type SettingsTab = { key: 'integrations' | 'business' | 'account'; label: string };
+
+export function SettingsTabs({
+  tabs,
+  activeTab,
+}: {
+  tabs: ReadonlyArray<SettingsTab>;
+  activeTab: SettingsTab['key'];
+}) {
+  const router = useRouter();
+  const refs = useRef<Array<HTMLAnchorElement | null>>([]);
+
+  function focusTab(index: number) {
+    const next = ((index % tabs.length) + tabs.length) % tabs.length;
+    const tab = tabs[next];
+    refs.current[next]?.focus();
+    // Match the comp: arrow keys move selection, not just focus.
+    router.push(`/settings?tab=${tab.key}`);
+  }
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLAnchorElement>, index: number) {
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        focusTab(index + 1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        focusTab(index - 1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        focusTab(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        focusTab(tabs.length - 1);
+        break;
+      default:
+        break;
+    }
+  }
+
+  return (
+    <div className={s.tabs} role="tablist" aria-label="Settings sections">
+      {tabs.map((tab, index) => {
+        const selected = activeTab === tab.key;
+        return (
+          <a
+            key={tab.key}
+            ref={(el) => {
+              refs.current[index] = el;
+            }}
+            id={`settings-tab-${tab.key}`}
+            href={`/settings?tab=${tab.key}`}
+            role="tab"
+            aria-selected={selected}
+            aria-controls={`settings-panel-${tab.key}`}
+            tabIndex={selected ? 0 : -1}
+            className={`${s.tab} ${selected ? s.tabActive : ''}`}
+            onKeyDown={(event) => onKeyDown(event, index)}
+          >
+            {tab.label}
+          </a>
+        );
+      })}
+    </div>
+  );
 }
 
 // ── Business form ────────────────────────────────────────────────────────────

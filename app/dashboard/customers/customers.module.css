@@ -1,6 +1,9 @@
-/* ─── Customers — per-customer evidence view (R8) — VERDICT v2 app dialect ───
-   Groups disputes by customer. Repeat-offender groups first. v2 tokens only,
-   so dark mode is automatic inside .app-shell.
+/* ─── Customers — per-customer evidence view (R8) — VERDICT redesign dialect ──
+   Groups disputes by customer. "Needs your call" (doubtful merges) is a neutral
+   card with a vermilion "Your call" pill; auto-linked groups carry an undo;
+   repeat-offender groups first. v2 tokens only, so dark mode is automatic
+   inside .app-shell. Restyle of the prior R8 view — every merge/split form
+   class is preserved so the server-action wiring is untouched.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
@@ -12,7 +15,18 @@
   gap: var(--space-6);
 }
 
+/* ── Page intro ─────────────────────────────────────────────────── */
+
 .header { display: flex; flex-direction: column; gap: 4px; }
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0;
+}
 
 .title {
   font-size: clamp(1.4rem, 2.2vw, 1.75rem);
@@ -23,12 +37,35 @@
   margin: 0;
 }
 
-.sub {
-  font-size: 13.5px;
+.lead {
+  font-size: 15px;
   color: var(--ink-2);
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
-  max-width: 64ch;
+  max-width: 62ch;
+}
+
+/* ── Section label (heading + caption) ──────────────────────────── */
+
+.sectionLabel {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.sectionHead {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.sectionCaption {
+  font-size: 12.5px;
+  color: var(--ink-2);
 }
 
 .repeatBanner {
@@ -43,7 +80,7 @@
 
 .repeatBanner strong { color: var(--verdict-deep); }
 
-/* ── List + cards ───────────────────────────────────────────────── */
+/* ── List + customer cards ──────────────────────────────────────── */
 
 .list { display: flex; flex-direction: column; gap: var(--space-4); }
 
@@ -51,27 +88,42 @@
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   background: var(--panel);
-  overflow: hidden;
+  box-shadow: var(--shadow-elev-1);
+  padding: var(--space-5);
 }
 
 .cardRepeat { border-left: 4px solid var(--verdict); }
 
-.cardHead {
+.custHead {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--hairline);
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
 }
 
-.cardIdent { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cardName { font-size: 15.5px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
-.cardEmail { font-size: 12.5px; color: var(--ink-3); }
+.cardIdent { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cardName { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+.cardEmail { font-size: 13px; color: var(--ink-2); }
 
-.cardMeta { display: flex; align-items: center; gap: 10px; }
-.cardAmount { font-size: 15px; font-weight: 700; color: var(--ink); }
+.cardMeta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+
+/* Auto-linked tag (verdict = connected/verified) */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--verdict-deep);
+  background: var(--verdict-tint);
+  border: 1px solid var(--mint);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.tag svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 .repeatPill {
   font-size: 11.5px;
@@ -83,51 +135,72 @@
   white-space: nowrap;
 }
 
-.cardStats {
-  display: flex;
-  gap: var(--space-6);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--hairline);
-  background: var(--panel-wash);
+.cardTotal {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-2) 0 0;
 }
-
-.stat { display: flex; align-items: baseline; gap: 6px; }
-.statValue { font-size: 16px; font-weight: 700; }
-.statLabel { font-size: 12px; color: var(--ink-3); }
-
-.tone_ok { color: var(--verdict); }
-.tone_warn { color: var(--warning); }
-.tone_gap { color: var(--gap-text); }
-.tone_neutral { color: var(--ink-2); }
 
 /* ── Dispute rows inside a card ─────────────────────────────────── */
 
-.disputeList { list-style: none; margin: 0; padding: 0; }
+.disputeList {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--hairline);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  box-shadow: var(--ring);
+}
 
 .disputeRow {
   display: grid;
-  grid-template-columns: 14px minmax(0, 1.6fr) 1fr 0.8fr 0.9fr;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--hairline);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--panel);
   text-decoration: none;
-  transition: background 120ms;
+  color: inherit;
+  transition: background var(--d-fast) var(--ease);
 }
 
-.disputeList li:last-child .disputeRow { border-bottom: none; }
 .disputeRow:hover { background: var(--panel-wash); }
 
-.statusDot { width: 9px; height: 9px; border-radius: 50%; }
-.statusDotAtRisk { background: var(--warning); }
+.disputeWhy { min-width: 0; display: grid; gap: 3px; }
+.disputeReason { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disputeMeta { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disputeAmount { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* status = icon-equivalent dot + text label, never color alone */
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.statusLabelGap { color: var(--gap-text); }
+.statusLabelWon { color: var(--verdict-press); }
+
+.statusDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .statusDotHealthy { background: var(--verdict); }
 .statusDotGap { background: var(--gap); }
 .statusDotNeutral { background: var(--ink-3); }
 
-.disputeReason { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.disputeDate { font-size: 12.5px; color: var(--ink-3); }
-.disputeAmount { font-size: 14px; font-weight: 600; color: var(--ink); text-align: right; }
-.disputeStatus { font-size: 12.5px; color: var(--ink-2); text-align: right; }
+.guidanceFoot {
+  margin: var(--space-5) 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 70ch;
+}
 
 /* ── Unlinked section ───────────────────────────────────────────── */
 
@@ -145,57 +218,128 @@
   text-align: center;
 }
 
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto var(--space-4);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink-3);
+  box-shadow: var(--ring);
+}
+
+.emptyIcon svg { width: 22px; height: 22px; }
+
 .emptyTitle { font-size: 15px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
 .emptyText { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin: 0 auto; max-width: 52ch; }
 
-/* ── Auto-linked (R8 confident auto-merge, transparent + undoable) ── */
+/* ── "Needs your call" — doubtful merges (suggest-and-confirm) ──────
+   Neutral card: the decision is a merchant-closable gap, so the pill is
+   vermilion ("Your call"); the card body itself stays neutral. */
 
-.autoSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-5);
+.suggestCard {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
-  background: var(--panel-wash);
-}
-
-.autoHead { font-size: 14px; font-weight: 700; color: var(--ink); margin: 0; }
-.autoSub { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 66ch; }
-
-.autoList { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-
-.autoRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  padding: 10px 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.autoPair { font-size: 13px; font-weight: 600; color: var(--ink); }
-.autoReason { font-size: 12px; color: var(--ink-3); flex: 1; min-width: 200px; }
-
-.autoSplit {
-  font-size: 12.5px;
-  font-weight: 600;
-  border-radius: var(--radius-input);
-  padding: 6px 14px;
-  cursor: pointer;
-  font-family: inherit;
   background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--hairline);
-  transition: border-color 120ms, color 120ms;
+  box-shadow: var(--shadow-elev-1);
+  padding: var(--space-5);
 }
 
-.autoSplit:hover { border-color: var(--gap); color: var(--gap-text); }
+.suggestCard + .suggestCard { margin-top: var(--space-4); }
+
+.suggestCardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.suggestTitle { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
+.suggestReason { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 6px 0 0; max-width: 56ch; }
+
+/* vermilion "Your call" pill — a merchant-closable decision */
+.gapPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gap-text);
+  background: var(--gap-tint);
+  border: 1px solid var(--gap);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.gapPillDot { width: 7px; height: 7px; border-radius: 50%; background: var(--gap); flex-shrink: 0; }
+
+/* the two candidate identities being compared */
+.mergeRows {
+  display: grid;
+  gap: 1px;
+  background: var(--hairline);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  box-shadow: var(--ring);
+  margin-bottom: var(--space-4);
+}
+
+.mergeRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--panel-wash);
+  padding: var(--space-3) var(--space-4);
+}
+
+.mergeAvatar {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.mergePairIx {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink-3);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mergeWho { min-width: 0; display: grid; gap: 2px; }
+.mergeName { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mergeEmail { font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.suggestActions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: 2px; }
 
 /* ── Inline merge/split forms (pending + feedback) ──────────────────
    Each confirm/split form carries its own button and an inline status
    line, so a decision shows progress and confirmation rather than
-   failing silently. */
+   failing silently. Class names preserved from the prior view. */
 
 .inlineForm {
   display: inline-flex;
@@ -212,98 +356,83 @@
 
 .formMsgError { color: var(--gap-text); }
 
+/* primary "Yes, merge" — verdict (a confirmed link) */
+.suggestConfirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-input);
+  padding: 9px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--verdict);
+  color: var(--on-verdict);
+  border: 1px solid var(--verdict);
+  transition: background var(--d-fast) var(--ease);
+}
+
+.suggestConfirm svg { width: 16px; height: 16px; flex-shrink: 0; }
+.suggestConfirm:hover { background: var(--verdict-press); }
+
+/* secondary "Keep separate" / "Not the same" — neutral */
+.suggestReject {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-input);
+  padding: 9px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  transition: border-color var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
+}
+
+.suggestReject:hover { border-color: var(--edge-green); }
+
 .suggestConfirm:disabled,
-.suggestReject:disabled,
-.autoSplit:disabled {
+.suggestReject:disabled {
   opacity: 0.6;
   cursor: progress;
 }
 
-/* ── "Possible same customer" suggestions (R8 suggest-and-confirm) ── */
-
-.suggestSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border: 1px solid var(--verdict-deep);
-  border-left: 4px solid var(--verdict);
-  border-radius: var(--radius-card);
-  background: var(--verdict-tint);
-}
-
-.suggestHead { font-size: 15px; font-weight: 700; color: var(--ink); margin: 0; }
-.suggestSub { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 66ch; }
-
-.suggestList { display: flex; flex-direction: column; gap: var(--space-3); }
-
-.suggestCard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: var(--space-4);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-input);
-  background: var(--panel);
-}
-
-.suggestPair {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-}
-
-.suggestId { font-size: 13.5px; font-weight: 600; color: var(--ink); }
-.suggestArrow { font-size: 14px; color: var(--ink-3); }
-
-.suggestConfidence {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--verdict-deep);
-  background: var(--verdict-tint);
-  border-radius: var(--radius-pill);
-  padding: 2px 9px;
-  margin-left: auto;
-}
-
-.suggestReason { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 0; }
-
-.suggestActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; }
-
-.suggestConfirm,
-.suggestReject {
-  font-size: 13px;
+/* "Not the same" undo on an auto-linked pair — uses the neutral linklike
+   style so the undo reads as reversible, not destructive. */
+.autoSplit {
+  font-size: 12.5px;
   font-weight: 600;
-  border-radius: var(--radius-input);
-  padding: 8px 16px;
+  color: var(--ink-2);
+  background: none;
+  border: none;
+  padding: 4px 2px;
   cursor: pointer;
   font-family: inherit;
-  border: 1px solid transparent;
-  transition: background 120ms, border-color 120ms, color 120ms;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 4px;
+  transition: color var(--d-fast) var(--ease);
 }
 
-.suggestConfirm { background: var(--verdict); color: var(--paper); border-color: var(--verdict); }
-.suggestConfirm:hover { background: var(--verdict-press); }
-
-.suggestReject { background: var(--panel); color: var(--ink); border-color: var(--hairline); }
-.suggestReject:hover { border-color: var(--edge-green); }
+.autoSplit:hover { color: var(--ink); }
+.autoSplit:disabled { opacity: 0.6; cursor: progress; }
 
 /* ── Mobile ─────────────────────────────────────────────────────── */
 
+@media (max-width: 760px) {
+  .disputeRow { grid-template-columns: minmax(0, 1fr) auto; }
+  .disputeRow .statusLabel { grid-column: 1 / -1; margin-top: 2px; }
+}
+
 @media (max-width: 640px) {
-  .disputeRow {
-    grid-template-columns: 14px minmax(0, 1fr) auto;
-    grid-template-areas:
-      "dot reason amount"
-      "dot date status";
-    row-gap: 2px;
-  }
-  .statusDot { grid-area: dot; }
-  .disputeReason { grid-area: reason; }
-  .disputeDate { grid-area: date; }
-  .disputeAmount { grid-area: amount; }
-  .disputeStatus { grid-area: status; }
+  .page { padding: var(--space-5) var(--space-4) var(--space-12); }
+  .card, .suggestCard { padding: var(--space-4); }
+  .disputeRow { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .disputeRow .disputeAmount { text-align: left; }
+  .disputeRow .statusLabel { grid-column: auto; margin-top: 0; }
 }
