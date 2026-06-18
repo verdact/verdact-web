@@ -2,12 +2,13 @@ import 'server-only';
 
 import type Stripe from 'stripe';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { SCORE_FLOOR, HEALTHY_LINE, STRIPE_LINE, GAUGE_MAX } from './lines';
 
 export const ACCOUNT_HEALTH_RECOMPUTE_EVENT = 'verdact/account-health.recompute';
 export const VAMP_WINDOW_DAYS = 90;
-export const SCORE_FLOOR = 50;
-export const STRIPE_LINE = 0.75;
-export const GAUGE_MAX = 1.5;
+// Re-exported from ./lines (the shared, non-server-only source of truth) so the
+// public VAMP checker and this server writer score against identical lines.
+export { SCORE_FLOOR, HEALTHY_LINE, STRIPE_LINE, GAUGE_MAX };
 export const STRIPE_API_VERSION = '2023-10-16';
 
 const PAGE_LIMIT = 100;

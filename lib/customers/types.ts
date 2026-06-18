@@ -1,11 +1,13 @@
 /**
- * Smart customer-merge types (strategy doc §R8, 2026-06-13).
+ * Smart customer-merge types (strategy doc §R8, 2026-06-13; auto-merge decision
+ * 2026-06-14).
  *
- * Verdact NEVER auto-merges customers. The exact-email grouping in
- * lib/dal.getDisputesByCustomer is the clean, automatic case; everything here is
- * the suggest-and-confirm layer for the UNCERTAIN cases. A suggestion is shown,
- * the merchant confirms or rejects, and the decision is persisted as a training
- * signal (customer_identity_links).
+ * Exact-email grouping in lib/dal.getDisputesByCustomer is the clean, automatic
+ * case. Beyond that, suggestions are partitioned by confidence: SURE pairs are
+ * auto-linked at render (shown transparently in "Auto-linked" with an undo),
+ * while DOUBTFUL pairs are surfaced as suggest-and-confirm prompts. Either way the
+ * merchant's correction (confirm or "not the same") is persisted as a training
+ * signal (customer_identity_links); auto-merges are persisted only when corrected.
  */
 
 export type IdentityDecision = 'merge' | 'split';

@@ -24,12 +24,52 @@ export function isProductionUrl(url: string) {
 }
 
 export function reviewerCodeIsValid(value: FormDataEntryValue | null) {
-  const expected = process.env.REVIEWER_ACCESS_CODE;
+  const expected = process.env.REVIEWER_ACCESS_CODE?.trim();
+  // Fail closed: with no access code configured, the reviewer path is locked.
   if (!expected) {
-    return true;
+    return false;
   }
 
-  return typeof value === 'string' && value.trim() === expected;
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const provided = value.trim();
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  const providedBuffer = Buffer.from(provided, 'utf8');
+
+  // Length check first: timingSafeEqual throws on unequal-length buffers.
+  if (expectedBuffer.length !== providedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
+/**
+ * Returns a same-origin relative path safe to redirect to, or the fallback.
+ * Rejects absolute URLs and protocol-relative / backslash tricks (e.g. "//evil.com",
+ * "/\evil.com") that resolve to an external origin via new URL(path, base).
+ */
+export function safeRedirectPath(value: FormDataEntryValue | null, fallback: string) {
+  if (typeof value !== 'string' || !value.startsWith('/')) {
+    return fallback;
+  }
+
+  // Resolve against a throwaway origin: any value that escapes to a different
+  // host — absolute URL, protocol-relative "//host", literal or %5C-encoded
+  // backslash, etc. — changes the hostname and is rejected. Only a value that
+  // stays on this origin (a true same-origin relative path) is returned.
+  try {
+    const sentinel = 'reviewer.invalid';
+    const url = new URL(value, `https://${sentinel}`);
+    if (url.hostname !== sentinel) {
+      return fallback;
+    }
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return fallback;
+  }
 }
 
 export function encryptForCookie(value: string) {

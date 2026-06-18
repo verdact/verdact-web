@@ -188,7 +188,7 @@
   transition: width 320ms var(--ease-out);
 }
 
-.gaugeFillClose  { background: var(--gap); }
+.gaugeFillClose  { background: var(--warning); }
 .gaugeFillAtRisk { background: var(--gap); }
 
 .gaugeMarker {
@@ -406,4 +406,50 @@
 
 @media (max-width: 420px) {
   .counts { grid-template-columns: 1fr; }
+}
+
+/* ── Print: report only ─────────────────────────────────────────────
+   "Export report" calls window.print(). Without these rules the whole app
+   shell (rail, top bar, bottom nav) prints too. Scoped to this module so the
+   rules only load on the account-health route; globals.css stays untouched.
+   We hide the app chrome and the interactive affordances, leaving just the
+   standing read, counts, trend, drivers, and monitoring list on the page. */
+@media print {
+  /* Drop the app chrome rendered by AppShell (global, stable class names). */
+  :global(.app-rail),
+  :global(.app-topbar),
+  :global(.app-bottom-nav) {
+    display: none !important;
+  }
+
+  /* Let the report take the full printed page. */
+  :global(.app-shell) {
+    display: block !important;
+  }
+
+  :global(.app-content) {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+    gap: var(--space-6);
+  }
+
+  /* Interactive affordances are not part of the printed artifact. */
+  .refreshForm,
+  .exportRow .betaTag,
+  .exportBtn,
+  .connectCta {
+    display: none !important;
+  }
+
+  /* Keep panels from breaking awkwardly across printed pages. */
+  .panel {
+    break-inside: avoid;
+    box-shadow: none;
+  }
 }

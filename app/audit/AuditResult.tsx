@@ -26,10 +26,14 @@ const TIER_LABEL: Record<WinnabilityTier, string> = {
 interface AuditResultProps {
   score: AuditScore;
   email: string;
+  // True only when the server confirmed transactional email is configured and a
+  // recap was dispatched. Drives the honest "we emailed a copy" vs "we saved a
+  // copy" claim so the page never promises an email that was not sent.
+  emailed: boolean;
   onRestart: () => void;
 }
 
-export function AuditResult({ score, email, onRestart }: AuditResultProps) {
+export function AuditResult({ score, email, emailed, onRestart }: AuditResultProps) {
   const { rate, summary, disputes } = score;
 
   const shouldHaveWon = useMemo(
@@ -247,7 +251,9 @@ export function AuditResult({ score, email, onRestart }: AuditResultProps) {
               </button>
             </div>
             <p className={styles.convertNote}>
-              We emailed a copy of this audit to {email}.
+              {emailed
+                ? `We emailed a copy of this audit to ${email}.`
+                : `We saved this audit under ${email} so we can pre-load it when you join.`}
             </p>
           </div>
         </div>

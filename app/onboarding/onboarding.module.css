@@ -340,6 +340,15 @@
 
 .formMsgError { color: var(--gap-text); }
 
+/* Page-level banner for redirect errors (e.g. ?error=complete_failed). Sits
+   above the step ledger so it is visible whichever step renders. */
+.pageError {
+  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  border: 1px solid var(--gap-text);
+  background: var(--panel-wash);
+}
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {

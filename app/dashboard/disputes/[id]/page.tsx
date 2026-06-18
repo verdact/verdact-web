@@ -32,6 +32,7 @@ import {
 import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
 import { PaidGate } from '../../../_components/ui/paid-gate';
+import { parseEvidenceDraft } from '@/lib/evidence/draft';
 
 export const metadata = {
   title: 'Evidence record · Verdact',
@@ -224,7 +225,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const submitted = Boolean(record.submitted_at);
   const evidenceItems = buildEvidenceItems(record, files, approved);
   const businessName = membership.merchant.business_name?.trim() || null;
-  const narrative = readNarrative(record.evidence_draft);
+  const parsedDraft = parseEvidenceDraft(record.evidence_draft);
+  const narrative = parsedDraft.narrative;
 
   // ── Per-dispute evidence analysis (Revano-adopted features) ────────────────
   // Proof is derived conservatively from attached evidence files until the
@@ -307,7 +309,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   // The merchant may have recorded that no formal delivery/acceptance proof
   // exists; that notes the gap (it never inflates readiness). The resolution
   // plan then guides the next real gap, or is null when nothing is actionable.
-  const acceptance = readAcceptanceUnavailable(record.evidence_draft);
+  const acceptance = parsedDraft.acceptanceUnavailable ?? null;
   const acceptanceNoted = Boolean(acceptance);
   const reasonProfile = getReasonProfile(reasonCode);
   const strength = strengthFromPercent(readiness);
@@ -772,13 +774,13 @@ function BottomActionBar({
   resolveCount: number;
 }) {
   return (
-    <div className="sticky bottom-0 z-10 border-t border-[#1e293b] bg-[#0f172a] text-[#cbd5e1]">
+    <div className="sticky bottom-0 z-10 border-t border-rule-strong bg-surface-2 text-ink-soft">
       <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-4 px-6 py-4 md:px-10">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-md border border-[#334155] bg-[#1e293b] text-[#60a5fa]">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-md border border-action-rule bg-action-soft text-action">
           <LockIcon className="h-4 w-4" />
         </span>
         <p className="min-w-[240px] flex-1 text-sm leading-6">
-          <span className="font-semibold text-[#e7edf4]">
+          <span className="font-semibold text-ink">
             {submitted
               ? 'This record has already been submitted.'
               : approved
@@ -799,17 +801,32 @@ function BottomActionBar({
           </a>
         ) : null}
         {/* Free→Paid gate routes through `can()`; beta-unlocked today so the real
-            buttons render unchanged, gated affordance appears once billing lands. */}
+            buttons render unchanged, gated affordance appears once billing lands.
+            During beta these controls are view-only — the labels say so and the
+            real submission path stays unwired. */}
         <PaidGate action="export_packet" allowed={canExport}>
-          <button className="rounded-md border border-[#3a4b60] px-4 py-2 text-sm font-semibold text-[#e7edf4]" type="button">
-            Export draft
+          <button
+            className="rounded-md border border-rule-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            disabled
+            title="Use the packet view above to copy or download the draft during beta."
+          >
+            Export draft (view-only)
           </button>
         </PaidGate>
         <PaidGate action="submit_to_stripe" allowed={canSubmit} previewAvailable={false}>
+          {/* Submission is intentionally inert during beta — the real Stripe
+              filing channel is not wired. Disabled so it never reads as a live
+              action; the Locked badge makes the gated state explicit. */}
           <button
             className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
-            disabled={!approved || submitted}
+            disabled
+            title={
+              submitted
+                ? 'This record has already been submitted.'
+                : 'Submission is wired in a later stage. Nothing is sent to the bank during beta.'
+            }
           >
             Review and submit
             <span className="rounded-sm bg-white/20 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em]">
@@ -1058,30 +1075,7 @@ function deriveProofFromFiles(files: EvidenceFile[]): {
   return { delivery, usage, comms };
 }
 
-// The merchant's draft narrative lives on disputes.evidence_draft (JSONB). Read
-// it defensively — the column may be null, a legacy string, or an object.
-function readNarrative(draft: unknown): string {
-  if (!draft) return '';
-  if (typeof draft === 'string') return draft;
-  if (typeof draft === 'object' && 'narrative' in draft) {
-    const n = (draft as { narrative?: unknown }).narrative;
-    return typeof n === 'string' ? n : '';
-  }
-  return '';
-}
 
-// The merchant may have recorded that no formal delivery/acceptance proof exists,
-// stored on disputes.evidence_draft.acceptanceUnavailable. Read it defensively;
-// an empty/cleared reason reads as "not noted".
-function readAcceptanceUnavailable(draft: unknown): { reason: string } | null {
-  if (!draft || typeof draft !== 'object') return null;
-  const v = (draft as { acceptanceUnavailable?: unknown }).acceptanceUnavailable;
-  if (!v || typeof v !== 'object') return null;
-  const reason = (v as { reason?: unknown }).reason;
-  return typeof reason === 'string' && reason.trim().length > 0
-    ? { reason: reason.trim() }
-    : null;
-}
 
 function formatReason(reason: string | null) {
   if (!reason) return 'Reason pending';

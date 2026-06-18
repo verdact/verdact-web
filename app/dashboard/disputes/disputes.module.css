@@ -218,8 +218,10 @@
   }
 
   .rowStatus   { grid-column: 1; grid-row: 1; }
-  .rowInfo     { grid-column: 1 / -1; grid-row: 2; }
-  .rowAmount   { display: none; }
-  .rowDeadline { grid-column: 2; grid-row: 1; font-size: 11.5px; }
+  .rowInfo     { grid-column: 1; grid-row: 2; }
+  /* Amount stays visible on mobile (was hidden) — right-aligned beside the
+     reason/charge id, so the figure is never lost on small screens. */
+  .rowAmount   { grid-column: 2; grid-row: 2; text-align: right; }
+  .rowDeadline { grid-column: 2; grid-row: 1; font-size: 11.5px; text-align: right; }
   .rowAction   { display: none; }
 }

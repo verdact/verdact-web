@@ -6,12 +6,14 @@ test('debug signup page CSS', async ({ page }) => {
   // Wait for animations to finish
   await page.waitForTimeout(1000);
   
-  const formCard = page.locator('.surface-card').first();
+  const formCard = page.locator('.auth-card').first();
+  await expect(formCard).toBeVisible();
   const opacity = await formCard.evaluate((node) => window.getComputedStyle(node).opacity);
   const color = await formCard.evaluate((node) => window.getComputedStyle(node).color);
   const bg = await formCard.evaluate((node) => window.getComputedStyle(node).backgroundColor);
   
-  const googleBtn = page.locator('.btn-secondary').first();
+  const googleBtn = page.getByRole('button', { name: /Continue with Google/i });
+  await expect(googleBtn).toBeVisible();
   const btnOpacity = await googleBtn.evaluate((node) => window.getComputedStyle(node).opacity);
   const btnColor = await googleBtn.evaluate((node) => window.getComputedStyle(node).color);
   

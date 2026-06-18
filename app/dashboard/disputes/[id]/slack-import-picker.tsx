@@ -58,6 +58,9 @@ export function SlackImportPicker({
   const loadChannels = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // Clear any prior success banner so a fresh failure never renders alongside
+    // a stale "Attached" success message.
+    setDone(null);
     try {
       const res = await fetch('/api/slack/channels');
       const json = (await res.json().catch(() => ({}))) as ApiChannelsResponse;
@@ -97,6 +100,9 @@ export function SlackImportPicker({
     async (channel: SlackChannel, cursor?: string) => {
       setLoading(true);
       setError(null);
+      // Clear any prior success banner so a fresh failure never renders alongside
+      // a stale "Attached" success message.
+      setDone(null);
       try {
         const qs = new URLSearchParams({ channelId: channel.id });
         if (cursor) qs.set('cursor', cursor);

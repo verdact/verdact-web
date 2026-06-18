@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -46,3 +47,9 @@ playwright-report/
 test-results/
 *.png
 .gstack/
+
+# build / QA scratch output and one-off util scripts (kept locally, not committed)
+/output/
+/tsc*.out.txt
+/convert-*.js
+/test-query.js

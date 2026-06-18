@@ -126,6 +126,7 @@ export default async function SettingsPage({
       email={user.email ?? ''}
       fullName={fullName}
       businessName={businessName}
+      hasMerchant={membership !== null}
       activeTab={activeTab}
       justDisconnected={justDisconnected}
       businessInitial={businessInitial}

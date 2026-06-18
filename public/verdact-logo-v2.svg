@@ -1,0 +1,8 @@
+<svg viewBox="0 0 188 26" fill="none" role="img" aria-labelledby="verdact-lockup-title" xmlns="http://www.w3.org/2000/svg">
+  <title id="verdact-lockup-title">Verdact</title>
+  <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="#0A5C44" stroke-width="4.4" stroke-linecap="square" stroke-linejoin="miter" />
+  <path d="M19.52 6.35 L20.5 4.7" stroke="#0A5C44" stroke-width="4.4" stroke-linecap="square" />
+  <text x="32" y="20" fill="#11181A" font-family="'Schibsted Grotesk', system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.3">
+    Verdact
+  </text>
+</svg>

@@ -53,7 +53,29 @@ export function clientKeyFromHeaders(headers: Headers): string {
   return hashIp(ip);
 }
 
+// Public fallback used only outside production so local dev / preview do not
+// require the secret. In production a missing salt is a misconfiguration: the
+// salt is what makes hashed IPs non-reversible, so we refuse to silently fall
+// back to a value that is committed to the repo.
+const DEFAULT_AUDIT_IP_SALT = 'verdact-audit-default-salt';
+let warnedMissingSalt = false;
+
+function resolveAuditIpSalt(): string {
+  const salt = process.env.AUDIT_IP_SALT;
+  if (salt) return salt;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('AUDIT_IP_SALT is required in production to hash client IPs.');
+  }
+
+  if (!warnedMissingSalt) {
+    console.warn('[audit] AUDIT_IP_SALT is not set — using the public default salt (non-production only).');
+    warnedMissingSalt = true;
+  }
+  return DEFAULT_AUDIT_IP_SALT;
+}
+
 export function hashIp(ip: string): string {
-  const salt = process.env.AUDIT_IP_SALT ?? 'verdact-audit-default-salt';
+  const salt = resolveAuditIpSalt();
   return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32);
 }

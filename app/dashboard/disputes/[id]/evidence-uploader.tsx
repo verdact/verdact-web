@@ -79,14 +79,22 @@ export function EvidenceUploader({
           fd.append('disputeId', disputeId);
           fd.append('purpose', purpose);
           const res = await fetch('/api/evidence/upload', { method: 'POST', body: fd });
-          const json = (await res.json().catch(() => ({}))) as { error?: string; deduped?: boolean };
+          const json = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            deduped?: boolean;
+            updated?: boolean;
+          };
           if (!res.ok) {
             updateItem(setItems, key, { status: 'error', message: json.error ?? 'Upload failed.' });
             continue;
           }
           updateItem(setItems, key, {
             status: 'done',
-            message: json.deduped ? 'Already attached' : 'Attached',
+            message: json.updated
+              ? 'Re-categorized'
+              : json.deduped
+                ? 'Already attached'
+                : 'Attached',
           });
         } catch {
           updateItem(setItems, key, { status: 'error', message: 'Network error. Try again.' });

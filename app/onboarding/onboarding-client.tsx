@@ -26,12 +26,14 @@ export type OnboardingClientProps = {
   initialFullName: string;
   initialBusinessName: string;
   stripeConnected: boolean;
+  initialError?: string;
 };
 
 export function OnboardingClient({
   initialFullName,
   initialBusinessName,
   stripeConnected,
+  initialError,
 }: OnboardingClientProps) {
   // If the user already connected Stripe (came back from the OAuth round-trip),
   // start them on the finish step so the moment is acknowledged.
@@ -47,6 +49,12 @@ export function OnboardingClient({
       </header>
 
       <main className={s.main} id="main" tabIndex={-1}>
+        {initialError ? (
+          <p className={`${s.formMsg} ${s.formMsgError} ${s.pageError}`} role="alert">
+            {initialError}
+          </p>
+        ) : null}
+
         <ol className={s.ledger} aria-label="Setup progress">
           {STEP_ORDER.map((key, i) => (
             <li
@@ -122,7 +130,7 @@ function PersonaStep({ onNext }: { onNext: () => void }) {
     <form action={formAction} className={s.step}>
       <h1 className={s.stepTitle}>Which best describes your business?</h1>
       <p className={s.stepBody}>
-        This tailors the tips Verdact shows you. You can skip it — and change it later in Settings.
+        This tailors the tips Verdact shows you. You can skip it, and change it later in Settings.
       </p>
 
       {state?.error ? (

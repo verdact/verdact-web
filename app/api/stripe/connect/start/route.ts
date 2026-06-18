@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.STRIPE_CONNECT_CLIENT_ID;
   if (!clientId) {
-    console.error('[stripe/connect/start] STRIPE_CLIENT_ID not set');
+    console.error('[stripe/connect/start] STRIPE_CONNECT_CLIENT_ID not set');
     return NextResponse.redirect(
       new URL('/dashboard?stripe_error=not_configured', request.url),
     );

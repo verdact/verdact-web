@@ -6,9 +6,9 @@ export const metadata = {
 };
 
 const safeguards = [
-  'Gmail and Slack access starts only after user consent.',
+  'Slack access starts only after merchant consent. Gmail is not offered at launch.',
   'Evidence searches are initiated by the merchant, not run continuously.',
-  'Connected inbox or workspace data is not used to train AI models.',
+  'Connected workspace data is not used to train AI models.',
   'Tokens are encrypted and kept separate from public reviewer pages.',
 ] as const;
 
@@ -70,15 +70,14 @@ export default function PrivacyPage() {
             </PolicySection>
 
             <PolicySection title="2. Data We Collect">
-              <DataGroup title="Gmail, if you choose to connect">
-                <li>Email message content and metadata from your connected Gmail account</li>
-                <li>We read emails only when you initiate an evidence search for a specific dispute</li>
-                <li>We do not read, store, or scan your inbox continuously or in the background</li>
+              <DataGroup title="Slack, if you choose to connect">
+                <li>Read-only access to message content from channels you explicitly select</li>
+                <li>We read messages only when you initiate an evidence search for a specific dispute</li>
+                <li>We do not read, store, or scan your workspace continuously or in the background</li>
               </DataGroup>
 
-              <DataGroup title="Slack, if you choose to connect">
-                <li>Message content from channels you explicitly authorize</li>
-                <li>We read messages only when you initiate an evidence search for a specific dispute</li>
+              <DataGroup title="Gmail (not offered at launch)">
+                <li>Gmail connection is not available to merchants at launch. If and when we enable it, we will read email content only when you initiate an evidence search for a specific dispute, and we will update this policy before turning it on.</li>
               </DataGroup>
 
               <DataGroup title="Stripe, required">
@@ -88,30 +87,50 @@ export default function PrivacyPage() {
               <DataGroup title="Account data">
                 <li>Name, email address, and login credentials for your Verdact account</li>
               </DataGroup>
+
+              <DataGroup title="Audit tool, if you use it">
+                <li>The public dispute audit tool collects the email address and optional business name you enter, plus the dispute figures you submit (such as transaction counts, dispute amounts, reason codes, outcomes, and which evidence types you say you hold)</li>
+                <li>We store these submissions and the score we calculate so we can follow up about your results</li>
+                <li>We store a one-way hashed form of your IP address and your browser user-agent string for rate limiting and abuse prevention, not your raw IP</li>
+              </DataGroup>
+
+              <DataGroup title="Waitlist, if you join">
+                <li>Sign-up is invite-only during the launch period. If you join the waitlist, we collect the email address you submit and a tag noting where you signed up</li>
+                <li>As with the audit tool, we store a one-way hashed form of your IP address and your browser user-agent string for rate limiting and abuse prevention</li>
+              </DataGroup>
+
+              <DataGroup title="Product analytics">
+                <li>We use PostHog to understand how the product is used. This captures pageviews, clicks, and similar interaction events</li>
+                <li>For signed-in merchants, events are tied to a pseudonymous account identifier, never to your name or email</li>
+                <li>In production we record anonymized session replays. Replay is configured to mask all form inputs and all on-screen text, so customer names, evidence, and dispute detail are not legible in a recording. Session replay is disabled in local development</li>
+                <li>If coarse country and region capture is enabled, we may record an approximate location derived from request headers. We do not store your raw IP address for this purpose</li>
+              </DataGroup>
             </PolicySection>
 
             <PolicySection title="3. How We Use Your Data">
-              <p>We use your data solely to:</p>
+              <p>We use your data to:</p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
                 <li>Identify relevant evidence for a chargeback dispute you are actively working on</li>
-                <li>Prepare dispute evidence drafts for merchant review</li>
-                <li>Calculate and display estimated VAMP exposure</li>
+                <li>Prepare submission-ready dispute evidence records for merchant review</li>
+                <li>Calculate and display your estimated dispute-rate standing</li>
                 <li>Send transactional notifications about dispute deadlines and outcomes</li>
+                <li>Follow up about audit results or waitlist sign-ups you submit to us</li>
+                <li>Understand product usage and improve the service through analytics</li>
               </ul>
               <p className="mt-4 font-semibold text-[#172033]">We do not:</p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
                 <li>Sell your data to third parties</li>
-                <li>Use your Gmail or Slack data to train AI models</li>
-                <li>Access your Gmail or Slack outside of an active evidence search you initiate</li>
-                <li>Share your data with any party other than Stripe and the infrastructure providers listed in Section 5</li>
+                <li>Use your connected Slack data to train AI models</li>
+                <li>Access your connected Slack workspace outside of an active evidence search you initiate</li>
+                <li>Share your data with any party other than Stripe and the service providers listed in Section 5</li>
               </ul>
             </PolicySection>
 
             <PolicySection title="4. Data Storage and Security">
               <ul className="list-disc space-y-2 pl-5">
                 <li>All data is stored in encrypted databases using AES-256 at rest</li>
-                <li>Gmail and Slack access tokens are encrypted and never stored in plain text</li>
-                <li>Evidence extracted from Gmail and Slack is deleted within 90 days of dispute resolution</li>
+                <li>Slack access tokens are encrypted and never stored in plain text</li>
+                <li>Evidence extracted from connected sources is deleted within 90 days of dispute resolution</li>
                 <li>We use Supabase for database infrastructure and Vercel for hosting</li>
               </ul>
             </PolicySection>
@@ -119,18 +138,21 @@ export default function PrivacyPage() {
             <PolicySection title="5. Third-Party Services">
               <p>We share data with the following services only as necessary to operate the platform:</p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
-                <li>Stripe - dispute submission and transaction data</li>
+                <li>Stripe - dispute and transaction data</li>
                 <li>Supabase - database storage</li>
                 <li>Vercel - hosting infrastructure</li>
                 <li>Anthropic - AI evidence drafting</li>
                 <li>Resend - transactional email delivery</li>
+                <li>PostHog - product analytics and anonymized session replay</li>
               </ul>
             </PolicySection>
 
             <PolicySection title="6. Google API Data">
               <div className="rounded-md border border-[#bdd9d3] bg-[#f2faf7] p-4">
                 <p>
-                  Our use of data received from Google APIs complies with the{' '}
+                  Gmail connection is not available to merchants at launch. The
+                  commitments below describe how we would handle Google API data
+                  if and when we enable Gmail, in line with the{' '}
                   <a
                     className="font-semibold text-[#235f5c] underline"
                     href="https://developers.google.com/terms/api-services-user-data-policy"
@@ -143,17 +165,16 @@ export default function PrivacyPage() {
                 </p>
               </div>
               <ul className="mt-4 list-disc space-y-2 pl-5">
-                <li>We only request Gmail access when a user explicitly initiates an evidence search</li>
-                <li>Gmail data is used only to identify dispute-relevant emails such as service delivery proof, usage confirmations, refund-policy references, and customer communications</li>
-                <li>We do not use Gmail data for advertising or to build user profiles</li>
-                <li>We do not allow humans to read your Gmail data except where you have given explicit consent or where required by law</li>
+                <li>We would request Gmail access only when a user explicitly initiates an evidence search</li>
+                <li>Gmail data would be used only to identify dispute-relevant emails such as service delivery proof, usage confirmations, refund-policy references, and customer communications</li>
+                <li>We would not use Gmail data for advertising or to build user profiles</li>
+                <li>We would not allow humans to read your Gmail data except where you have given explicit consent or where required by law</li>
               </ul>
             </PolicySection>
 
             <PolicySection title="7. Your Rights">
               <p>You may at any time:</p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
-                <li>Disconnect Gmail: Google Account &rarr; Security &rarr; Third-party apps &rarr; Verdact &rarr; Remove access</li>
                 <li>Disconnect Slack: Slack admin settings &rarr; Installed apps &rarr; Verdact &rarr; Remove</li>
                 <li>Disconnect Stripe: Verdact dashboard &rarr; Settings &rarr; Integrations &rarr; Disconnect</li>
                 <li>
@@ -176,7 +197,7 @@ export default function PrivacyPage() {
             <PolicySection title="8. Data Retention">
               <ul className="list-disc space-y-2 pl-5">
                 <li>Active account data: retained while your account is active</li>
-                <li>Raw Gmail or Slack imports not included in an evidence record: deleted within 90 days of dispute resolution</li>
+                <li>Raw imports from connected sources not included in an evidence record: deleted within 90 days of dispute resolution</li>
                 <li>Evidence records: retained for at least 24 months or longer where card-network, legal, tax, fraud-prevention, or audit obligations require it</li>
                 <li>Customer PII in retained records: redacted on valid deletion request where retention rules allow</li>
                 <li>Account data after deletion request: purged or de-identified within 30 days unless retention rules require preservation</li>

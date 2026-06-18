@@ -192,6 +192,33 @@
 
 .autoSplit:hover { border-color: var(--gap); color: var(--gap-text); }
 
+/* ── Inline merge/split forms (pending + feedback) ──────────────────
+   Each confirm/split form carries its own button and an inline status
+   line, so a decision shows progress and confirmation rather than
+   failing silently. */
+
+.inlineForm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.formMsg {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--verdict);
+}
+
+.formMsgError { color: var(--gap-text); }
+
+.suggestConfirm:disabled,
+.suggestReject:disabled,
+.autoSplit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 /* ── "Possible same customer" suggestions (R8 suggest-and-confirm) ── */
 
 .suggestSection {

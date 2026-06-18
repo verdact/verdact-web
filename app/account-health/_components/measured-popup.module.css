@@ -110,3 +110,12 @@
 @media (max-width: 420px) {
   .row { grid-template-columns: 1fr; gap: 2px; }
 }
+
+/* Print (Export report): drop the explainer trigger and any open dialog so
+   only the account-health report itself prints. */
+@media print {
+  .trigger,
+  .dialog {
+    display: none !important;
+  }
+}

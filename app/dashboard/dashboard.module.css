@@ -46,6 +46,17 @@
   flex-wrap: wrap;
 }
 
+/* Page h1 — real heading hierarchy, consistent with the Disputes/Customers
+   page titles. The .eyebrow treatment below stays for section labels. */
+.title {
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
 .eyebrow {
   font-size: 12px;
   font-weight: 600;

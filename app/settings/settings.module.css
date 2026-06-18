@@ -5,15 +5,18 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
+  box-sizing: border-box;
   padding: var(--space-8) var(--space-6) var(--space-16);
+  width: 100%;
   max-width: 880px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  min-width: 0;
 }
 
-.headerText { display: flex; flex-direction: column; gap: 4px; }
+.headerText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
 .pageTitle {
   font-size: clamp(1.4rem, 2.2vw, 1.75rem);
@@ -24,7 +27,7 @@
   margin: 0;
 }
 
-.sub { font-size: 13px; color: var(--ink-3); margin: 0; }
+.sub { font-size: 13px; color: var(--ink-3); margin: 0; overflow-wrap: anywhere; }
 
 /* ── Tabs ───────────────────────────────────────────────────────── */
 
@@ -33,7 +36,10 @@
   gap: var(--space-1);
   border-bottom: 1px solid var(--hairline);
   overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tabs::-webkit-scrollbar { display: none; }
@@ -71,6 +77,7 @@
 /* ── Panels ─────────────────────────────────────────────────────── */
 
 .panel {
+  box-sizing: border-box;
   border-radius: 10px;
   border: 1px solid var(--hairline);
   background: var(--panel);
@@ -78,13 +85,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  min-width: 0;
 }
 
 .panelHead { display: flex; flex-direction: column; gap: 4px; }
 
 .panelTitle { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
 
-.panelDesc { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 62ch; }
+.panelDesc { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 62ch; overflow-wrap: anywhere; }
 
 .stack { display: flex; flex-direction: column; gap: var(--space-5); }
 
@@ -176,7 +184,7 @@
 .connIconStripe { background: var(--verdict-tint); color: var(--verdict); }
 
 .connName { font-size: 14.5px; font-weight: 600; color: var(--ink); margin: 0; }
-.connDesc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 2px 0 0; max-width: 46ch; }
+.connDesc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 2px 0 0; max-width: 46ch; overflow-wrap: anywhere; }
 
 .connRight { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
 
@@ -239,7 +247,7 @@
   padding: 2px 7px;
 }
 
-.connMeta { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.connMeta { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
 .divider { height: 1px; background: var(--hairline); border: none; margin: 0; }
 
@@ -403,7 +411,12 @@
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .page { padding: var(--space-5) var(--space-4) var(--space-12); }
+  .page { padding: var(--space-5) var(--space-4) var(--space-12); gap: var(--space-5); }
+  .tabs { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); }
+  .tab { min-height: 44px; padding: 12px 12px 10px; }
+  .panel { padding: var(--space-5); }
   .fieldRow { grid-template-columns: 1fr; }
-  .connRight { align-items: flex-start; }
+  .connRow { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+  .connLeft { width: 100%; }
+  .connRight { align-items: flex-start; width: 100%; }
 }

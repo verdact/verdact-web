@@ -20,6 +20,40 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in real values. `.env.example` is the
+canonical, commented list of every variable the app reads; the table below summarises
+the launch set. Production and preview values live in the Vercel project and are never
+committed. `NEXT_PUBLIC_`-prefixed vars are exposed to the browser — never put secrets there.
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_APP_URL` | Public base URL used for OAuth redirect/return URLs |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/publishable key (RLS-guarded) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server-only, bypasses RLS) |
+| `STRIPE_SECRET_KEY` | Stripe secret API key |
+| `STRIPE_CONNECT_CLIENT_ID` | Stripe Connect client id for the Standard OAuth flow |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `SLACK_CLIENT_ID` | Slack OAuth client id |
+| `SLACK_CLIENT_SECRET` | Slack OAuth client secret |
+| `NEXTAUTH_SECRET` | Secret for encrypting the reviewer/Gmail cookie |
+| `GOOGLE_CLIENT_ID` | Google OAuth client id (Gmail path) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (Gmail path) |
+| `RESEND_API_KEY` | Resend API key (transactional email, not yet wired) |
+| `EMAIL_FROM` | From address for transactional email (not yet wired) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (AI guidance, not yet wired) |
+| `INNGEST_EVENT_KEY` | Inngest event key (read automatically by the client) |
+| `INNGEST_SIGNING_KEY` | Inngest signing key (read automatically by the client) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key (analytics is inert without it) |
+| `AUDIT_IP_SALT` | Salt for hashing client IPs (required in production) |
+| `REVIEWER_ACCESS_CODE` | Optional code gating the reviewer sign-in path |
+| `VERDACT_ADMIN_EMAILS` | Emergency admin email allowlist (DB is source of truth) |
+| `ADMIN_GEO_CAPTURE` | Set `on` to enable best-effort geo capture (off by default) |
+| `VERDACT_BETA_ALL_UNLOCKED` | Master beta flag; anything but `false`/`0` unlocks gated actions |
+| `VERDACT_AUTO_SUBMIT_ENABLED` | Auto-submit kill switch; hard-off unless exactly `true` |
+
 ## Google OAuth Reviewer Path
 
 Reviewer URL:
@@ -40,16 +74,9 @@ Reviewer instructions for Google:
 7. Select Preview on any result to inspect the selected message before import.
 ```
 
-Required deployment environment variables:
-
-```text
-NEXT_PUBLIC_APP_URL=https://www.verdact.io
-NEXTAUTH_SECRET=<random production secret>
-GOOGLE_CLIENT_ID=<Google OAuth client ID>
-GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
-REVIEWER_ACCESS_CODE=<optional reviewer gate code>
-NEXT_PUBLIC_POSTHOG_KEY=<PostHog project API key (US Cloud)>
-```
+This reviewer path requires `NEXT_PUBLIC_APP_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`,
+and `GOOGLE_CLIENT_SECRET`, plus the optional `REVIEWER_ACCESS_CODE` gate. See the
+[Environment Variables](#environment-variables) section for the full list.
 
 ## Analytics (PostHog)
 

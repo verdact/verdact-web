@@ -119,6 +119,28 @@ export async function POST(request: Request) {
     .eq('content_sha256', sha256)
     .maybeSingle();
   if (existing) {
+    // Same bytes already on this dispute. If the merchant re-submitted the
+    // identical file under a DIFFERENT purpose, treat it as a re-categorize:
+    // update the existing row's purpose in place (one row per content hash)
+    // rather than silently no-op'ing the new categorization. Still RLS-scoped
+    // to this merchant, so a merchant can only ever re-categorize its own file.
+    if (existing.purpose !== purpose) {
+      const { data: recategorized, error: updateError } = await supabase
+        .from('evidence_files')
+        .update({ purpose })
+        .eq('id', existing.id)
+        .eq('merchant_id', merchantId)
+        .eq('dispute_id', disputeId)
+        .select('id, purpose, upload_status, mime_type, content_size_bytes, created_at')
+        .single();
+      if (updateError || !recategorized) {
+        return NextResponse.json(
+          { error: 'Could not re-categorize the existing file.' },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({ ok: true, deduped: true, updated: true, file: recategorized });
+    }
     return NextResponse.json({ ok: true, deduped: true, file: existing });
   }
 
@@ -173,8 +195,22 @@ function hasMatchingMagicBytes(bytes: Buffer, mime: string): boolean {
         bytes.subarray(0, 4).toString('latin1') === 'RIFF' &&
         bytes.subarray(8, 12).toString('latin1') === 'WEBP'
       );
-    case 'text/plain':
-      return true;
+    case 'text/plain': {
+      // Security heuristic: Reject if it contains null bytes or >30% non-printable
+      // characters in the first 1024 bytes. Prevents executables from masquerading
+      // as text.
+      const sample = bytes.subarray(0, Math.min(bytes.length, 1024));
+      if (sample.length === 0) return true;
+      let nonPrintable = 0;
+      for (let i = 0; i < sample.length; i++) {
+        const b = sample[i] as number;
+        if (b === 0x00) return false;
+        if ((b < 32 || b > 126) && b !== 9 && b !== 10 && b !== 13) {
+          nonPrintable++;
+        }
+      }
+      return nonPrintable / sample.length <= 0.3;
+    }
     default:
       return false;
   }

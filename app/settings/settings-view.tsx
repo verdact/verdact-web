@@ -41,6 +41,13 @@ export type SettingsViewProps = {
   email: string;
   fullName: string;
   businessName: string | null;
+  // False when the signed-in user has no active merchant membership. The
+  // workspace-scoped tabs (connections, business, policies, notifications) and
+  // the account-deletion request all need a workspace, so we show an honest
+  // state instead of forms that would fail with "Workspace not found".
+  // Optional so the dev-only preview route can render the full populated UI
+  // without supplying it; the real /settings always passes it explicitly.
+  hasMerchant?: boolean;
   activeTab: TabKey;
   justDisconnected: boolean;
   businessInitial: BusinessInitial;
@@ -67,6 +74,7 @@ export function SettingsView({
   email,
   fullName,
   businessName,
+  hasMerchant = true,
   activeTab,
   justDisconnected,
   businessInitial,
@@ -76,6 +84,13 @@ export function SettingsView({
   slackNotice,
   slackError,
 }: SettingsViewProps) {
+  // Tabs that operate on a workspace. With no membership these would render
+  // forms whose actions fail server-side, so we swap in an honest panel.
+  const workspaceTab =
+    activeTab === 'connections' ||
+    activeTab === 'business' ||
+    activeTab === 'policies' ||
+    activeTab === 'notifications';
   return (
     <AppShell email={email} businessName={businessName} active="settings">
       <div className={s.page}>
@@ -97,13 +112,60 @@ export function SettingsView({
           ))}
         </nav>
 
-        {justDisconnected && activeTab === 'connections' ? (
-          <div className={s.banner} role="status">
-            Stripe disconnected. Your dispute history is still here, and you can reconnect any time.
-          </div>
+        {workspaceTab && !hasMerchant ? <NoWorkspacePanel /> : null}
+        {workspaceTab && hasMerchant ? (
+          <WorkspaceTabs
+            activeTab={activeTab}
+            justDisconnected={justDisconnected}
+            businessInitial={businessInitial}
+            policiesInitial={policiesInitial}
+            stripe={stripe}
+            slack={slack}
+            slackNotice={slackNotice}
+            slackError={slackError}
+          />
         ) : null}
 
-        {slackNotice === 'connected' && activeTab === 'connections' ? (
+        {activeTab === 'account' ? (
+          <AccountPanel email={email} fullName={fullName} hasMerchant={hasMerchant} />
+        ) : null}
+      </div>
+    </AppShell>
+  );
+}
+
+// ── Workspace-scoped tabs (connections / business / policies / notifications) ─
+
+type WorkspaceTabsProps = {
+  activeTab: TabKey;
+  justDisconnected: boolean;
+  businessInitial: BusinessInitial;
+  policiesInitial: PoliciesInitial;
+  stripe: SettingsStripe;
+  slack: SettingsSlack;
+  slackNotice: SlackNotice;
+  slackError: string | null;
+};
+
+function WorkspaceTabs({
+  activeTab,
+  justDisconnected,
+  businessInitial,
+  policiesInitial,
+  stripe,
+  slack,
+  slackNotice,
+  slackError,
+}: WorkspaceTabsProps) {
+  return (
+    <>
+      {justDisconnected && activeTab === 'connections' ? (
+        <div className={s.banner} role="status">
+          Stripe disconnected. Your dispute history is still here, and you can reconnect any time.
+        </div>
+      ) : null}
+
+      {slackNotice === 'connected' && activeTab === 'connections' ? (
           <div className={s.banner} role="status">
             Slack connected. Open any dispute to import the messages where the customer agreed,
             accepted, or used the work.
@@ -149,9 +211,31 @@ export function SettingsView({
           </section>
         ) : null}
         {activeTab === 'notifications' ? <NotificationsPanel /> : null}
-        {activeTab === 'account' ? <AccountPanel email={email} fullName={fullName} /> : null}
+    </>
+  );
+}
+
+// ── No-workspace state ────────────────────────────────────────────────────────
+// Shown on workspace-scoped tabs when the signed-in user has no active merchant
+// membership. Honest: explains why these settings are unavailable and what still
+// works, instead of forms that submit and fail with "Workspace not found".
+
+function NoWorkspacePanel() {
+  return (
+    <section className={s.panel}>
+      <div className={s.panelHead}>
+        <h2 className={s.panelTitle}>No workspace yet</h2>
+        <p className={s.panelDesc}>
+          Your login is not attached to a workspace, so connections, business details, evidence
+          policies, and notifications are not available yet. You can still update your name, email,
+          and password under the Account tab. If you expected a workspace here, contact the Verdact
+          team.
+        </p>
       </div>
-    </AppShell>
+      <a href="/settings?tab=account" className={s.connectBtn}>
+        Go to Account
+      </a>
+    </section>
   );
 }
 
@@ -278,7 +362,15 @@ function NotificationsPanel() {
 
 // ── Account panel ────────────────────────────────────────────────────────────
 
-function AccountPanel({ email, fullName }: { email: string; fullName: string }) {
+function AccountPanel({
+  email,
+  fullName,
+  hasMerchant,
+}: {
+  email: string;
+  fullName: string;
+  hasMerchant: boolean;
+}) {
   return (
     <div className={s.stack}>
       <section className={s.panel}>
@@ -302,14 +394,16 @@ function AccountPanel({ email, fullName }: { email: string; fullName: string }) 
         <SignOutButton />
       </section>
 
-      <section className={s.danger}>
-        <h2 className={s.dangerTitle}>Delete account</h2>
-        <p className={s.dangerText}>
-          This sends a deletion request to the Verdact team. We action it within 2 business days and
-          email you to confirm. Your data is not removed immediately.
-        </p>
-        <DeleteAccount />
-      </section>
+      {hasMerchant ? (
+        <section className={s.danger}>
+          <h2 className={s.dangerTitle}>Delete account</h2>
+          <p className={s.dangerText}>
+            This sends a deletion request to the Verdact team. We action it within 2 business days
+            and email you to confirm. Your data is not removed immediately.
+          </p>
+          <DeleteAccount />
+        </section>
+      ) : null}
     </div>
   );
 }

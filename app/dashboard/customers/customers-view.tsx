@@ -2,7 +2,7 @@ import { AppShell } from '../../_components/app-chrome';
 import { ConnectStripePanel } from '../../_components/connect-stripe-panel';
 import type { CustomerGroup } from '@/lib/dal';
 import type { MergeSuggestion } from '@/lib/customers/types';
-import { confirmMergeAction, rejectMergeAction } from '@/lib/customers/actions';
+import { AutoSplitForm, ConfirmMergeForm, RejectMergeForm } from './merge-forms';
 import s from './customers.module.css';
 
 // Presentational per-customer evidence view (R8). Groups a merchant's disputes
@@ -103,13 +103,7 @@ function AutoLinked({ autoMerged }: { autoMerged: MergeSuggestion[] }) {
               {sg.primaryLabel} <span aria-hidden="true">↔</span> {sg.linkedLabel}
             </span>
             <span className={s.autoReason}>{sg.reason}</span>
-            <form action={rejectMergeAction}>
-              <SuggestionFields suggestion={sg} />
-              <input type="hidden" name="source" value="auto" />
-              <button type="submit" className={s.autoSplit}>
-                Not the same
-              </button>
-            </form>
+            <AutoSplitForm suggestion={sg} />
           </div>
         ))}
       </div>
@@ -138,41 +132,13 @@ function MergeSuggestions({ suggestions }: { suggestions: MergeSuggestion[] }) {
             </div>
             <p className={s.suggestReason}>{sg.reason}</p>
             <div className={s.suggestActions}>
-              <form action={confirmMergeAction}>
-                <SuggestionFields suggestion={sg} includeReason />
-                <button type="submit" className={s.suggestConfirm}>
-                  Confirm same customer
-                </button>
-              </form>
-              <form action={rejectMergeAction}>
-                <SuggestionFields suggestion={sg} />
-                <button type="submit" className={s.suggestReject}>
-                  Not the same
-                </button>
-              </form>
+              <ConfirmMergeForm suggestion={sg} />
+              <RejectMergeForm suggestion={sg} />
             </div>
           </div>
         ))}
       </div>
     </section>
-  );
-}
-
-function SuggestionFields({
-  suggestion,
-  includeReason = false,
-}: {
-  suggestion: MergeSuggestion;
-  includeReason?: boolean;
-}) {
-  return (
-    <>
-      <input type="hidden" name="primaryKey" value={suggestion.primaryKey} />
-      <input type="hidden" name="linkedKey" value={suggestion.linkedKey} />
-      <input type="hidden" name="kind" value={suggestion.kind} />
-      <input type="hidden" name="confidence" value={String(suggestion.confidence)} />
-      {includeReason && <input type="hidden" name="reason" value={suggestion.reason} />}
-    </>
   );
 }
 

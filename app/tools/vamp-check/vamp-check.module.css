@@ -188,6 +188,42 @@
   .readCol { border-left: 0; border-top: 1px solid var(--hairline); }
 }
 
+@media (max-width: 640px) {
+  :global(html.reveals-armed) .page :global(.reveal-view) {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .hero {
+    padding: 44px 0 72px;
+  }
+
+  .instrumentBand {
+    padding-bottom: 48px;
+  }
+
+  .instrumentWrap {
+    margin-top: -56px;
+  }
+
+  .calcCol,
+  .readCol {
+    padding: 22px;
+  }
+
+  .gaugeFooter {
+    padding: 22px;
+  }
+
+  .refSection,
+  .poster,
+  .recsSection,
+  .convertSection {
+    padding-block: 48px;
+  }
+}
+
 .colLabel {
   font-size: 12px;
   font-weight: 700;

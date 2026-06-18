@@ -7,10 +7,10 @@ export const metadata = {
 
 const keyTerms = [
   'Verdact is a dispute evidence and filing workflow tool, not a legal service.',
-  'We do not guarantee chargeback dispute win rates.',
-  'Automatic filing requires an active subscription and merchant-configured controls.',
-  'Gmail and Slack connections are entirely merchant-initiated.',
-  'Governed by the laws of the State of Delaware.',
+  'We do not guarantee chargeback dispute outcomes.',
+  'Filing automation is not enabled during the current beta period.',
+  'Slack connections are entirely merchant-initiated. Gmail is not offered at launch.',
+  'Verdact is operated pre-incorporation. Governing law is to be confirmed.',
 ] as const;
 
 export default function TermsPage() {
@@ -61,6 +61,12 @@ export default function TermsPage() {
                 by these Terms of Service. If you do not agree to these terms, you may not access
                 or use the Service.
               </p>
+              <p className="mt-3">
+                In these terms, &quot;Verdact,&quot; &quot;we,&quot; &quot;us,&quot; and
+                &quot;the operator&quot; refer to the operator of Verdact. Verdact is operated
+                pre-incorporation and is not yet a registered legal entity. We will update
+                these terms to identify the operating entity once it is formed.
+              </p>
             </TermsSection>
 
             <TermsSection title="2. Description of Service">
@@ -70,25 +76,25 @@ export default function TermsPage() {
                 evidence, and manage filing controls for eligible dispute responses.
               </p>
               <p className="mt-3">
-                Free tier accounts may view generated packets and evidence assembly, but
-                download, export, and filing require an active Paid tier subscription. During the beta period,
+                Free tier accounts may view generated packets and evidence assembly, while
+                download and export are positioned as Paid tier features. During the beta period,
                 the Paid tier is free for all users (no separate Founding tier).
-                Active subscribers may choose automatic filing or review-then-submit for eligible
-                Stripe dispute responses. When filing automation is enabled, Verdact submits
-                according to merchant-configured controls. You are responsible for reviewing your
-                settings and evidence records. We are not a payment processor, bank, or legal
-                service.
+                Filing automation is not enabled during the current beta period: Verdact does not
+                submit dispute responses to Stripe on your behalf. You remain responsible for
+                reviewing your settings and evidence records and for any submission you make. We
+                are not a payment processor, bank, or legal service.
               </p>
             </TermsSection>
 
             <TermsSection title="3. Account and Connection Security">
               <p>
                 To use the Service, you must connect your Stripe account. You may also optionally
-                connect Slack and Gmail to search for and import delivery proof.
+                connect Slack to search for and import delivery proof. Gmail connection is not
+                available to merchants at launch.
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-5">
                 <li>Stripe Connect: We use Standard Connect OAuth to retrieve dispute data. We do not store your Stripe credentials or access tokens.</li>
-                <li>Gmail and Slack OAuth: We access these sources only upon your explicit request to search for evidence. We do not continuously monitor, store, or scan your communications.</li>
+                <li>Slack OAuth: We access Slack read-only, only for channels you select, and only upon your explicit request to search for evidence. We do not continuously monitor, store, or scan your communications.</li>
                 <li>All access tokens are stored in encrypted format using AES-256 at rest.</li>
               </ul>
             </TermsSection>
@@ -96,7 +102,8 @@ export default function TermsPage() {
             <TermsSection title="4. Google API Limited Use Compliance">
               <div className="rounded-md border border-[#bdd9d3] bg-[#f2faf7] p-4">
                 <p>
-                  Verdact&apos;s use of information received from Google APIs will adhere to the{' '}
+                  Gmail connection is not offered to merchants at launch. If and when we enable
+                  it, Verdact&apos;s use of information received from Google APIs will adhere to the{' '}
                   <a
                     className="font-semibold text-[#235f5c] underline"
                     href="https://developers.google.com/terms/api-services-user-data-policy"
@@ -132,8 +139,11 @@ export default function TermsPage() {
 
             <TermsSection title="7. Governing Law">
               <p>
-                These terms shall be governed by and construed in accordance with the laws of the State
-                of Delaware, without regard to its conflict of law provisions.
+                Verdact is operated pre-incorporation and is not yet a registered legal entity, so
+                no governing law or jurisdiction is established by these terms at this time. Once
+                the operating entity is formed, we will update this section to specify the
+                governing law and jurisdiction and will notify you of the change as described in
+                Section 8.
               </p>
             </TermsSection>
 

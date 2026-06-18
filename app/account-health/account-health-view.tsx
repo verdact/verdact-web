@@ -1,6 +1,6 @@
 import { AppShell } from '../_components/app-chrome';
 import { type Dispute, type EfwAlert, type VampSnapshot } from '@/lib/dal';
-import { STRIPE_LINE, GAUGE_MAX } from '@/lib/account-health/vamp-snapshots';
+import { HEALTHY_LINE, STRIPE_LINE, GAUGE_MAX } from '@/lib/account-health/lines';
 import { MeasuredPopup } from './_components/measured-popup';
 import { ExportButton } from './_components/export-button';
 import { RefreshButton } from './_components/refresh-button';
@@ -9,7 +9,7 @@ import s from './account-health.module.css';
 // ── Constants (mirror the server writer; STRIPE_LINE/GAUGE_MAX are percents) ──
 const LINE_FRACTION = STRIPE_LINE / 100; // 0.0075 — the line we score against
 const GAUGE_MAX_FRACTION = GAUGE_MAX / 100; // 0.015 — far edge of the gauge
-const HEALTHY_BELOW = 0.005;
+const HEALTHY_BELOW = HEALTHY_LINE / 100; // 0.0065 — shared healthy/close cutoff
 
 const OPEN_STATUSES = new Set(['needs_response', 'under_review', 'submitted']);
 

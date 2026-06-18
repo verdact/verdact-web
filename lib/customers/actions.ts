@@ -6,25 +6,40 @@ import { createClient } from '@/lib/supabase/server';
 import type { IdentityDecision } from './types';
 
 /**
+ * Result of a merge/split action, surfaced to the merchant so the choice never
+ * fails silently. `ok` with a `decision` drives the success line; `error` drives
+ * the inline error. Compatible with useActionState's (prevState, formData) shape.
+ */
+export type MergeActionState =
+  | { ok: true; decision: IdentityDecision }
+  | { ok: false; error: string }
+  | undefined;
+
+const SAVE_FAILED = 'Could not save your choice. Please try again.';
+
+/**
  * Persist a merchant's identity decision (strategy doc §R8). 'merge' confirms two
  * keys are the same customer; 'split' records that they are NOT (suppresses the
  * suggestion / undoes a merge). Every decision is a training signal.
  *
  * NEVER called automatically — only from the merchant's explicit Confirm /
- * "Not the same" click. Degrades quietly while the table is unprovisioned (the
- * migration is left for review): the upsert fails, nothing changes, no crash.
+ * "Not the same" click. Returns a result so the UI can confirm or surface a
+ * failure; while the table is unprovisioned the upsert fails and the merchant
+ * sees an error rather than a silent no-op.
  */
 async function recordDecision(
   formData: FormData,
   decision: IdentityDecision,
-): Promise<void> {
+): Promise<MergeActionState> {
   const primaryKey = String(formData.get('primaryKey') ?? '').trim();
   const linkedKey = String(formData.get('linkedKey') ?? '').trim();
-  if (!primaryKey || !linkedKey || primaryKey === linkedKey) return;
+  if (!primaryKey || !linkedKey || primaryKey === linkedKey) {
+    return { ok: false, error: SAVE_FAILED };
+  }
 
   const user = await verifySession();
   const membership = await getMerchant();
-  if (!membership) return;
+  if (!membership) return { ok: false, error: SAVE_FAILED };
 
   const confidenceRaw = Number(formData.get('confidence'));
   // 'auto' = the merchant is correcting an auto-merge (a labeled false positive at
@@ -50,18 +65,27 @@ async function recordDecision(
   );
 
   // Only reflect the change when it actually persisted. A missing table (feature
-  // not yet provisioned) leaves the suggestion in place rather than crashing.
-  if (!error) {
-    revalidatePath('/dashboard/customers');
+  // not yet provisioned) surfaces the error instead of crashing or no-op'ing.
+  if (error) {
+    return { ok: false, error: SAVE_FAILED };
   }
+
+  revalidatePath('/dashboard/customers');
+  return { ok: true, decision };
 }
 
-export async function confirmMergeAction(formData: FormData): Promise<void> {
-  await recordDecision(formData, 'merge');
+export async function confirmMergeAction(
+  _prevState: MergeActionState,
+  formData: FormData,
+): Promise<MergeActionState> {
+  return recordDecision(formData, 'merge');
 }
 
-export async function rejectMergeAction(formData: FormData): Promise<void> {
-  await recordDecision(formData, 'split');
+export async function rejectMergeAction(
+  _prevState: MergeActionState,
+  formData: FormData,
+): Promise<MergeActionState> {
+  return recordDecision(formData, 'split');
 }
 
 function stringOrNull(value: FormDataEntryValue | null): string | null {
