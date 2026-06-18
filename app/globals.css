@@ -102,13 +102,20 @@
   --tag-slack-fill: #F2EBF8;
   --tag-neutral-ink: var(--ink-3);
 
-  /* Focus + elevation */
+  /* Focus + elevation — redesign 2026-06: shadow-as-border (Geist style), decision #4 */
   --focus-ring-color: var(--verdict);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
-  --shadow-elev-1: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px -1px rgba(0, 0, 0, .05);
-  --shadow-elev-2: 0 4px 12px -2px rgba(0, 0, 0, .10), 0 2px 4px -2px rgba(0, 0, 0, .06);
-  --shadow-record: 0 8px 32px -4px rgba(0, 0, 0, .12), 0 0 0 1px rgba(10, 92, 68, .10);
+  --on-verdict: #FFFFFF; /* text on a verdict-green fill (light: green is dark -> white text) */
+  --ring: 0 0 0 1px var(--hairline);
+  --elev-1: 0 0 0 1px var(--hairline), 0 1px 2px rgba(16, 24, 26, .04), 0 2px 6px -2px rgba(16, 24, 26, .05);
+  --elev-2: 0 0 0 1px var(--hairline), 0 2px 4px rgba(16, 24, 26, .04), 0 12px 28px -8px rgba(16, 24, 26, .10);
+  --elev-pop: 0 0 0 1px var(--rule-strong), 0 8px 24px -6px rgba(16, 24, 26, .16), 0 24px 56px -16px rgba(7, 57, 43, .14);
+  /* Existing shadow names now resolve to the shadow-as-border set, so already-shipped
+     module CSS picks up the new elevation in place without renames. */
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-record: var(--elev-2);
 
   /* Font families — single-stack (Schibsted Grotesk via --font-sans from layout.tsx) */
   --font-display: var(--font-sans, "Schibsted Grotesk"), system-ui, sans-serif;
@@ -135,11 +142,18 @@
   --space-prose-width: 640px;
   --space-header-height: var(--space-14);
 
-  /* Radius */
-  --radius-chip: 4px;
-  --radius-input: 6px;
-  --radius-card: 8px;
+  /* Radius — redesign 2026-06 softer scale (8/12/16), decision #4 */
+  --radius-chip: 5px;
+  --radius-input: 8px;
+  --radius-card: 12px;
+  --radius-lg: 16px;
   --radius-pill: 9999px;
+  /* Redesign-named radius aliases (comps use --r-*) */
+  --r-chip: var(--radius-chip);
+  --r-input: var(--radius-input);
+  --r-card: var(--radius-card);
+  --r-lg: var(--radius-lg);
+  --r-pill: var(--radius-pill);
 
   /* Motion */
   --duration-instant: 160ms;
@@ -150,6 +164,11 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Redesign-named motion aliases (comps use --d-* / --ease) */
+  --d-fast: var(--duration-fast);
+  --d-normal: var(--duration-normal);
+  --d-slow: var(--duration-slow);
+  --ease: var(--ease-out);
 
   /* Z-scale */
   --z-base: 0;
@@ -197,27 +216,36 @@
   html:not([data-theme="light"]) .app-shell {
     color-scheme: dark;
 
-    --paper: #0E1311;
-    --paper-2: #141C19;
-    --panel: #1C2620;
-    --panel-wash: #162019;
-    --ink: #ECF2EE;
-    --ink-2: #8DA89F;
-    --ink-3: #617870;
-    --hairline: #263029;
-    --edge-green: #2F3D37;
+    /* Redesign 2026-06 dark: deep green-tinted near-black, brighter legible
+       green (dark text on fills via --on-verdict), warmer vermilion. AA.
+       Also redeclares paper-neutral / rule-strong / panel-3 / mark, which
+       previously leaked :root LIGHT values into dark mode. */
+    --paper: #0C1311;
+    --paper-2: #0F1715;
+    --paper-neutral: #121A17;
+    --panel: #16201C;
+    --panel-wash: #111917;
+    --panel-3: #1B2723;
+    --ink: #ECF2EF;
+    --ink-2: #A9B7B1;
+    --ink-3: #84948D;
+    --hairline: #2C3833;
+    --edge-green: #24322C;
+    --rule-strong: #3B4843;
 
-    --verdict: #33BB88;
-    --verdict-press: #45CC98;
-    --verdict-deep: #0A1E16;
-    --verdict-abyss: #061410;
-    --verdict-tint: #0B2219;
-    --mint: #52C490;
+    --verdict: #3BD89A;
+    --verdict-press: #2FC489;
+    --verdict-deep: #0A1A14;
+    --verdict-abyss: #07140F;
+    --verdict-tint: #13251E;
+    --mint: #7FE3BC;
+    --on-verdict: #08120E;
 
-    --gap: #E87048;
-    --gap-text: #F29070;
-    --gap-tint: #2C1208;
+    --gap: #FF6B43;
+    --gap-text: #FF8B6B;
+    --gap-tint: #241310;
     --gap-2: var(--gap-tint);
+    --mark: #3A3A1E;
 
     /* Derived aliases must be re-declared in this scope. A var() reference is
        resolved where its OWNING declaration is cascaded, not where it is read.
@@ -259,9 +287,13 @@
     --accent-rule: #5A2A18;
 
     --focus-ring-color: var(--verdict);
-    --shadow-elev-1: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px -1px rgba(0,0,0,.3);
-    --shadow-elev-2: 0 4px 12px -2px rgba(0,0,0,.5), 0 2px 4px -2px rgba(0,0,0,.35);
-    --shadow-record: 0 8px 32px -4px rgba(0,0,0,.55), 0 0 0 1px rgba(51,187,136,.12);
+    --ring: 0 0 0 1px var(--hairline);
+    --elev-1: 0 0 0 1px var(--hairline), 0 1px 2px rgba(0,0,0,.4), 0 2px 6px -2px rgba(0,0,0,.45);
+    --elev-2: 0 0 0 1px var(--hairline), 0 2px 4px rgba(0,0,0,.45), 0 14px 30px -10px rgba(0,0,0,.6);
+    --elev-pop: 0 0 0 1px var(--rule-strong), 0 10px 28px -8px rgba(0,0,0,.7), 0 28px 64px -20px rgba(0,0,0,.65);
+    --shadow-elev-1: var(--elev-1);
+    --shadow-elev-2: var(--elev-2);
+    --shadow-record: var(--elev-2);
 
     --band: #060E0A;
     --band-ink: #C8DAD2;
@@ -285,27 +317,36 @@
 html[data-theme="dark"] .app-shell {
   color-scheme: dark;
 
-  --paper: #0E1311;
-  --paper-2: #141C19;
-  --panel: #1C2620;
-  --panel-wash: #162019;
-  --ink: #ECF2EE;
-  --ink-2: #8DA89F;
-  --ink-3: #617870;
-  --hairline: #263029;
-  --edge-green: #2F3D37;
+  /* Redesign 2026-06 dark (manual toggle). Mirrors the prefers-color-scheme
+     block above; deep green-tinted near-black, brighter green with dark text
+     on fills (--on-verdict), warmer vermilion. AA. Redeclares
+     paper-neutral / rule-strong / panel-3 / mark to stop light-value leaks. */
+  --paper: #0C1311;
+  --paper-2: #0F1715;
+  --paper-neutral: #121A17;
+  --panel: #16201C;
+  --panel-wash: #111917;
+  --panel-3: #1B2723;
+  --ink: #ECF2EF;
+  --ink-2: #A9B7B1;
+  --ink-3: #84948D;
+  --hairline: #2C3833;
+  --edge-green: #24322C;
+  --rule-strong: #3B4843;
 
-  --verdict: #33BB88;
-  --verdict-press: #45CC98;
-  --verdict-deep: #0A1E16;
-  --verdict-abyss: #061410;
-  --verdict-tint: #0B2219;
-  --mint: #52C490;
+  --verdict: #3BD89A;
+  --verdict-press: #2FC489;
+  --verdict-deep: #0A1A14;
+  --verdict-abyss: #07140F;
+  --verdict-tint: #13251E;
+  --mint: #7FE3BC;
+  --on-verdict: #08120E;
 
-  --gap: #E87048;
-  --gap-text: #F29070;
-  --gap-tint: #2C1208;
+  --gap: #FF6B43;
+  --gap-text: #FF8B6B;
+  --gap-tint: #241310;
   --gap-2: var(--gap-tint);
+  --mark: #3A3A1E;
 
   /* Re-declare derived aliases in this scope so they resolve against the dark
      base above, not :root's light values. See the matching note in the
@@ -344,9 +385,13 @@ html[data-theme="dark"] .app-shell {
   --accent-rule: #5A2A18;
 
   --focus-ring-color: var(--verdict);
-  --shadow-elev-1: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px -1px rgba(0,0,0,.3);
-  --shadow-elev-2: 0 4px 12px -2px rgba(0,0,0,.5), 0 2px 4px -2px rgba(0,0,0,.35);
-  --shadow-record: 0 8px 32px -4px rgba(0,0,0,.55), 0 0 0 1px rgba(51,187,136,.12);
+  --ring: 0 0 0 1px var(--hairline);
+  --elev-1: 0 0 0 1px var(--hairline), 0 1px 2px rgba(0,0,0,.4), 0 2px 6px -2px rgba(0,0,0,.45);
+  --elev-2: 0 0 0 1px var(--hairline), 0 2px 4px rgba(0,0,0,.45), 0 14px 30px -10px rgba(0,0,0,.6);
+  --elev-pop: 0 0 0 1px var(--rule-strong), 0 10px 28px -8px rgba(0,0,0,.7), 0 28px 64px -20px rgba(0,0,0,.65);
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-record: var(--elev-2);
 
   --band: #060E0A;
   --band-ink: #C8DAD2;
