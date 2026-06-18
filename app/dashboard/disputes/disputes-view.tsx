@@ -133,13 +133,13 @@ function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
       <div className={s.rowInfo}>
         <span className={s.rowReason}>{dispute.reason ?? 'Dispute'}</span>
         <span className={s.rowId}>
-          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : '—'}
+          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : 'No charge ID'}
         </span>
         {isRespondable && <ReadinessChip proof={proof} />}
       </div>
 
       <span className={s.rowAmount}>
-        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
       </span>
 
       {isOpen && dispute.due_by ? (
@@ -314,7 +314,7 @@ function deadlineAria(dueBy: string, hours: number | null): string {
 function closedDeadlineLabel(status: string): string {
   if (status === 'submitted') return 'Submitted';
   if (status === 'won' || status === 'lost' || status === 'warning_closed') return 'Closed';
-  return '—';
+  return 'None';
 }
 
 function formatDueDate(dueBy: string): string {

@@ -77,7 +77,7 @@ export function AuditResult({ score, email, emailed, onRestart }: AuditResultPro
           <div className={styles.headlineStats}>
             <Stat
               big
-              value={pct == null ? '—' : `${pct.toFixed(2)}%`}
+              value={pct == null ? 'No rate yet' : `${pct.toFixed(2)}%`}
               label="Estimated dispute rate"
               tone={rate.band === 'atRisk' ? 'gap' : 'verdict'}
             />

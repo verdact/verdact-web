@@ -438,7 +438,7 @@ function FiledWaitingRow({ s, dispute }: { s: CssModuleStyles; dispute: Dispute 
         </div>
       </div>
       <span className={`${s.amt} ${s.num}`}>
-        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
       </span>
     </div>
   );
@@ -513,7 +513,7 @@ function LedgerHealthCell({
       <div className={s.health}>
         <div className={s.lEyebrow}>Account health</div>
         <div className={s.healthCalibrating}>Calibrating</div>
-        <div className={s.sub}>Too early to score — not enough settled volume yet.</div>
+        <div className={s.sub}>Too early to score. Not enough settled volume yet.</div>
       </div>
     );
   }
@@ -829,14 +829,14 @@ function DocketRow({
           {dispute.reason ?? 'Dispute'}
         </div>
         <div className={`${s.rMeta} ${s.num}`}>
-          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : '—'} ·{' '}
+          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : 'No charge ID'} ·{' '}
           {statusLabel(dispute.status)}
         </div>
         <ProofRow s={s} proof={proof} />
       </div>
       <div className={s.rRight}>
         <div className={`${s.amt} ${s.num}`}>
-          {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+          {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
         </div>
         {days !== null && (
           <div className={`${s.dead} ${urgent ? s.deadUrgent : ''} ${s.num}`}>{deadlineLabel(days)}</div>
@@ -873,7 +873,7 @@ function SingleCase({
           <div className={s.caseLabel}>Action needed</div>
           <h3 className={s.caseTitle}>{dispute.reason ?? 'Dispute'}</h3>
           <div className={`${s.caseMeta} ${s.num}`}>
-            {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+            {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
             {dispute.processor_charge_id ? ` · ${truncateChargeId(dispute.processor_charge_id)}` : ''}
           </div>
           <ProofRow s={s} proof={proof} />
@@ -1192,7 +1192,7 @@ function buildStandingSentence({
   }
 
   if (openCount === 0) {
-    return "You're set up. Nothing needs you right now — here's what Verdact is watching.";
+    return "You're set up. Nothing needs you right now. Here's what Verdact is watching.";
   }
 
   if (openCount === 1) {

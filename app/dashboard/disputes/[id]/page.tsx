@@ -29,6 +29,7 @@ import {
   buildResolutionPlan,
   strengthFromPercent,
   type EvidenceStrength,
+  type ResolutionPlan,
 } from '@/lib/evidence/resolution';
 import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
@@ -311,7 +312,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const firstMissing = packet.readiness.missing[0];
   const packetText = serializePacketText(
     packet,
-    `Verdact evidence packet — dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
+    `Verdact evidence packet: dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
   );
   const downloadFilename = `verdact-packet-${record.processor_dispute_id}.txt`;
 
@@ -401,9 +402,11 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             networkLabel={reasonProfile.networkLabel}
           />
 
-          {/* Inline-tip slot (spec 3.2-B): one honesty-gated guidance tip near
-              the readiness block. Owned by the TIPS agent in a later pass; left
-              intentionally clean here so it drops in without re-layout. */}
+          {/* Inline-tip slot (spec 3.2-B): ONE honesty-gated, case-specific
+              guidance tip near the readiness block. Grounded only in state the
+              page already computed (readiness, the resolution plan, submitted),
+              so it never invents a blocker. No percentages, no em dashes. */}
+          <WorkbenchTip plan={resolutionPlan} submitted={submitted} />
 
           {resolutionPlan && <ResolveMissingProof plan={resolutionPlan} />}
 
@@ -540,6 +543,52 @@ function ReadinessCard({
         />
       </div>
     </section>
+  );
+}
+
+// Inline workbench tip (spec 3.2-B): at most ONE case-specific guidance line near
+// the readiness block. When a real closeable gap exists, name the single
+// highest-priority blocker (the SAME one the resolution plan is guiding, so it is
+// always traced to this case) in vermilion and link to #resolve. When the record
+// is filing-ready or submitted, show the calm verdict-green note instead. No
+// percentages or numbers; no em dashes.
+function WorkbenchTip({
+  plan,
+  submitted,
+}: {
+  plan: ResolutionPlan | null;
+  submitted: boolean;
+}) {
+  if (submitted || !plan) {
+    return (
+      <div className={`${styles.card} flex items-start gap-3 px-5 py-4`}>
+        <span className={`${styles.statusDotOk} mt-0.5 h-5 w-5`} aria-hidden="true">
+          <CheckIcon className="h-3 w-3" />
+        </span>
+        <p className="text-sm leading-6 text-ink-soft">
+          <span className="font-semibold text-trust">Filing-ready.</span> Nothing is filed without
+          you.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${styles.surfaceGap} flex items-start gap-3 px-5 py-4`}>
+      <span className={`${styles.statusDotGap} mt-0.5 h-5 w-5`} aria-hidden="true">
+        <AlertIcon className="h-3 w-3" />
+      </span>
+      <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
+        <span className="font-semibold text-accent-deep">{plan.title}.</span> Adding it lifts this
+        record toward filing-ready. Verdact advises, you decide, and nothing is filed without you.{' '}
+        <a
+          href="#resolve"
+          className="font-semibold text-action underline underline-offset-4 hover:text-action-deep"
+        >
+          Resolve this item
+        </a>
+      </p>
+    </div>
   );
 }
 
@@ -738,13 +787,31 @@ function AcceptanceGapRow({
           {item.detail}
         </p>
         {!noted ? (
-          <a
-            href="#resolve"
-            className="mt-3 inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-white"
-          >
-            <ChevronRightIcon className="h-3.5 w-3.5" />
-            Resolve this above
-          </a>
+          <>
+            {/* C-E3 (spec 5.3): the acceptance group is what the bank weighs most,
+                so prompt manual-first for the exact confirmation message rather
+                than a lone generic CTA. Grounded in the same open acceptance-gap
+                state already computed for this row; nothing fabricated. */}
+            <p className="mt-3 text-sm leading-6 text-ink-soft">
+              Paste or upload the exact email or message where the customer confirmed they received
+              or accepted it. This is the item the bank weighs most.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              <a
+                href="#add-evidence"
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-white"
+              >
+                <ChevronRightIcon className="h-3.5 w-3.5" />
+                Paste or upload the confirmation
+              </a>
+              <a
+                href="#resolve"
+                className="inline-flex items-center gap-2 rounded-md border border-rule-strong bg-surface px-3.5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-action hover:bg-action-soft"
+              >
+                See guided steps
+              </a>
+            </div>
+          </>
         ) : null}
         <AcceptanceUnavailable disputeId={disputeId} noted={noted} reason={reason} />
       </div>

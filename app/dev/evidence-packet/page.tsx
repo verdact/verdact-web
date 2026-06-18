@@ -146,7 +146,7 @@ export default async function EvidencePacketPreview({
     analysis,
   });
 
-  const packetText = serializePacketText(packet, 'Verdact evidence packet — dispute dp_test_packet');
+  const packetText = serializePacketText(packet, 'Verdact evidence packet: dispute dp_test_packet');
 
   // Stage 1E derived values (mirrors the real workbench).
   const plan = buildResolutionPlan({

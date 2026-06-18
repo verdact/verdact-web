@@ -508,7 +508,7 @@ function PreviewCard({ score }: { score: AuditScore }) {
   const pct = rate.ratioPercent;
   return (
     <div className={styles.previewCard}>
-      <p className={styles.previewStat}>{pct == null ? '—' : `${pct.toFixed(2)}%`}</p>
+      <p className={styles.previewStat}>{pct == null ? 'No rate yet' : `${pct.toFixed(2)}%`}</p>
       <p className={styles.previewStatLabel}>estimated dispute rate</p>
       <dl className={styles.previewList}>
         <div>

@@ -425,19 +425,19 @@ function HeroBand({
     <section className={c.heroBand} aria-label="Headline metrics">
       <HeroCell
         label="Net profit / (burn)"
-        value={netProfit ? formatMetricValue(netProfit.value, netProfit.format, currency) : '—'}
+        value={netProfit ? formatMetricValue(netProfit.value, netProfit.format, currency) : 'Not set'}
         sub={netProfit && (netProfit.value ?? 0) >= 0 ? 'Profitable at these inputs' : 'Burning cash'}
         tone={netProfit && (netProfit.value ?? 0) >= 0 ? 'good' : 'bad'}
       />
       <HeroCell
         label="Runway"
-        value={runway ? formatMetricValue(runway.value, runway.format, currency) : '—'}
+        value={runway ? formatMetricValue(runway.value, runway.format, currency) : 'Not set'}
         sub={runway && runway.value == null ? 'Set cash on hand' : 'At current net burn'}
         tone={toneFromMetric(runway?.tone)}
       />
       <HeroCell
         label="Break-even customers"
-        value={beCustomers != null ? beCustomers.toLocaleString('en-US') : '—'}
+        value={beCustomers != null ? beCustomers.toLocaleString('en-US') : 'Not set'}
         sub={
           beCustomers == null
             ? 'No positive contribution'
@@ -449,7 +449,7 @@ function HeroBand({
       />
       <HeroCell
         label="LTV : CAC"
-        value={ltvCac ? formatMetricValue(ltvCac.value, ltvCac.format, currency) : '—'}
+        value={ltvCac ? formatMetricValue(ltvCac.value, ltvCac.format, currency) : 'Not set'}
         sub={ltvCac && ltvCac.value == null ? 'Set acquisition spend' : '3x+ is healthy'}
         tone={toneFromMetric(ltvCac?.tone)}
       />
@@ -731,7 +731,7 @@ function Tornado({
   );
 
   const fmt = (v: number | null): string => {
-    if (v == null) return '—';
+    if (v == null) return 'None';
     if (target === 'profit') return formatMetricValue(v, 'usd', currency);
     return `${v > 0 ? '+' : ''}${Math.round(v)}`;
   };
@@ -848,7 +848,7 @@ const COMPARE_ROWS: { label: string; get: (m: EconomicsModel, currency: string) 
   },
   {
     label: 'Break-even customers',
-    get: (m) => (m.breakEvenCustomers != null ? m.breakEvenCustomers.toLocaleString('en-US') : '—'),
+    get: (m) => (m.breakEvenCustomers != null ? m.breakEvenCustomers.toLocaleString('en-US') : 'None'),
   },
   {
     label: 'ARPU',

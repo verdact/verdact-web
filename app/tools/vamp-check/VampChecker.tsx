@@ -158,7 +158,7 @@ export function VampChecker() {
   const bandClass = band === 'atRisk' ? styles.atRisk : band === 'close' ? styles.close
     : band === 'healthy' ? styles.healthy : styles.empty;
   const youColor = band === 'atRisk' ? 'var(--gap)' : band === 'close' ? 'var(--warning)' : 'var(--verdict)';
-  const ratioDisplay = result.hasRate ? `${result.ratio.toFixed(2)}%` : '—';
+  const ratioDisplay = result.hasRate ? `${result.ratio.toFixed(2)}%` : 'No rate yet';
 
   const setField = (id: keyof FormValues) => (value: string) =>
     setForm((prev) => ({ ...prev, [id]: value.replace(/[^\d]/g, '') }));
