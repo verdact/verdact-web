@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import posthog, { type CaptureResult } from 'posthog-js';
 import { PostHogProvider as PHProvider } from '@posthog/react';
 import { createClient } from '@/lib/supabase/client';
@@ -52,8 +52,20 @@ function sanitize(event: CaptureResult | null): CaptureResult | null {
 }
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  // Gate PostHog behind a post-hydration flag. The server and the client's first
+  // (hydration) render both return the bare children tree, so PostHog — and
+  // especially session replay (rrweb), which mutates the DOM as it snapshots —
+  // never runs during React's hydration pass. The recorder snapshotting mid-
+  // hydration was the cause of the React #418 hydration mismatch on the marketing
+  // pages in production (replay is enabled only when NODE_ENV === 'production',
+  // which is why it never reproduced in local dev).
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    if (!POSTHOG_KEY) return;
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || !POSTHOG_KEY) return;
     posthog.init(POSTHOG_KEY, {
       // Reverse-proxied through next.config rewrites (/ingest) to dodge
       // ad-blockers; ui_host keeps "open in PostHog" links pointing at the app.
@@ -93,8 +105,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authSub.subscription.unsubscribe();
     };
-  }, []);
+  }, [hydrated]);
 
-  if (!POSTHOG_KEY) return <>{children}</>;
+  if (!POSTHOG_KEY || !hydrated) return <>{children}</>;
   return <PHProvider client={posthog}>{children}</PHProvider>;
 }
