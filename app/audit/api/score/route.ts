@@ -4,6 +4,7 @@ import { computeAuditScore } from '@/lib/audit/scoring';
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/audit/rate-limit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { readEdgeGeo, geoColumns } from '@/lib/geo/edge';
+import { sendAuditRecapEmail, isEmailEnabled } from '@/lib/email';
 import type { AuditDispute } from '@/lib/audit/types';
 
 // Node runtime: uses node:crypto (rate-limit) and the service-role client.
@@ -81,7 +82,10 @@ export async function POST(request: Request) {
     headers: request.headers,
   });
 
-  return NextResponse.json({ score });
+  // `emailed` reflects whether transactional email is configured, so the result
+  // page can claim "we emailed a copy" only when that is true. It is not a
+  // delivery receipt: the recap is dispatched fire-and-forget inside captureLead.
+  return NextResponse.json({ score, emailed: isEmailEnabled() });
 }
 
 async function captureLead({
@@ -133,7 +137,17 @@ async function captureLead({
     if (error) {
       // Table may be unmigrated in some environments — that is expected pre-apply.
       console.error('[audit/score] lead capture failed:', error.message);
+      return;
     }
+
+    // Fire-and-forget the recap email. The lead is stored, so the result page's
+    // "we emailed a copy" claim is honest when a key is configured; when it is
+    // not, sendAuditRecapEmail no-ops and the UI softens to "we saved a copy".
+    void sendAuditRecapEmail(submission.email, {
+      totalDisputes: score.summary.totalDisputes,
+      shouldHaveWonCount: score.summary.shouldHaveWonCount,
+      commsHingedCount: score.summary.commsHingedCount,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
     console.error('[audit/score] lead capture threw:', message);

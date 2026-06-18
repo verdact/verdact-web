@@ -1,0 +1,271 @@
+/*
+ * Evidence Workbench — co-located module CSS (Redesign 2026-06).
+ *
+ * Replaces the workbench's dependence on app/legacy.css. Every value here reads
+ * the canonical redesign tokens declared in app/globals.css (Stage 1): no new
+ * hex, no palette of its own. Dark mode inherits automatically because these
+ * tokens are overridden under `.app-shell[data-theme="dark"]` upstream.
+ *
+ * Two-color law: verdict green (--verdict / --verdict-tint) = confirmed / safe /
+ * action; vermilion (--gap / --gap-tint) = a merchant-closable gap only; status
+ * is always icon + text, never colour alone. No em dashes in any UI copy.
+ *
+ * When the last legacy screen is rebuilt, app/legacy.css can be deleted and its
+ * import dropped from globals.css (flagged to the orchestrator).
+ */
+
+/* ── Display type (Schibsted Grotesk; brand law: one typeface) ────────────── */
+.fontDisplay {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  letter-spacing: 0;
+}
+
+/* ── Card surface ─────────────────────────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-1);
+}
+
+.cardLead {
+  border-top: 3px solid var(--verdict);
+}
+
+/* ── Mono labels (eyebrows / field keys) ──────────────────────────────────── */
+.labelMono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.labelMonoStrong {
+  composes: labelMono;
+  color: var(--ink);
+}
+
+.metaMono {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+/* ── Reason-code chip ─────────────────────────────────────────────────────── */
+.chipRc {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--verdict);
+  border: 1px solid var(--mint);
+  background: var(--verdict-tint);
+  border-radius: var(--radius-input);
+  padding: 0.15rem 0.45rem;
+}
+
+/* ── Status pills (icon + text; colour never carries meaning alone) ────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--radius-input);
+  border: 1px solid;
+}
+
+.pillVerdict {
+  composes: pill;
+  color: var(--verdict);
+  background: var(--verdict-tint);
+  border-color: var(--mint);
+}
+
+.pillGap {
+  composes: pill;
+  color: var(--gap-text);
+  background: var(--gap-tint);
+  border-color: var(--gap);
+}
+
+.pillNeutral {
+  composes: pill;
+  color: var(--ink-3);
+  background: var(--panel-wash);
+  border-color: var(--hairline);
+}
+
+.pillWarning {
+  composes: pill;
+  color: var(--warning-deep);
+  background: var(--warning-soft);
+  border-color: var(--warning-rule);
+}
+
+/* ── Source tags on evidence rows ─────────────────────────────────────────── */
+.srcTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.18rem 0.45rem;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--hairline);
+  color: var(--ink-3);
+  background: var(--panel-wash);
+}
+
+.srcTagGap {
+  composes: srcTag;
+  color: var(--gap-text);
+  background: var(--gap-tint);
+  border-color: var(--gap);
+}
+
+/* ── Status dots ──────────────────────────────────────────────────────────── */
+.statusDot {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.statusDotOk {
+  composes: statusDot;
+  background: var(--verdict-tint);
+  border: 1.5px solid var(--verdict);
+  color: var(--verdict);
+}
+
+.statusDotGap {
+  composes: statusDot;
+  background: var(--gap-tint);
+  border: 1.5px solid var(--gap);
+  color: var(--gap-text);
+}
+
+.statusDotNeutral {
+  composes: statusDot;
+  background: var(--panel-wash);
+  border: 1.5px solid var(--hairline);
+  color: var(--ink-3);
+}
+
+/* ── A merchant-closable gap surface (vermilion, hatched) ─────────────────── */
+.surfaceGap {
+  background:
+    linear-gradient(var(--gap-tint), var(--gap-tint)),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 16px,
+      color-mix(in srgb, var(--gap) 6%, transparent) 16px 17px
+    );
+  border: 1px solid var(--gap);
+  border-radius: var(--radius-input);
+}
+
+/* ── Chain of Intent timeline (C-E2) ──────────────────────────────────────── */
+.coiList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coiNode {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 14px;
+  padding-bottom: var(--s5, 1.25rem);
+}
+
+.coiNode:last-child {
+  padding-bottom: 0;
+}
+
+/* The connective spine. A descendant combinator keeps it layout-only (no
+   layout-bound property is ever animated). */
+.coiNode::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background: var(--hairline);
+}
+
+.coiNode:last-child::before {
+  display: none;
+}
+
+.coiMarker {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.coiMarkerOk {
+  composes: coiMarker;
+  background: var(--verdict-tint);
+  border: 1.5px solid var(--verdict);
+  color: var(--verdict);
+}
+
+.coiMarkerGap {
+  composes: coiMarker;
+  background: var(--gap-tint);
+  border: 1.5px solid var(--gap);
+  color: var(--gap-text);
+}
+
+.coiBody {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.coiTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coiTitleGap {
+  composes: coiTitle;
+  color: var(--gap-text);
+}
+
+.coiDetail {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.coiWhen {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}

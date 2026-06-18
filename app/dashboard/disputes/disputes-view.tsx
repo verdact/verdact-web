@@ -15,9 +15,29 @@ export type DisputesViewProps = {
   disputes: Dispute[];
   stripeConnected: boolean;
   filter: DisputeFilter;
+  /**
+   * Present proof pillars per dispute, keyed by dispute id (respondable cases).
+   * Optional so the dev preview route can render without a DB read; the chip
+   * then reads as an honest "add your proof" gap rather than fabricating one.
+   */
+  proofByDispute?: Record<string, string[]>;
 };
 
 const OPEN_STATUSES = new Set(['needs_response', 'under_review', 'submitted']);
+
+// Statuses where a "Worth responding" readiness chip is meaningful: a response
+// can still be built. Closed/resolved cases never carry the chip.
+const RESPONDABLE_STATUSES = new Set(['needs_response', 'under_review']);
+
+// The core proof pillars an evidence record leans on. The chip grades these
+// present (verdict green) vs missing (vermilion "Gap"). This is evidence
+// completeness, not a win prediction: strictly no odds, percentages, or
+// guarantees. Reason-code-specific requirements are a later delta (C-F1).
+const REQUIRED_PILLARS = ['Delivery', 'Comms', 'Policy'] as const;
+
+// Under 48 hours to respond is the only window that earns the vermilion
+// deadline accent. Anything further out stays neutral.
+const URGENT_HOURS = 48;
 
 const FILTERS: Array<{ key: DisputeFilter; label: string }> = [
   { key: 'needs-action', label: 'Needs action' },
@@ -35,6 +55,7 @@ export function DisputesView({
   disputes,
   stripeConnected,
   filter,
+  proofByDispute = {},
 }: DisputesViewProps) {
   const counts = {
     'needs-action': disputes.filter((d) => d.status === 'needs_response').length,
@@ -77,7 +98,7 @@ export function DisputesView({
             ) : (
               <div className={s.list}>
                 {visible.map((d) => (
-                  <DisputeRow key={d.id} dispute={d} />
+                  <DisputeRow key={d.id} dispute={d} proof={proofByDispute[d.id] ?? []} />
                 ))}
               </div>
             )}
@@ -90,9 +111,11 @@ export function DisputesView({
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function DisputeRow({ dispute }: { dispute: Dispute }) {
-  const days = dispute.due_by ? daysUntil(dispute.due_by) : null;
-  const isUrgent = days !== null && days <= 3;
+function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
+  const isOpen = OPEN_STATUSES.has(dispute.status);
+  const isRespondable = RESPONDABLE_STATUSES.has(dispute.status);
+  const hours = dispute.due_by ? hoursUntil(dispute.due_by) : null;
+  const isUrgent = isOpen && hours !== null && hours < URGENT_HOURS;
   const actionLabel =
     dispute.status === 'needs_response'
       ? 'Build response'
@@ -110,20 +133,90 @@ function DisputeRow({ dispute }: { dispute: Dispute }) {
       <div className={s.rowInfo}>
         <span className={s.rowReason}>{dispute.reason ?? 'Dispute'}</span>
         <span className={s.rowId}>
-          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : '—'}
+          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : 'No charge ID'}
         </span>
+        {isRespondable && <ReadinessChip proof={proof} />}
       </div>
 
       <span className={s.rowAmount}>
-        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : '—'}
+        {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
       </span>
 
-      <span className={`${s.rowDeadline} ${isUrgent ? s.rowDeadlineUrgent : ''}`}>
-        {days !== null ? deadlineLabel(days) : '—'}
-      </span>
+      {isOpen && dispute.due_by ? (
+        <span
+          className={`${s.rowDeadline} ${isUrgent ? s.rowDeadlineUrgent : ''}`}
+          aria-label={deadlineAria(dispute.due_by, hours)}
+        >
+          <ClockIcon />
+          <span>{deadlineLabel(dispute.due_by, hours)}</span>
+        </span>
+      ) : (
+        <span className={s.rowDeadline}>{closedDeadlineLabel(dispute.status)}</span>
+      )}
 
       <span className={s.rowAction}>{actionLabel}</span>
     </a>
+  );
+}
+
+// Honest, hedged evidence-strength chip. Grades the present proof pillars
+// (verdict green, icon + text) against the missing required ones (vermilion
+// "Gap"). This is evidence completeness, not a win prediction: strictly no
+// percentages, no odds, no "you'll win", no guarantee.
+function ReadinessChip({ proof }: { proof: string[] }) {
+  const present = new Set(proof);
+  const missing = REQUIRED_PILLARS.filter((p) => !present.has(p));
+
+  if (proof.length === 0) {
+    return (
+      <span className={`${s.chip} ${s.chipGap}`}>
+        <GapIcon />
+        <span>Worth responding: add your proof to start</span>
+      </span>
+    );
+  }
+
+  if (missing.length === 0) {
+    return (
+      <span className={`${s.chip} ${s.chipReady}`}>
+        <CheckIcon />
+        <span>Worth responding: your required proof is on file</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className={`${s.chip} ${s.chipGap}`}>
+      <GapIcon />
+      <span>Worth responding: gap in {formatList(missing)}</span>
+    </span>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className={s.deadlineIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className={s.chipIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+function GapIcon() {
+  return (
+    <svg className={s.chipIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+    </svg>
   );
 }
 
@@ -193,16 +286,47 @@ function statusLabel(status: string): string {
   return map[status] ?? status;
 }
 
-function daysUntil(dueBy: string): number {
+function hoursUntil(dueBy: string): number {
   const diff = new Date(dueBy).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.floor(diff / (1000 * 60 * 60));
 }
 
-function deadlineLabel(days: number): string {
-  if (days < 0) return 'Overdue';
-  if (days === 0) return 'Due today';
-  if (days === 1) return 'Due tomorrow';
-  return `Due in ${days} days`;
+// "Respond by Jun 24, 4 days left". When under a day, the lead drops to hours
+// left so the urgency reads honestly; when overdue it states the date passed.
+function deadlineLabel(dueBy: string, hours: number | null): string {
+  const by = formatDueDate(dueBy);
+  if (hours === null) return `Respond by ${by}`;
+  if (hours < 0) return `Respond by ${by}, deadline passed`;
+  if (hours < 1) return `Respond by ${by}, under an hour left`;
+  if (hours < 24) {
+    const h = Math.floor(hours);
+    return `Respond by ${by}, ${h} hour${h === 1 ? '' : 's'} left`;
+  }
+  const days = Math.floor(hours / 24);
+  return `Respond by ${by}, ${days} day${days === 1 ? '' : 's'} left`;
+}
+
+function deadlineAria(dueBy: string, hours: number | null): string {
+  return `Response deadline: ${deadlineLabel(dueBy, hours)}`;
+}
+
+// What the deadline cell shows once a case is closed (no live countdown).
+function closedDeadlineLabel(status: string): string {
+  if (status === 'submitted') return 'Submitted';
+  if (status === 'won' || status === 'lost' || status === 'warning_closed') return 'Closed';
+  return 'None';
+}
+
+function formatDueDate(dueBy: string): string {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(dueBy));
+}
+
+// "Delivery, Comms and Policy" — Oxford-free join for the gap chip copy.
+function formatList(items: readonly string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
 function formatAmount(cents: number, currency: string | null): string {

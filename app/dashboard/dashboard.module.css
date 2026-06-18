@@ -46,6 +46,17 @@
   flex-wrap: wrap;
 }
 
+/* Page h1 — real heading hierarchy, consistent with the Disputes/Customers
+   page titles. The .eyebrow treatment below stays for section labels. */
+.title {
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
 .eyebrow {
   font-size: 12px;
   font-weight: 600;
@@ -555,13 +566,400 @@
 
 .ciFirst .ciBox { border-color: var(--verdict); }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ADAPTIVE DASHBOARD (redesign 2026-06): MODE A no-dispute health-hero
+   + MODE B dispute-hero. Layout + chrome only; every value is a shared
+   token. MODE A is vermilion-free by construction (nothing at risk);
+   vermilion appears in MODE B only on a genuine gap (deadline / missing
+   pillar / over-line health), never as decoration.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Dash toolbar: freshness stamp + refresh (both modes) ────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+}
+
+.fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.freshDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--verdict);
+  flex: none;
+}
+
+.refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  border: 1px solid var(--hairline);
+  background: var(--panel);
+  border-radius: var(--radius-input);
+  padding: 7px 12px;
+  min-height: 36px;
+  transition: border-color var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
+}
+
+.refresh:hover { border-color: var(--edge-green); color: var(--ink); }
+.refresh:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.refreshIcon { width: 15px; height: 15px; flex: none; }
+
+/* ── MODE A: standing note (green/neutral, vermilion-free) ───────── */
+
+.standNote {
+  margin: var(--space-4) 0 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+.standNoteWin { font-weight: 700; color: var(--verdict); font-variant-numeric: tabular-nums; }
+.standNoteFine { font-size: 11.5px; color: var(--ink-3); }
+
+/* ── MODE B grid: docket (hero) + rail (secondary) ──────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.gridMain { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.gridAside { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+
+/* ── MODE A hero row: health meter (dominant) + watching co-hero ── */
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* ── Pinned tip band (plan §3.2-A) ──────────────────────────────── */
+
+.tipBand { margin: 0; }
+
+.tipBandHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.tipCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--edge-green);
+  background: var(--verdict-tint);
+  border-radius: var(--radius-card);
+}
+
+/* A genuine gap tip carries the vermilion edge; a neutral/monitoring tip stays green. */
+.tipCardGap {
+  border-color: var(--gap-tint);
+  background: var(--gap-tint);
+}
+
+.tipIcon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--verdict);
+  margin-top: 1px;
+}
+
+.tipIcon svg { width: 100%; height: 100%; }
+
+.tipCardGap .tipIcon { color: var(--gap-text); }
+
+.tipBody { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; min-width: 0; }
+
+/* ── Watching co-hero card (MODE A) ─────────────────────────────── */
+
+.watchCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+
+.watchHead { display: flex; flex-direction: column; gap: 6px; }
+
+.watchTitle {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* ── Guidance section wrapper (MODE B rail) ─────────────────────── */
+
+.guideSection { display: flex; flex-direction: column; gap: var(--space-3); }
+.guideHead { display: flex; align-items: center; }
+
+/* ── Health card (shared chrome; MODE B compact + MODE A hero) ──── */
+
+.healthCardLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-card);
+}
+
+.healthCardLink:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.healthCardLink:hover .healthCardChrome { box-shadow: var(--elev-pop); }
+
+/* Hero variant stretches to the co-hero row height so the two heroes align. */
+.healthCardLinkHero { height: 100%; }
+.healthCardLinkHero .healthCardChrome { height: 100%; }
+
+.healthCardChrome {
+  background: var(--panel);
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: box-shadow var(--d-fast) var(--ease);
+}
+
+.healthCardHero { padding: var(--space-6); gap: var(--space-5); }
+
+.healthCardHeadRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.healthCardTitle {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 6px 0 0;
+  line-height: 1.25;
+}
+
+.healthCardTitleHero {
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 8px 0 0;
+  line-height: 1.2;
+}
+
+.healthCardFoot {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* status badge: icon + text, never color alone */
+.healthBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--verdict);
+  background: var(--verdict-tint);
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  flex: none;
+}
+
+.healthBadgeGap {
+  color: var(--gap-text);
+  background: var(--gap-tint);
+  border-color: var(--gap-tint);
+}
+
+.healthBadgeNeutral {
+  color: var(--ink-2);
+  background: var(--panel-wash);
+  border-color: var(--hairline);
+}
+
+.healthBadgeIcon { width: 13px; height: 13px; flex: none; }
+.healthBadgeFine { font-weight: 500; color: var(--ink-3); }
+.healthBadgeGap .healthBadgeFine { color: var(--gap-text); }
+.healthBadgeNeutral .healthBadgeFine { color: var(--ink-3); }
+
+/* card meter (re-uses the same math as the ledger meter, card-scale chrome) */
+.cardMeterWrap { display: flex; flex-direction: column; gap: 10px; }
+
+.cardReadout {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.cardReadoutHero { font-size: clamp(48px, 7vw, 80px); }
+
+.cardMeter {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--hairline);
+}
+
+.cardMeterFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--verdict);
+  border-radius: 4px;
+  transition: width var(--d-normal) var(--ease);
+}
+
+.cardMeterFillGap { background: var(--gap); }
+
+.cardMeterLine {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--ink-2);
+}
+
+.cardScale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.cardScale span:nth-child(2) { color: var(--ink-2); font-weight: 500; }
+
+/* ── MODE A demoted docket: calm reassurance ─────────────────────── */
+
+.docketSection { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.calmEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  padding: var(--space-12) var(--space-6);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius-card);
+  background: var(--panel-wash);
+}
+
+.calmEmptyIcon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--verdict);
+  background: var(--verdict-tint);
+  border-radius: var(--radius-pill);
+}
+
+.calmEmptyIcon svg { width: 24px; height: 24px; }
+
+.calmEmptyCopy { max-width: 46ch; display: flex; flex-direction: column; gap: 6px; }
+
+.calmEmptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.calmEmptyText { font-size: 13.5px; color: var(--ink-2); line-height: 1.55; margin: 0; }
+
+/* filed-and-waiting strip (both modes; never the merchant's action) */
+.filedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+}
+
+.statusLabel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.statusDotNeutral {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex: none;
+}
+
+.filedSub { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.45; }
+
 /* ── Responsive ─────────────────────────────────────────────────── */
+
+/* Collapse the two-column adaptive grids to one column on tablet so the rail
+   never crushes the docket / co-hero (matches the comp's 860px breakpoint). */
+@media (max-width: 860px) {
+  .grid,
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 767px) {
   .page {
     padding: var(--space-5) var(--space-4) var(--space-12);
     gap: var(--space-5);
   }
+
+  .calmEmpty { padding: var(--space-8) var(--space-5); }
+
+  .filedRow { flex-wrap: wrap; }
 
   .ledger,
   .ledgerCollapsed {

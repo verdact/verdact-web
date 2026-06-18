@@ -186,6 +186,47 @@ export const stripeWebhookReceived = inngest.createFunction(
               payload: { schema_version: 'v1', stripe_event_type: eventType },
             });
           });
+        } else if (
+          eventType === 'charge.dispute.funds_withdrawn' ||
+          eventType === 'charge.dispute.funds_reinstated'
+        ) {
+          // Funds movement updates the dispute outcome but is not a closure.
+          // Record an audit row consistent with the created/closed handlers so
+          // the dispute timeline reflects the provisional debit/credit.
+          await step.run('log-dispute-funds', async () => {
+            await supabase.from('dispute_events').insert({
+              merchant_id: row.merchant_id,
+              dispute_id: disputeRow.id,
+              event_type: 'status_changed',
+              to_status: internalStatus,
+              actor_kind: 'webhook',
+              payload: { schema_version: 'v1', stripe_event_type: eventType },
+            });
+          });
+        }
+      } else if (eventType === 'account.application.deauthorized') {
+        // Merchant revoked our Connect access on Stripe's side. Mark the
+        // connection disconnected so it is not left stuck as 'connected'.
+        // Resolved by processor_account_id (the deauthorized account on
+        // event.account), independent of the FK lookup above.
+        if (row.processor_account_id) {
+          await step.run('mark-connection-disconnected', async () => {
+            const now = new Date().toISOString();
+            const { error } = await supabase
+              .from('processor_connections')
+              .update({
+                connection_status: 'disconnected',
+                disconnected_at: now,
+                updated_at: now,
+              })
+              .eq('processor', 'stripe')
+              .eq('processor_account_id', row.processor_account_id);
+            if (error) throw error;
+          });
+        } else {
+          logger.warn('account.application.deauthorized without processor_account_id', {
+            webhookEventId,
+          });
         }
       } else if (eventType === 'radar.early_fraud_warning.created') {
         const efw = dataObject as Record<string, unknown>;

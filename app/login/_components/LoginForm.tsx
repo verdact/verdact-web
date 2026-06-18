@@ -127,7 +127,7 @@ export function LoginForm({ presetError }: { presetError?: string }) {
           className="font-medium text-action underline underline-offset-[5px] hover:text-action-deep"
           href="/signup"
         >
-          Create a workspace
+          Join the beta
         </a>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   isAllowedEvidenceMime,
   type EvidencePurpose,
 } from '@/lib/evidence/intake';
+import styles from './workbench.module.css';
 
 /**
  * Real evidence intake (R2 sub-stage 1): upload, drag-and-drop, or paste a
@@ -79,14 +80,22 @@ export function EvidenceUploader({
           fd.append('disputeId', disputeId);
           fd.append('purpose', purpose);
           const res = await fetch('/api/evidence/upload', { method: 'POST', body: fd });
-          const json = (await res.json().catch(() => ({}))) as { error?: string; deduped?: boolean };
+          const json = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            deduped?: boolean;
+            updated?: boolean;
+          };
           if (!res.ok) {
             updateItem(setItems, key, { status: 'error', message: json.error ?? 'Upload failed.' });
             continue;
           }
           updateItem(setItems, key, {
             status: 'done',
-            message: json.deduped ? 'Already attached' : 'Attached',
+            message: json.updated
+              ? 'Re-categorized'
+              : json.deduped
+                ? 'Already attached'
+                : 'Attached',
           });
         } catch {
           updateItem(setItems, key, { status: 'error', message: 'Network error. Try again.' });
@@ -139,17 +148,17 @@ export function EvidenceUploader({
           <UploadGlyph className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className={`label-mono-strong ${lead ? 'text-accent' : 'text-ink-mute'}`}>
+          <span className={`${styles.labelMonoStrong} ${lead ? 'text-accent-deep' : 'text-ink-mute'}`}>
             Add evidence
           </span>
-          <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
+          <span className={`${styles.fontDisplay} mt-1 block text-[1.05rem] font-semibold leading-tight text-ink`}>
             Upload, drag and drop, or paste a screenshot
           </span>
         </span>
       </header>
 
       <div className="px-5 pb-5 pt-4">
-        <label className="label-mono mb-1.5 block" htmlFor="evidence-purpose">
+        <label className={`${styles.labelMono} mb-1.5 block`} htmlFor="evidence-purpose">
           What is this?
         </label>
         <select

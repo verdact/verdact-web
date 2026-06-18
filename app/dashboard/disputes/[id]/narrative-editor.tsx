@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { saveNarrativeAction } from './actions';
+import { AlertIcon, CheckIcon } from '../../dash-icons';
+import styles from './workbench.module.css';
 
 /**
  * The merchant's own account of what happened, persisted to
@@ -58,11 +60,11 @@ export function NarrativeEditor({
   );
 
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-surface-3/60 px-6 py-4">
         <div>
-          <p className="font-display text-lg font-semibold text-ink">Your account of what happened</p>
-          <p className="label-mono mt-1.5">
+          <p className={`${styles.fontDisplay} text-lg font-semibold text-ink`}>Your account of what happened</p>
+          <p className={`${styles.labelMono} mt-1.5`}>
             In your words. We restate it in bank language for the packet.
           </p>
         </div>
@@ -96,8 +98,20 @@ export function NarrativeEditor({
 }
 
 function SaveBadge({ state }: { state: SaveState }) {
-  if (state === 'saving') return <span className="pill-neutral">Saving…</span>;
-  if (state === 'saved') return <span className="pill-trust">Saved</span>;
-  if (state === 'error') return <span className="pill-accent">Could not save</span>;
+  if (state === 'saving') return <span className={styles.pillNeutral}>Saving</span>;
+  if (state === 'saved')
+    return (
+      <span className={styles.pillVerdict}>
+        <CheckIcon className="h-3 w-3" />
+        Saved
+      </span>
+    );
+  if (state === 'error')
+    return (
+      <span className={styles.pillGap}>
+        <AlertIcon className="h-3 w-3" />
+        Could not save
+      </span>
+    );
   return null;
 }

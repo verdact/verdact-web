@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { PostHogProvider } from "./_components/posthog-provider";
+import { FeedbackWidget } from "./_components/feedback/FeedbackWidget";
 
 const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -35,7 +36,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`h-full antialiased ${schibsted.variable}`}
     >
-      <body className="min-h-full flex flex-col">
+      <head>
         {/* Resolve the app theme before first paint — prevents FOUC and makes
             system-dark deterministic. An explicit Light/Dark choice wins; with
             no stored choice we follow the OS via matchMedia and set the
@@ -47,10 +48,17 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('verdact-theme');if(t!=='dark'&&t!=='light'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
           }}
         />
+      </head>
+      <body className="min-h-full flex flex-col">
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
-        <PostHogProvider>{children}</PostHogProvider>
+        <PostHogProvider>
+          {children}
+          {/* Single mount: "send feedback from anywhere". Works signed-out on
+              marketing/auth (light) and inside the app shell (theme-aware). */}
+          <FeedbackWidget />
+        </PostHogProvider>
       </body>
     </html>
   );

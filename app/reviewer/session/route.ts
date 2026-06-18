@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appBaseUrl, isProductionUrl, reviewerCodeIsValid, REVIEWER_COOKIE } from '../../../lib/reviewer';
+import {
+  appBaseUrl,
+  isProductionUrl,
+  reviewerCodeIsValid,
+  safeRedirectPath,
+  REVIEWER_COOKIE,
+} from '../../../lib/reviewer';
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
-  const from = formData.get('from');
-  const nextPath = typeof from === 'string' && from.startsWith('/') ? from : '/settings/connections';
+  const nextPath = safeRedirectPath(formData.get('from'), '/settings/connections');
 
   if (!reviewerCodeIsValid(formData.get('accessCode'))) {
     return NextResponse.redirect(new URL('/signin?error=access', request.url), 303);

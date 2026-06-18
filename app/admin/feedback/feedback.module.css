@@ -1,0 +1,216 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   FEEDBACK INBOX — extras only. Shared layout, tabs, table, drawer come from
+   admin.module.css + the shared Drawer component. This file holds the inbox-
+   specific bits: the status dot/label, the column rhythm, the message ellipsis,
+   the quote block, and the drawer triage controls. Tokens only, no new hex.
+
+   Status color law (icon + text, never color alone):
+     New     = --gap        (open, needs you)
+     Triaged = --ink-3      (neutral)
+     Closed  = --verdict    (handled / safe)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: var(--space-4) 0;
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ── Status dot + label ──────────────────────────────────────────────────────*/
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex: 0 0 auto;
+}
+.dotGap {
+  background: var(--gap);
+}
+.dotNeutral {
+  background: var(--ink-3);
+}
+.dotSafe {
+  background: var(--verdict);
+}
+
+/* ── Table column rhythm + cells ─────────────────────────────────────────────*/
+.table {
+  table-layout: fixed;
+}
+.colStatus {
+  width: 15%;
+}
+.colSender {
+  width: 19%;
+}
+.colCat {
+  width: 12%;
+}
+.colScreen {
+  width: 14%;
+}
+.colMsg {
+  width: 28%;
+}
+.colDate {
+  width: 12%;
+}
+
+.msgCell {
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+.screenCell {
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.anon {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+.clickRow {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.clickRow:hover {
+  background: var(--panel-wash);
+}
+.clickRow[aria-selected='true'] {
+  background: var(--verdict-tint);
+}
+.rowButton {
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+}
+.rowButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--verdict-tint);
+  border-radius: 4px;
+}
+
+/* ── Pagination footer ───────────────────────────────────────────────────────*/
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
+}
+.pagerNote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.pagerBtns {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ── Drawer triage controls ──────────────────────────────────────────────────*/
+.statusGroup {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.statusOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-wash);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--d-fast) var(--ease), box-shadow var(--d-fast) var(--ease), color var(--d-fast) var(--ease);
+}
+.statusOption:hover {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+.statusOptionActive {
+  background: var(--verdict-tint);
+  color: var(--verdict-press);
+  box-shadow: inset 0 0 0 1px var(--mint);
+}
+.statusOption:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.quote {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-card);
+  border-left: 3px solid var(--rule-strong);
+  background: var(--panel-wash);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  word-break: break-all;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+.footerSpacer {
+  flex: 1;
+}
+
+@media (max-width: 560px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .searchForm {
+    flex-wrap: wrap;
+  }
+}

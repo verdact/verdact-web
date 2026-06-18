@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SlackChannel, SlackMessageSnapshot } from '@/lib/slack/api';
+import styles from './workbench.module.css';
 
 /**
  * In-dispute Slack picker. The merchant opens ONE channel, sees its recent
@@ -58,6 +59,9 @@ export function SlackImportPicker({
   const loadChannels = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // Clear any prior success banner so a fresh failure never renders alongside
+    // a stale "Attached" success message.
+    setDone(null);
     try {
       const res = await fetch('/api/slack/channels');
       const json = (await res.json().catch(() => ({}))) as ApiChannelsResponse;
@@ -97,6 +101,9 @@ export function SlackImportPicker({
     async (channel: SlackChannel, cursor?: string) => {
       setLoading(true);
       setError(null);
+      // Clear any prior success banner so a fresh failure never renders alongside
+      // a stale "Attached" success message.
+      setDone(null);
       try {
         const qs = new URLSearchParams({ channelId: channel.id });
         if (cursor) qs.set('cursor', cursor);
@@ -186,8 +193,8 @@ export function SlackImportPicker({
             <SlackGlyph className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="label-mono-strong text-ink-mute">Import from Slack</span>
-            <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
+            <span className={`${styles.labelMonoStrong} text-ink-mute`}>Import from Slack</span>
+            <span className={`${styles.fontDisplay} mt-1 block text-[1.05rem] font-semibold leading-tight text-ink`}>
               Attach the messages where the customer agreed
             </span>
           </span>
@@ -220,8 +227,8 @@ export function SlackImportPicker({
           <SlackGlyph className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="label-mono-strong text-ink-mute">Import from Slack</span>
-          <span className="font-display mt-1 block text-[1.05rem] font-semibold leading-tight text-ink">
+          <span className={`${styles.labelMonoStrong} text-ink-mute`}>Import from Slack</span>
+          <span className={`${styles.fontDisplay} mt-1 block text-[1.05rem] font-semibold leading-tight text-ink`}>
             Pick the exact messages, then attach
           </span>
         </span>
@@ -251,7 +258,7 @@ export function SlackImportPicker({
 
           {!active ? (
             <>
-              <label className="label-mono mb-1.5 block" htmlFor="slack-channel-filter">
+              <label className={`${styles.labelMono} mb-1.5 block`} htmlFor="slack-channel-filter">
                 Choose a channel
               </label>
               <input
@@ -331,7 +338,7 @@ export function SlackImportPicker({
                           <span className="min-w-0 flex-1">
                             <span className="flex items-baseline justify-between gap-2">
                               <span className="font-semibold text-ink">{m.author}</span>
-                              <span className="meta-mono flex-none text-ink-faint">{formatTs(m.ts)}</span>
+                              <span className={`${styles.metaMono} flex-none`}>{formatTs(m.ts)}</span>
                             </span>
                             <span className="mt-0.5 block whitespace-pre-wrap break-words text-ink-soft">
                               {m.text}

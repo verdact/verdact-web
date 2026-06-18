@@ -64,7 +64,7 @@ export async function saveOnboardingBasicsAction(
 }
 
 // Saves the merchant's self-selected persona (the skippable onboarding question).
-// Ask-only: there is no inference and no default — skipping leaves persona null
+// Ask-only: there is no inference and no default. Skipping leaves persona null
 // and the guidance engine ranks tips generically. Stored on merchant_profiles
 // (persona + persona_source='self_select') so server-side ranking can read it.
 export async function savePersonaAction(

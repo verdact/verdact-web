@@ -20,7 +20,8 @@ import { RemoveFileButton } from './evidence-file-actions';
 import { AcceptanceUnavailable } from './acceptance-unavailable';
 import { ResolveMissingProof } from './resolve-missing-proof';
 import { PacketView } from './packet-view';
-import { analyzeEvidence } from '@/lib/evidence';
+import { analyzeEvidence, buildChainOfIntent } from '@/lib/evidence';
+import { ChainOfIntentTimeline } from './chain-of-intent-timeline';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
@@ -28,10 +29,13 @@ import {
   buildResolutionPlan,
   strengthFromPercent,
   type EvidenceStrength,
+  type ResolutionPlan,
 } from '@/lib/evidence/resolution';
 import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
 import { PaidGate } from '../../../_components/ui/paid-gate';
+import { parseEvidenceDraft } from '@/lib/evidence/draft';
+import styles from './workbench.module.css';
 
 export const metadata = {
   title: 'Evidence record · Verdact',
@@ -78,13 +82,21 @@ type EvidenceFile = {
   created_at: string;
 };
 
+// C-E3: merchants and banks distinguish "proof of work" from "proof the client
+// accepted / received it". The acceptance group is weighted higher, so a missing
+// acknowledgment surfaces as a vermilion gap. C-E4 prior-relationship rows are
+// supporting (neutral when absent, never vermilion).
+type EvidenceGroup = 'work' | 'acceptance' | 'supporting';
+
 type EvidenceItem = {
-  source: 'stripe' | 'gmail' | 'slack' | 'policy' | 'file' | 'missing';
+  source: 'stripe' | 'gmail' | 'slack' | 'policy' | 'file' | 'missing' | 'relationship';
   label: string;
   title: string;
   detail: string;
   relevance: string;
   status: 'confirmed' | 'missing' | 'draft';
+  // Which checklist group this row belongs to (C-E3). Defaults to 'work'.
+  group?: EvidenceGroup;
   when?: string;
   // Present for uploaded files — enables the inline Remove control.
   fileId?: string;
@@ -224,7 +236,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const submitted = Boolean(record.submitted_at);
   const evidenceItems = buildEvidenceItems(record, files, approved);
   const businessName = membership.merchant.business_name?.trim() || null;
-  const narrative = readNarrative(record.evidence_draft);
+  const parsedDraft = parseEvidenceDraft(record.evidence_draft);
+  const narrative = parsedDraft.narrative;
 
   // ── Per-dispute evidence analysis (Revano-adopted features) ────────────────
   // Proof is derived conservatively from attached evidence files until the
@@ -299,7 +312,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   const firstMissing = packet.readiness.missing[0];
   const packetText = serializePacketText(
     packet,
-    `Verdact evidence packet — dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
+    `Verdact evidence packet: dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
   );
   const downloadFilename = `verdact-packet-${record.processor_dispute_id}.txt`;
 
@@ -307,7 +320,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   // The merchant may have recorded that no formal delivery/acceptance proof
   // exists; that notes the gap (it never inflates readiness). The resolution
   // plan then guides the next real gap, or is null when nothing is actionable.
-  const acceptance = readAcceptanceUnavailable(record.evidence_draft);
+  const acceptance = parsedDraft.acceptanceUnavailable ?? null;
   const acceptanceNoted = Boolean(acceptance);
   const reasonProfile = getReasonProfile(reasonCode);
   const strength = strengthFromPercent(readiness);
@@ -322,22 +335,40 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       });
   const customerName = pii?.customer_name?.trim() || null;
 
+  // ── C-E2 Chain of Intent ────────────────────────────────────────────────────
+  // The chronological story a reviewer reads: authorization first, then
+  // agreement, delivery, usage, acceptance. Derived from the SAME readiness
+  // checks the packet already computed, so a node is never green unless the
+  // underlying proof genuinely exists. A missing authorization or acceptance
+  // signal renders as a vermilion gap the merchant can close.
+  const hasDeliveryProofCheck = packet.readiness.checks.find((c) => c.key === 'delivery_proof');
+  const hasPolicyCheck = packet.readiness.checks.find((c) => c.key === 'policy');
+  const chainNodes = buildChainOfIntent({
+    reasonCode,
+    signals,
+    hasChargeAttached: Boolean(record.processor_charge_id),
+    hasDeliveryProof: Boolean(hasDeliveryProofCheck?.done),
+    hasPolicy: Boolean(hasPolicyCheck?.done),
+    acceptanceNoted,
+    purchaseAt: enrichment.purchaseAt ?? null,
+  });
+
   return (
     <AppShell email={user.email} businessName={businessName} active="disputes">
       <div className="border-b border-rule-strong bg-surface-2 px-6 py-6 md:px-10">
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-start gap-6">
           <div className="min-w-[280px] flex-1">
             <a
-              className="label-mono rounded-sm text-action underline underline-offset-4 hover:text-action-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40"
+              className={`${styles.labelMono} rounded-sm text-action underline underline-offset-4 hover:text-action-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/40`}
               href="/dashboard"
             >
               Back to overview
             </a>
-            <p className="label-mono mt-5">
-              Dispute <span className="chip-rc mx-1">{record.processor_dispute_id}</span>{' '}
+            <p className={`${styles.labelMono} mt-5`}>
+              Dispute <span className={`${styles.chipRc} mx-1`}>{record.processor_dispute_id}</span>{' '}
               {reasonProfile.networkLabel} · {reasonProfile.shortReason}
             </p>
-            <h1 className="font-display mt-3 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-ink">
+            <h1 className={`${styles.fontDisplay} mt-3 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-ink`}>
               {customerName ?? 'Evidence record'}
             </h1>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
@@ -371,6 +402,12 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             networkLabel={reasonProfile.networkLabel}
           />
 
+          {/* Inline-tip slot (spec 3.2-B): ONE honesty-gated, case-specific
+              guidance tip near the readiness block. Grounded only in state the
+              page already computed (readiness, the resolution plan, submitted),
+              so it never invents a blocker. No percentages, no em dashes. */}
+          <WorkbenchTip plan={resolutionPlan} submitted={submitted} />
+
           {resolutionPlan && <ResolveMissingProof plan={resolutionPlan} />}
 
           <div id="add-evidence" className="scroll-mt-24 space-y-5">
@@ -387,6 +424,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             acceptanceReason={acceptance?.reason ?? null}
           />
 
+          <ChainOfIntentTimeline nodes={chainNodes} />
+
           <div id="your-account" className="scroll-mt-24">
             <NarrativeEditor disputeId={record.id} initialNarrative={narrative} />
           </div>
@@ -398,6 +437,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             canDownload={downloadGate.allowed}
             packetText={packetText}
             downloadFilename={downloadFilename}
+            reasonLabel={`${reasonProfile.networkLabel} ${reasonProfile.shortReason}`}
           />
         </div>
 
@@ -452,13 +492,13 @@ function ReadinessCard({
       : 'Resolve the open items below to strengthen this record. Each item is source-linked, and nothing is sent until you approve.';
 
   return (
-    <section className="surface-card overflow-hidden border-t-[3px] border-t-action">
+    <section className={`${styles.card} ${styles.cardLead} overflow-hidden`}>
       <div className="grid gap-6 border-b border-rule px-6 py-6 sm:grid-cols-[108px_1fr]">
         <ReadinessDial value={readiness} />
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             {submitted ? (
-              <span className="pill-trust w-fit">
+              <span className={`${styles.pillVerdict} w-fit`}>
                 <CheckIcon className="h-3 w-3" />
                 Submitted
               </span>
@@ -472,11 +512,11 @@ function ReadinessCard({
                 {strength.label}
               </span>
             )}
-            <span className="label-mono">
+            <span className={styles.labelMono}>
               Evidence completeness for {networkLabel}. Not a win prediction.
             </span>
           </div>
-          <h2 className="font-display mt-4 text-[1.45rem] font-semibold leading-tight tracking-[-0.01em] text-ink">
+          <h2 className={`${styles.fontDisplay} mt-4 text-[1.45rem] font-semibold leading-tight tracking-[-0.01em] text-ink`}>
             {title}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">{sub}</p>
@@ -503,6 +543,52 @@ function ReadinessCard({
         />
       </div>
     </section>
+  );
+}
+
+// Inline workbench tip (spec 3.2-B): at most ONE case-specific guidance line near
+// the readiness block. When a real closeable gap exists, name the single
+// highest-priority blocker (the SAME one the resolution plan is guiding, so it is
+// always traced to this case) in vermilion and link to #resolve. When the record
+// is filing-ready or submitted, show the calm verdict-green note instead. No
+// percentages or numbers; no em dashes.
+function WorkbenchTip({
+  plan,
+  submitted,
+}: {
+  plan: ResolutionPlan | null;
+  submitted: boolean;
+}) {
+  if (submitted || !plan) {
+    return (
+      <div className={`${styles.card} flex items-start gap-3 px-5 py-4`}>
+        <span className={`${styles.statusDotOk} mt-0.5 h-5 w-5`} aria-hidden="true">
+          <CheckIcon className="h-3 w-3" />
+        </span>
+        <p className="text-sm leading-6 text-ink-soft">
+          <span className="font-semibold text-trust">Filing-ready.</span> Nothing is filed without
+          you.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${styles.surfaceGap} flex items-start gap-3 px-5 py-4`}>
+      <span className={`${styles.statusDotGap} mt-0.5 h-5 w-5`} aria-hidden="true">
+        <AlertIcon className="h-3 w-3" />
+      </span>
+      <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
+        <span className="font-semibold text-accent-deep">{plan.title}.</span> Adding it lifts this
+        record toward filing-ready. Verdact advises, you decide, and nothing is filed without you.{' '}
+        <a
+          href="#resolve"
+          className="font-semibold text-action underline underline-offset-4 hover:text-action-deep"
+        >
+          Resolve this item
+        </a>
+      </p>
+    </div>
   );
 }
 
@@ -534,20 +620,40 @@ function ReadinessDial({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-[2rem] font-semibold leading-none text-ink">
+        <span className={`${styles.fontDisplay} text-[2rem] font-semibold leading-none text-ink`}>
           {value}%
         </span>
-        <span className="label-mono mt-1 text-[0.62rem]">Ready</span>
+        <span className={`${styles.labelMono} mt-1 text-[0.62rem]`}>Ready</span>
       </div>
     </div>
   );
 }
 
 function strengthPillClass(tone: EvidenceStrength['tone']): string {
-  if (tone === 'trust') return 'pill-trust';
-  if (tone === 'warning') return 'pill-warning';
-  return 'pill-neutral';
+  if (tone === 'trust') return styles.pillVerdict;
+  if (tone === 'warning') return styles.pillWarning;
+  return styles.pillNeutral;
 }
+
+// C-E3: the checklist is split into the two groups merchants and banks
+// distinguish. "Client accepted or received" is weighted higher (banks reject
+// activity-only proof), so it renders second and carries the acceptance gap.
+const GROUP_META: Record<EvidenceGroup, { title: string; note: string }> = {
+  work: {
+    title: 'Work happened',
+    note: 'Proof the service was delivered or the work was done.',
+  },
+  acceptance: {
+    title: 'Client accepted or received it',
+    note: 'Proof the customer acknowledged or received the delivery. Banks weigh this most.',
+  },
+  supporting: {
+    title: 'Supporting',
+    note: 'Extra context that backs up the record without being required.',
+  },
+};
+
+const GROUP_ORDER: EvidenceGroup[] = ['work', 'acceptance', 'supporting'];
 
 function EvidenceRecord({
   items,
@@ -562,39 +668,64 @@ function EvidenceRecord({
 }) {
   const confirmed = items.filter((item) => item.status === 'confirmed').length;
   const missing = items.filter((item) => item.status === 'missing').length;
+  const groups = GROUP_ORDER.map((group) => ({
+    group,
+    rows: items.filter((item) => (item.group ?? 'work') === group),
+  })).filter((g) => g.rows.length > 0);
+
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule bg-surface-3/60 px-6 py-4">
         <div>
-          <p className="font-display text-lg font-semibold text-ink">Evidence Record</p>
-          <p className="label-mono mt-1.5">Source-linked · Nothing submitted until you approve</p>
+          <p className={`${styles.fontDisplay} text-lg font-semibold text-ink`}>Evidence Record</p>
+          <p className={`${styles.labelMono} mt-1.5`}>
+            Source-linked. Nothing submitted until you approve.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="pill-trust">
+          <span className={styles.pillVerdict}>
             <CheckIcon className="h-3 w-3" />
             {confirmed} confirmed
           </span>
-          <span className={missing > 0 ? 'pill-accent' : 'pill-neutral'}>{missing} missing</span>
+          <span className={missing > 0 ? styles.pillGap : styles.pillNeutral}>
+            {missing > 0 ? <AlertIcon className="h-3 w-3" /> : <CheckIcon className="h-3 w-3" />}
+            {missing} missing
+          </span>
         </div>
       </header>
-      <div className="px-6 py-2">
-        {items.map((item) =>
-          item.acceptanceGap ? (
-            <AcceptanceGapRow
-              key="acceptance-gap"
-              item={item}
-              disputeId={disputeId}
-              noted={acceptanceNoted}
-              reason={acceptanceReason}
-            />
-          ) : (
-            <EvidenceItemRow
-              key={item.fileId ? `file-${item.fileId}` : `${item.source}-${item.title}`}
-              item={item}
-              disputeId={disputeId}
-            />
-          ),
-        )}
+      <div className="px-6">
+        {groups.map(({ group, rows }) => {
+          const meta = GROUP_META[group];
+          const weighted = group === 'acceptance';
+          return (
+            <div key={group} className="border-b border-rule py-2 last:border-b-0">
+              <div className="flex flex-wrap items-baseline gap-2 pb-1 pt-3">
+                <p className="text-sm font-semibold text-ink">{meta.title}</p>
+                {weighted ? (
+                  <span className={styles.labelMono}>Weighted highest</span>
+                ) : null}
+              </div>
+              <p className={`${styles.labelMono} pb-1`}>{meta.note}</p>
+              {rows.map((item) =>
+                item.acceptanceGap ? (
+                  <AcceptanceGapRow
+                    key="acceptance-gap"
+                    item={item}
+                    disputeId={disputeId}
+                    noted={acceptanceNoted}
+                    reason={acceptanceReason}
+                  />
+                ) : (
+                  <EvidenceItemRow
+                    key={item.fileId ? `file-${item.fileId}` : `${item.source}-${item.title}`}
+                    item={item}
+                    disputeId={disputeId}
+                  />
+                ),
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -615,38 +746,38 @@ function AcceptanceGapRow({
     <details
       id="acceptance-gap"
       className={`scroll-mt-24 border-b border-rule last:border-b-0 ${
-        noted ? '' : 'surface-missing -mx-6 my-2 px-6'
+        noted ? '' : `${styles.surfaceGap} -mx-6 my-2 px-6`
       }`}
       open
     >
       <summary className="grid cursor-pointer list-none grid-cols-[1.5rem_1fr_auto] items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
         {noted ? (
           <span
-            className="grid h-5 w-5 flex-none place-items-center rounded-full border border-rule-strong bg-surface-2 text-ink-mute"
+            className={`${styles.statusDotNeutral} h-5 w-5`}
             aria-hidden="true"
           >
             <InfoCircleIcon className="h-3 w-3" />
           </span>
         ) : (
-          <span className="status-dot miss h-5 w-5" aria-hidden="true">
+          <span className={`${styles.statusDotGap} h-5 w-5`} aria-hidden="true">
             <AlertIcon className="h-3 w-3" />
           </span>
         )}
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
-            <span className={`src-tag ${noted ? 'policy' : 'missing'}`}>
+            <span className={noted ? styles.srcTag : styles.srcTagGap}>
               {noted ? 'NOTED · UNAVAILABLE' : item.label}
             </span>
           </span>
           <span
             className={`mt-1.5 block text-sm font-semibold leading-snug ${
-              noted ? 'text-ink' : 'font-display text-[1rem] text-accent'
+              noted ? 'text-ink' : `${styles.fontDisplay} text-[1rem] text-accent-deep`
             }`}
           >
             {item.title}
           </span>
         </span>
-        <span className={noted ? 'pill-neutral' : 'pill-accent'}>
+        <span className={noted ? styles.pillNeutral : styles.pillGap}>
           {noted ? <InfoCircleIcon className="h-3 w-3" /> : <AlertIcon className="h-3 w-3" />}
           {noted ? 'Noted' : 'Action needed'}
         </span>
@@ -656,13 +787,31 @@ function AcceptanceGapRow({
           {item.detail}
         </p>
         {!noted ? (
-          <a
-            href="#resolve"
-            className="mt-3 inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-white"
-          >
-            <ChevronRightIcon className="h-3.5 w-3.5" />
-            Resolve this above
-          </a>
+          <>
+            {/* C-E3 (spec 5.3): the acceptance group is what the bank weighs most,
+                so prompt manual-first for the exact confirmation message rather
+                than a lone generic CTA. Grounded in the same open acceptance-gap
+                state already computed for this row; nothing fabricated. */}
+            <p className="mt-3 text-sm leading-6 text-ink-soft">
+              Paste or upload the exact email or message where the customer confirmed they received
+              or accepted it. This is the item the bank weighs most.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              <a
+                href="#add-evidence"
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-white"
+              >
+                <ChevronRightIcon className="h-3.5 w-3.5" />
+                Paste or upload the confirmation
+              </a>
+              <a
+                href="#resolve"
+                className="inline-flex items-center gap-2 rounded-md border border-rule-strong bg-surface px-3.5 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-action hover:bg-action-soft"
+              >
+                See guided steps
+              </a>
+            </div>
+          </>
         ) : null}
         <AcceptanceUnavailable disputeId={disputeId} noted={noted} reason={reason} />
       </div>
@@ -672,33 +821,47 @@ function AcceptanceGapRow({
 
 function EvidenceItemRow({ item, disputeId }: { item: EvidenceItem; disputeId: string }) {
   const isMissing = item.status === 'missing';
-  const dotClass = isMissing ? 'miss' : 'ok';
-  const tagClass = item.source === 'file' ? 'policy' : item.source;
+  // A "draft" (not-yet-supplied supporting/policy row) is neutral, not a gap:
+  // only a genuinely missing required item is vermilion.
+  const isDraft = item.status === 'draft';
+  const dotClass = isMissing ? styles.statusDotGap : isDraft ? styles.statusDotNeutral : styles.statusDotOk;
   return (
     <details
-      className={`border-b border-rule last:border-b-0 ${isMissing ? 'surface-missing -mx-6 my-2 px-6' : ''}`}
+      className={`border-b border-rule last:border-b-0 ${isMissing ? `${styles.surfaceGap} -mx-6 my-2 px-6` : ''}`}
       open={isMissing}
     >
       <summary className="grid cursor-pointer list-none grid-cols-[1.5rem_1fr_auto] items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
-        <span className={`status-dot h-5 w-5 ${dotClass}`} aria-hidden="true">
-          {isMissing ? <AlertIcon className="h-3 w-3" /> : <CheckIcon className="h-3 w-3" />}
+        <span className={`${dotClass} h-5 w-5`} aria-hidden="true">
+          {isMissing ? (
+            <AlertIcon className="h-3 w-3" />
+          ) : isDraft ? (
+            <InfoCircleIcon className="h-3 w-3" />
+          ) : (
+            <CheckIcon className="h-3 w-3" />
+          )}
         </span>
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
-            <span className={`src-tag ${tagClass}`}>{item.label}</span>
-            {item.when ? <span className="meta-mono text-ink-faint">{item.when}</span> : null}
+            <span className={isMissing ? styles.srcTagGap : styles.srcTag}>{item.label}</span>
+            {item.when ? <span className={styles.metaMono}>{item.when}</span> : null}
           </span>
           <span
             className={`mt-1.5 block text-sm font-semibold leading-snug ${
-              isMissing ? 'font-display text-[1rem] text-accent' : 'text-ink'
+              isMissing ? `${styles.fontDisplay} text-[1rem] text-accent-deep` : 'text-ink'
             }`}
           >
             {item.title}
           </span>
         </span>
-        <span className={isMissing ? 'pill-accent' : 'pill-trust'}>
-          {isMissing ? <AlertIcon className="h-3 w-3" /> : <CheckIcon className="h-3 w-3" />}
-          {isMissing ? 'Action needed' : 'Confirmed'}
+        <span className={isMissing ? styles.pillGap : isDraft ? styles.pillNeutral : styles.pillVerdict}>
+          {isMissing ? (
+            <AlertIcon className="h-3 w-3" />
+          ) : isDraft ? (
+            <InfoCircleIcon className="h-3 w-3" />
+          ) : (
+            <CheckIcon className="h-3 w-3" />
+          )}
+          {isMissing ? 'Action needed' : isDraft ? 'Optional' : 'Confirmed'}
         </span>
       </summary>
       <div className="pb-5 pl-10">
@@ -706,7 +869,7 @@ function EvidenceItemRow({ item, disputeId }: { item: EvidenceItem; disputeId: s
           {item.detail}
         </p>
         <p className="mt-3 flex gap-2 text-xs leading-5 text-ink-mute">
-          <span className="label-mono flex-none">Relevance</span>
+          <span className={`${styles.labelMono} flex-none`}>Relevance</span>
           <span>{item.relevance}</span>
         </p>
         {item.fileId ? (
@@ -721,10 +884,10 @@ function EvidenceItemRow({ item, disputeId }: { item: EvidenceItem; disputeId: s
 
 function AccountRiskPanel({ ratio }: { ratio: number | null }) {
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex items-center justify-between gap-3 border-b border-rule px-5 py-4">
-        <p className="label-mono-strong">Account risk</p>
-        <span className="pill-trust">
+        <p className={styles.labelMonoStrong}>Account risk</p>
+        <span className={styles.pillVerdict}>
           <ShieldIcon className="h-3 w-3" />
           Monitor
         </span>
@@ -744,7 +907,7 @@ function AccountRiskPanel({ ratio }: { ratio: number | null }) {
           </div>
         </div>
         <details className="mt-4 border-t border-rule pt-3">
-          <summary className="label-mono cursor-pointer text-action">VAMP detail</summary>
+          <summary className={`${styles.labelMono} cursor-pointer text-action`}>VAMP detail</summary>
           <div className="mt-3 rounded-md border border-rule bg-surface px-3 py-2 text-center font-mono text-[0.72rem] text-ink-mute">
             (Fraud TC40 + Disputes TC15) / Settled TC05
           </div>
@@ -772,13 +935,13 @@ function BottomActionBar({
   resolveCount: number;
 }) {
   return (
-    <div className="sticky bottom-0 z-10 border-t border-[#1e293b] bg-[#0f172a] text-[#cbd5e1]">
+    <div className="sticky bottom-0 z-10 border-t border-rule-strong bg-surface-2 text-ink-soft">
       <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-4 px-6 py-4 md:px-10">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-md border border-[#334155] bg-[#1e293b] text-[#60a5fa]">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-md border border-action-rule bg-action-soft text-action">
           <LockIcon className="h-4 w-4" />
         </span>
         <p className="min-w-[240px] flex-1 text-sm leading-6">
-          <span className="font-semibold text-[#e7edf4]">
+          <span className="font-semibold text-ink">
             {submitted
               ? 'This record has already been submitted.'
               : approved
@@ -799,17 +962,32 @@ function BottomActionBar({
           </a>
         ) : null}
         {/* Free→Paid gate routes through `can()`; beta-unlocked today so the real
-            buttons render unchanged, gated affordance appears once billing lands. */}
+            buttons render unchanged, gated affordance appears once billing lands.
+            During beta these controls are view-only — the labels say so and the
+            real submission path stays unwired. */}
         <PaidGate action="export_packet" allowed={canExport}>
-          <button className="rounded-md border border-[#3a4b60] px-4 py-2 text-sm font-semibold text-[#e7edf4]" type="button">
-            Export draft
+          <button
+            className="rounded-md border border-rule-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            disabled
+            title="Use the packet view above to copy or download the draft during beta."
+          >
+            Export draft (view-only)
           </button>
         </PaidGate>
         <PaidGate action="submit_to_stripe" allowed={canSubmit} previewAvailable={false}>
+          {/* Submission is intentionally inert during beta — the real Stripe
+              filing channel is not wired. Disabled so it never reads as a live
+              action; the Locked badge makes the gated state explicit. */}
           <button
             className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
-            disabled={!approved || submitted}
+            disabled
+            title={
+              submitted
+                ? 'This record has already been submitted.'
+                : 'Submission is wired in a later stage. Nothing is sent to the bank during beta.'
+            }
           >
             Review and submit
             <span className="rounded-sm bg-white/20 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em]">
@@ -825,8 +1003,9 @@ function BottomActionBar({
 function StatusPill({ status }: { status: string }) {
   const label = status.replaceAll('_', ' ');
   if (status === 'needs_response') {
+    // A live respond-by deadline is a genuine merchant-closable gap: vermilion.
     return (
-      <span className="pill-warning">
+      <span className={styles.pillGap}>
         <AlertIcon className="h-3 w-3" />
         Needs response
       </span>
@@ -834,13 +1013,13 @@ function StatusPill({ status }: { status: string }) {
   }
   if (status === 'won' || status === 'submitted') {
     return (
-      <span className="pill-trust">
+      <span className={styles.pillVerdict}>
         <CheckIcon className="h-3 w-3" />
         {label}
       </span>
     );
   }
-  return <span className="pill-neutral capitalize">{label}</span>;
+  return <span className={`${styles.pillNeutral} capitalize`}>{label}</span>;
 }
 
 function Fact({
@@ -858,11 +1037,11 @@ function Fact({
 }) {
   return (
     <div className="border-b border-rule px-5 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-      <span className="label-mono block">{label}</span>
+      <span className={`${styles.labelMono} block`}>{label}</span>
       <span
         className={`mt-1 block text-sm ${mono ? 'font-mono' : ''} ${
-          strong ? 'font-display text-lg font-semibold' : 'font-semibold'
-        } ${warning ? 'text-warning' : 'text-ink'}`}
+          strong ? `${styles.fontDisplay} text-lg font-semibold` : 'font-semibold'
+        } ${warning ? 'text-accent-deep' : 'text-ink'}`}
       >
         {value}
       </span>
@@ -885,18 +1064,18 @@ function ReadinessFact({
 }) {
   return (
     <div className="border-b border-rule px-6 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-      <p className="label-mono flex items-center gap-2">
+      <p className={`${styles.labelMono} flex items-center gap-2`}>
         {icon}
         {label}
       </p>
       <p
         className={`mt-2 text-sm font-semibold leading-5 ${
-          tone === 'warn' ? 'text-accent' : tone === 'ok' ? 'text-trust' : 'text-ink'
+          tone === 'warn' ? 'text-accent-deep' : tone === 'ok' ? 'text-trust' : 'text-ink'
         }`}
       >
         {value}
       </p>
-      {note ? <p className="meta-mono mt-1 text-ink-mute">{note}</p> : null}
+      {note ? <p className={`${styles.metaMono} mt-1`}>{note}</p> : null}
     </div>
   );
 }
@@ -946,10 +1125,14 @@ function buildEvidenceItems(
 ): EvidenceItem[] {
   const fileItems: EvidenceItem[] = files.map((file) => {
     const isSlack = file.source_kind === 'slack';
+    // Communication / Slack proof is the customer accepting or acknowledging;
+    // service docs and policies are proof the work happened (C-E3 grouping).
+    const isAcceptance = isSlack || file.purpose === 'communication';
     return {
       source: isSlack ? 'slack' : 'file',
       label: isSlack ? 'SLACK' : formatPurpose(file.purpose),
       fileId: file.id,
+      group: isAcceptance ? 'acceptance' : 'work',
       title: isSlack ? 'Slack messages' : `${formatPurpose(file.purpose)} file`,
       detail: [
         isSlack ? 'Imported from Slack' : file.mime_type ? `Type: ${file.mime_type}` : null,
@@ -983,6 +1166,7 @@ function buildEvidenceItems(
     {
       source: 'stripe',
       label: 'STRIPE',
+      group: 'work',
       title: record.processor_charge_id
         ? `Charge ${record.processor_charge_id}`
         : 'Stripe dispute record',
@@ -995,6 +1179,7 @@ function buildEvidenceItems(
     {
       source: 'policy',
       label: 'POLICY',
+      group: 'work',
       title: hasPolicyFile
         ? 'Refund or cancellation policy'
         : 'Terms, refund, and cancellation policy',
@@ -1006,6 +1191,25 @@ function buildEvidenceItems(
     },
   ];
 
+  // C-E4 Prior relationship — concrete compelling evidence merchants already
+  // cite. Supporting, not required: present reads verdict-green, absent stays
+  // neutral (never vermilion, since its absence is not a closable gap).
+  const hasPriorRelationship = files.some((f) => f.source_kind === 'slack');
+  items.push({
+    source: 'relationship',
+    label: 'PRIOR RELATIONSHIP',
+    group: 'supporting',
+    title: hasPriorRelationship
+      ? 'Prior undisputed activity by this customer'
+      : 'Prior relationship with this customer',
+    detail: hasPriorRelationship
+      ? 'Earlier orders or continued use by the same customer corroborate a genuine, ongoing relationship, not a one-off fraudulent charge.'
+      : 'Add any prior undisputed transactions, repeat orders, or continued usage by the same customer. It is supporting evidence, so it strengthens the record without being required.',
+    relevance:
+      'A repeat or continuing customer is hard to square with "I never authorized this", so it backs up the rest of the chain.',
+    status: hasPriorRelationship ? 'confirmed' : 'draft',
+  });
+
   // Only surface the acceptance gap when it is genuinely missing. Rendered as a
   // first-class, actionable row (AcceptanceGapRow) that can be resolved above or
   // marked unavailable with a reason.
@@ -1013,6 +1217,7 @@ function buildEvidenceItems(
     items.push({
       source: 'missing',
       label: 'MISSING · RECOMMENDED',
+      group: 'acceptance',
       title: 'Delivery or acceptance proof',
       detail:
         'A dated delivery confirmation or signed acceptance is the strongest proof for a services dispute. Resolve it above, or record why it is unavailable.',
@@ -1058,30 +1263,7 @@ function deriveProofFromFiles(files: EvidenceFile[]): {
   return { delivery, usage, comms };
 }
 
-// The merchant's draft narrative lives on disputes.evidence_draft (JSONB). Read
-// it defensively — the column may be null, a legacy string, or an object.
-function readNarrative(draft: unknown): string {
-  if (!draft) return '';
-  if (typeof draft === 'string') return draft;
-  if (typeof draft === 'object' && 'narrative' in draft) {
-    const n = (draft as { narrative?: unknown }).narrative;
-    return typeof n === 'string' ? n : '';
-  }
-  return '';
-}
 
-// The merchant may have recorded that no formal delivery/acceptance proof exists,
-// stored on disputes.evidence_draft.acceptanceUnavailable. Read it defensively;
-// an empty/cleared reason reads as "not noted".
-function readAcceptanceUnavailable(draft: unknown): { reason: string } | null {
-  if (!draft || typeof draft !== 'object') return null;
-  const v = (draft as { acceptanceUnavailable?: unknown }).acceptanceUnavailable;
-  if (!v || typeof v !== 'object') return null;
-  const reason = (v as { reason?: unknown }).reason;
-  return typeof reason === 'string' && reason.trim().length > 0
-    ? { reason: reason.trim() }
-    : null;
-}
 
 function formatReason(reason: string | null) {
   if (!reason) return 'Reason pending';

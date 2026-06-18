@@ -1,4 +1,5 @@
 import { ShieldIcon } from '../../dash-icons';
+import styles from './workbench.module.css';
 
 // First-open guided state shown when the merchant opens a dispute before they
 // have set up a business profile. Without it the record cannot reason about
@@ -18,14 +19,14 @@ export function NoProfileFirstOpen({ reason }: { reason: string | null }) {
           <ShieldIcon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="label-mono-strong text-action">Set up your business profile first</p>
-          <h2 className="font-display mt-1.5 text-[1.15rem] font-semibold leading-tight text-ink">
+          <p className={`${styles.labelMonoStrong} text-action`}>Set up your business profile first</p>
+          <h2 className={`${styles.fontDisplay} mt-1.5 text-[1.15rem] font-semibold leading-tight text-ink`}>
             We need a little context before this record is useful
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
             This is your first dispute and you have not set up a business profile yet. A profile tells
             Verdact how you deliver, what your refund and cancellation policies say, and where they are
-            disclosed{reason ? ` — the exact things a ${formatReason(reason)} dispute turns on` : ''}.
+            disclosed{reason ? `, the exact things a ${formatReason(reason)} dispute turns on` : ''}.
             With it, the evidence record below can flag what is strong and what is missing. Without it,
             it can only show the Stripe facts.
           </p>

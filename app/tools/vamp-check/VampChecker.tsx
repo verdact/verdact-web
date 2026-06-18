@@ -6,13 +6,14 @@ import { MarketingHeader } from '../../_components/marketing/marketing-header';
 import { MarketingFooter } from '../../_components/marketing/marketing-footer';
 import { CheckIcon, AlertTriangleIcon } from '../../_components/home-icons';
 import { ScrollReveals } from '../../_components/ui/scroll-reveals';
+import { SCORE_FLOOR, HEALTHY_LINE, STRIPE_LINE, GAUGE_MAX } from '@/lib/account-health/lines';
 import styles from './vamp-check.module.css';
 
-// ─── Thresholds (verified 2026-06-07 against the vault Stripe/Visa extracts) ──
-const SCORE_FLOOR = 50;       // settled charges/month below which a single event is noise
-const HEALTHY_MAX = 0.65;     // under this = healthy
-const STRIPE_LINE = 0.75;     // Stripe acts here; the operative line for most merchants
-const GAUGE_MAX = 1.5;        // track right edge = Visa's excessive ratio
+// ─── Thresholds ──────────────────────────────────────────────────────────────
+// SCORE_FLOOR / HEALTHY_LINE / STRIPE_LINE / GAUGE_MAX come from the shared
+// source of truth in lib/account-health/lines so the public checker and the
+// authed Account Health view score against identical lines (verified 2026-06-07
+// against the vault Stripe/Visa extracts).
 const VISA_EVENT_GATE = 1500; // Visa VAMP monitoring count gate (events/month)
 const MC_CB_GATE = 100;       // Mastercard ECP monitoring count gate (chargebacks/month)
 
@@ -74,7 +75,7 @@ function compute(form: FormValues): Result {
 
   let band: Band;
   if (settled < SCORE_FLOOR) band = 'tooEarly';
-  else if (ratio < HEALTHY_MAX) band = 'healthy';
+  else if (ratio < HEALTHY_LINE) band = 'healthy';
   else if (ratio < STRIPE_LINE) band = 'close';
   else band = 'atRisk';
 
@@ -157,7 +158,7 @@ export function VampChecker() {
   const bandClass = band === 'atRisk' ? styles.atRisk : band === 'close' ? styles.close
     : band === 'healthy' ? styles.healthy : styles.empty;
   const youColor = band === 'atRisk' ? 'var(--gap)' : band === 'close' ? 'var(--warning)' : 'var(--verdict)';
-  const ratioDisplay = result.hasRate ? `${result.ratio.toFixed(2)}%` : '—';
+  const ratioDisplay = result.hasRate ? `${result.ratio.toFixed(2)}%` : 'No rate yet';
 
   const setField = (id: keyof FormValues) => (value: string) =>
     setForm((prev) => ({ ...prev, [id]: value.replace(/[^\d]/g, '') }));
@@ -171,7 +172,7 @@ export function VampChecker() {
   return (
     <>
       <ScrollReveals />
-      <MarketingHeader ctaLabel="Start free" ctaHref="/signup" />
+      <MarketingHeader ctaLabel="See your free audit" ctaHref="/audit" />
 
       <main id="main" className={styles.page}>
         {/* ─── HERO ────────────────────────────────────────────────── */}
@@ -482,7 +483,7 @@ export function VampChecker() {
                   Stripe&rsquo;s 0.75% line, so account risk is never a surprise.
                 </p>
                 <div className={styles.convertCtas}>
-                  <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>Create workspace</Link>
+                  <Link href="/audit" className={`${styles.btn} ${styles.btnPrimary}`}>See your free audit</Link>
                   <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>See how Verdact works</Link>
                 </div>
               </div>

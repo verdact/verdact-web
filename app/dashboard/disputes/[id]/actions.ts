@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
+import { parseEvidenceDraft } from '@/lib/evidence/draft';
 
 /**
  * Workbench mutations (R2 sub-stage 1).
@@ -55,10 +56,7 @@ export async function saveNarrativeAction(input: {
   if (!row) return { ok: false, error: 'Dispute not found.' };
 
   const savedAt = new Date().toISOString();
-  const existing =
-    row.evidence_draft && typeof row.evidence_draft === 'object'
-      ? (row.evidence_draft as Record<string, unknown>)
-      : {};
+  const existing = parseEvidenceDraft(row.evidence_draft);
   const draft = { ...existing, narrative, narrativeSavedAt: savedAt };
 
   const { error } = await supabase
@@ -163,15 +161,11 @@ export async function setAcceptanceUnavailableAction(input: {
     .maybeSingle();
   if (!row) return { ok: false, error: 'Dispute not found.' };
 
-  const existing =
-    row.evidence_draft && typeof row.evidence_draft === 'object'
-      ? (row.evidence_draft as Record<string, unknown>)
-      : {};
+  const existing = parseEvidenceDraft(row.evidence_draft);
 
   // Clearing: drop the key entirely so the gap returns to "action needed".
-  let draft: Record<string, unknown>;
+  let draft = { ...existing };
   if (!reason) {
-    draft = { ...existing };
     delete draft.acceptanceUnavailable;
   } else {
     // acceptanceUnavailable is a UI-layer gap note only. It is never mapped into

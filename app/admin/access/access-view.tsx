@@ -463,7 +463,7 @@ function AdminsPanel({
         {isOwner ? (
           <span className={s.countPill}>{formatNumber(counts.owner)} owners · {formatNumber(counts.admin)} admins</span>
         ) : (
-          <span className={s.countPill}>View only — owners manage access</span>
+          <span className={s.countPill}>View only. Owners manage access.</span>
         )}
       </div>
 
@@ -488,8 +488,8 @@ function AdminsPanel({
               Role
             </label>
             <select id="admin-role" name="role" className={s.input} defaultValue="admin">
-              <option value="admin">Admin — full console, cannot manage access</option>
-              <option value="owner">Owner — can manage access and admission</option>
+              <option value="admin">Admin: full console, cannot manage access</option>
+              <option value="owner">Owner: can manage access and admission</option>
             </select>
           </div>
           <button type="submit" className={s.primaryBtn}>
@@ -576,7 +576,7 @@ function AdminsPanel({
                           </form>
                         ) : (
                           <span className={s.muted}>
-                            {isSelf ? 'You' : wouldStrandOwners ? 'Last owner' : '—'}
+                            {isSelf ? 'You' : wouldStrandOwners ? 'Last owner' : 'None'}
                           </span>
                         )}
                       </td>
@@ -960,7 +960,7 @@ function expiryLabel(iso: string | null): string {
 }
 
 function formatMetaValue(value: unknown): string {
-  if (value == null) return '—';
+  if (value == null) return 'Not set';
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }

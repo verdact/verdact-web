@@ -96,14 +96,20 @@
 }
 
 .statusChipHealthy { border-color: var(--verdict-deep); background: var(--verdict-tint); color: var(--ink); }
+.statusChipHealthy .statusIcon { color: var(--verdict); }
 .statusChipClose   { border-color: var(--gap); color: var(--ink); }
+.statusChipClose .statusIcon { color: var(--gap-text); }
 .statusChipAtRisk  { border-color: var(--gap); background: var(--gap-tint); color: var(--gap-text); }
 
+/* Neutral dot for the not-connected / not-yet-scored chips. The scored chips
+   carry an icon instead (icon + text status, never color alone). */
 .statusDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.statusDotHealthy { background: var(--verdict); }
-.statusDotClose   { background: none; border: 2px solid var(--gap); }
-.statusDotAtRisk  { background: var(--gap); }
 .statusDotNeutral { background: var(--ink-3); }
+
+/* Status icon for scored chips: meaning is carried by icon + text, never color
+   alone. Inherits chip color so healthy reads verdict-green, at-risk reads
+   gap-text. */
+.statusIcon { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ── Panels ─────────────────────────────────────────────────────── */
 
@@ -143,7 +149,9 @@
 }
 
 .readNumber {
-  font-size: 44px;
+  /* Lead with one number: the readout dominates the standing read (comp hero
+     clamp 48-80px). */
+  font-size: clamp(48px, 8vw, 80px);
   font-weight: 700;
   color: var(--ink);
   line-height: 1;
@@ -153,10 +161,15 @@
 }
 
 .readBand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 600;
   margin: 0;
 }
+
+.readBandIcon { width: 16px; height: 16px; flex-shrink: 0; }
 
 .readBandHealthy { color: var(--verdict); }
 .readBandClose   { color: var(--ink); }
@@ -188,7 +201,7 @@
   transition: width 320ms var(--ease-out);
 }
 
-.gaugeFillClose  { background: var(--gap); }
+.gaugeFillClose  { background: var(--warning); }
 .gaugeFillAtRisk { background: var(--gap); }
 
 .gaugeMarker {
@@ -198,6 +211,20 @@
   height: 14px;
   background: var(--ink);
   opacity: 0.55;
+}
+
+/* "One more dispute" ghost marker: a quiet hollow dot showing where the rate
+   would land if one more dispute landed, so the headroom reads as concrete.
+   Neutral, never colored. Hidden when already over the line. */
+.gaugeGhost {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1.5px dashed var(--rule-strong);
+  transform: translate(-50%, -50%);
 }
 
 .gaugeScale {
@@ -332,6 +359,45 @@
 
 /* ── Zone E: monitoring reassurance ─────────────────────────────── */
 
+/* Promote "What Verdact is watching" into a real surface: green eyebrow + a
+   live count, so the tips read as a deliberate panel, not a buried footnote. */
+.watchHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.watchTitle { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0;
+}
+
+.watchCount {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.watchCountNum { color: var(--verdict-press); font-weight: 700; }
+
+.watchEmpty {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
+
 .monitorList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 
 .monitorItem {
@@ -406,4 +472,50 @@
 
 @media (max-width: 420px) {
   .counts { grid-template-columns: 1fr; }
+}
+
+/* ── Print: report only ─────────────────────────────────────────────
+   "Export report" calls window.print(). Without these rules the whole app
+   shell (rail, top bar, bottom nav) prints too. Scoped to this module so the
+   rules only load on the account-health route; globals.css stays untouched.
+   We hide the app chrome and the interactive affordances, leaving just the
+   standing read, counts, trend, drivers, and monitoring list on the page. */
+@media print {
+  /* Drop the app chrome rendered by AppShell (global, stable class names). */
+  :global(.app-rail),
+  :global(.app-topbar),
+  :global(.app-bottom-nav) {
+    display: none !important;
+  }
+
+  /* Let the report take the full printed page. */
+  :global(.app-shell) {
+    display: block !important;
+  }
+
+  :global(.app-content) {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+    gap: var(--space-6);
+  }
+
+  /* Interactive affordances are not part of the printed artifact. */
+  .refreshForm,
+  .exportRow .betaTag,
+  .exportBtn,
+  .connectCta {
+    display: none !important;
+  }
+
+  /* Keep panels from breaking awkwardly across printed pages. */
+  .panel {
+    break-inside: avoid;
+    box-shadow: none;
+  }
 }

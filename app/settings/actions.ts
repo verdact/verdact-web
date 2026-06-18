@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getMerchant, getUser, verifySession } from '@/lib/dal';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERSONA_IDS } from '@/lib/guidance';
+import { sendDeletionAckEmail } from '@/lib/email';
 
 export type SettingsState =
   | {
@@ -226,6 +227,13 @@ export async function requestAccountDeletionAction(
       },
     });
     if (error) throw error;
+
+    // Acknowledge the request by email. Awaited so the confirmation is attempted
+    // before we report success; never throws, so a missing key or send failure
+    // does not block the request (the durable audit_log row above is the record).
+    if (user.email) {
+      await sendDeletionAckEmail(user.email);
+    }
 
     return {
       ok: true,

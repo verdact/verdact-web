@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AuthFrame } from '../_components/auth-chrome';
-import { CheckIcon } from '../_components/auth-icons';
+import { LockIcon } from '../_components/auth-icons';
 import { getUser } from '@/lib/dal';
 import { LoginForm } from './_components/LoginForm';
 
@@ -16,12 +16,18 @@ export const metadata = {
   description: 'Return to your Verdact evidence workspace.',
 };
 
-// Static sample data per wireframe — never live user data on the public page.
-const EXAMPLE_ROWS = [
-  { label: 'Open disputes', value: '2' },
-  { label: 'Needs evidence', value: '1' },
-  { label: 'Awaiting decision', value: '1' },
-  { label: 'Account risk', value: 'Check dashboard' },
+// Static sample data per redesign comp. Never live user data on the public
+// page. The dispute-rate row is framed vs Stripe's 0.75% line (S41 wording)
+// and uses verdict green to read as safe/healthy.
+const EXAMPLE_ROWS: ReadonlyArray<{
+  label: string;
+  value: string;
+  good?: boolean;
+}> = [
+  { label: 'Open disputes needing you', value: '2' },
+  { label: 'Filed, awaiting the issuer', value: '1' },
+  { label: 'Dispute rate vs 0.75% line', value: '0.31%', good: true },
+  { label: 'Recovered to date', value: '$4,180' },
 ];
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -38,13 +44,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthFrame>
       <div className="auth-split">
         <div className="auth-promise auth-rise" style={{ '--i': 0 } as React.CSSProperties}>
-          <p className="eyebrow auth-eyebrow-row">Merchant sign-in</p>
+          <p className="eyebrow auth-eyebrow-row">Welcome back</p>
           <h1 className="auth-h1">
-            Welcome back<span className="auth-dot">.</span>
+            Your dispute desk, ready when they file<span className="auth-dot">.</span>
           </h1>
           <p className="auth-sub">
-            Return to your evidence workspace and pick up the dispute response
-            where you left off.
+            Pick up where you left off. Every case, its evidence, and your
+            account health in one calm place.
           </p>
         </div>
 
@@ -61,8 +67,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <LoginForm presetError={presetError} />
 
           <p className="auth-trust" style={{ marginTop: 'var(--space-6)' }}>
-            <CheckIcon />
-            Your workspace opens to the dashboard after sign-in.
+            <LockIcon />
+            We store your Stripe account ID only, never your keys, and never
+            train on your data.
           </p>
         </div>
 
@@ -72,12 +79,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           aria-label="Example workspace preview with sample data"
         >
           <p className="wsprev-label">
-            Example workspace <span className="sample">Sample data</span>
+            Your workspace <span className="sample">Sample</span>
           </p>
           {EXAMPLE_ROWS.map((row) => (
             <div className="wsprev-row" key={row.label}>
               <b>{row.label}</b>
-              <span className="val">{row.value}</span>
+              <span
+                className="val"
+                style={row.good ? { color: 'var(--verdict)' } : undefined}
+              >
+                {row.value}
+              </span>
             </div>
           ))}
         </aside>

@@ -2,6 +2,7 @@ import type { EvidencePacket } from '@/lib/evidence/packet';
 import { PaidGate } from '../../../_components/ui/paid-gate';
 import { PacketDownloadButton } from './packet-download';
 import { AlertIcon, CheckIcon, DocIcon } from '../../dash-icons';
+import styles from './workbench.module.css';
 
 /**
  * Generated evidence packet view (R2 sub-stage 1).
@@ -17,24 +18,28 @@ export function PacketView({
   canDownload,
   packetText,
   downloadFilename,
+  reasonLabel,
 }: {
   packet: EvidencePacket;
   canDownload: boolean;
   packetText: string;
   downloadFilename: string;
+  // C-E1: the detected reason code, shown as the bank-ready header so each
+  // mapped field reads against the requirement it satisfies.
+  reasonLabel: string;
 }) {
-  const sizeTone = packet.limits.withinSizeLimit ? 'pill-trust' : 'pill-accent';
+  const sizeTone = packet.limits.withinSizeLimit ? styles.pillVerdict : styles.pillGap;
 
   return (
-    <section className="surface-card overflow-hidden">
+    <section className={`${styles.card} overflow-hidden`}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-surface-3/60 px-6 py-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-display text-lg font-semibold text-ink">Generated evidence packet</p>
-            <span className="pill-neutral">Preview</span>
+            <p className={`${styles.fontDisplay} text-lg font-semibold text-ink`}>Bank-ready evidence packet</p>
+            <span className={styles.pillNeutral}>Preview</span>
           </div>
-          <p className="label-mono mt-1.5">
-            Mapped to Stripe evidence fields · build and view are free
+          <p className={`${styles.labelMono} mt-1.5`}>
+            Reason code: {reasonLabel}. Each field below maps to what this code requires.
           </p>
         </div>
         <span className={sizeTone}>
@@ -48,20 +53,32 @@ export function PacketView({
           <div key={field.key} className="border-b border-rule py-4 last:border-b-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-ink">{field.label}</span>
-              <span className="meta-mono text-ink-faint">{field.key}</span>
+              {field.present ? (
+                <span className={styles.pillVerdict}>
+                  <CheckIcon className="h-3 w-3" />
+                  Mapped to required field
+                </span>
+              ) : (
+                <span className={styles.pillGap}>
+                  <AlertIcon className="h-3 w-3" />
+                  Gap: not yet addressed
+                </span>
+              )}
             </div>
             {field.present ? (
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-soft">{field.value}</p>
             ) : (
               <p className="mt-2 text-sm italic leading-6 text-ink-mute">Not provided yet</p>
             )}
-            <p className="label-mono mt-2 text-ink-faint">From {field.source}</p>
+            <p className={`${styles.labelMono} mt-2`}>
+              From {field.source} · {field.key}
+            </p>
           </div>
         ))}
       </div>
 
       <div className="border-t border-rule px-6 py-4">
-        <p className="label-mono mb-3">Exhibits ({packet.exhibits.length})</p>
+        <p className={`${styles.labelMono} mb-3`}>Exhibits ({packet.exhibits.length})</p>
         {packet.exhibits.length === 0 ? (
           <p className="text-sm leading-6 text-ink-mute">
             No files attached yet. Add evidence above and it appears here as an exhibit.
@@ -78,7 +95,7 @@ export function PacketView({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-ink">{exhibit.name}</span>
-                  <span className="meta-mono text-ink-faint">→ {exhibit.stripeField}</span>
+                  <span className={styles.metaMono}>maps to {exhibit.stripeField}</span>
                 </span>
               </li>
             ))}
@@ -88,7 +105,7 @@ export function PacketView({
 
       <div className="flex flex-wrap items-center gap-4 border-t border-rule bg-surface-2 px-6 py-4">
         {packet.filingBlocked ? (
-          <p className="flex items-center gap-2 text-sm leading-6 text-accent">
+          <p className="flex items-center gap-2 text-sm leading-6 text-accent-deep">
             <AlertIcon className="h-4 w-4 flex-none" />
             Resolve the QA blocker above before downloading. You can still view and edit the packet.
           </p>

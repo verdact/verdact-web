@@ -146,7 +146,7 @@ export default async function EvidencePacketPreview({
     analysis,
   });
 
-  const packetText = serializePacketText(packet, 'Verdact evidence packet — dispute dp_test_packet');
+  const packetText = serializePacketText(packet, 'Verdact evidence packet: dispute dp_test_packet');
 
   // Stage 1E derived values (mirrors the real workbench).
   const plan = buildResolutionPlan({
@@ -180,6 +180,7 @@ export default async function EvidencePacketPreview({
               canDownload={canDownload}
               packetText={packetText}
               downloadFilename="verdact-packet-dp_test_packet.txt"
+              reasonLabel="Visa product not received"
             />
             <section className="surface-card overflow-hidden">
               <header className="border-b border-rule px-5 py-4">

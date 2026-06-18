@@ -28,6 +28,12 @@ export {
 export { buildPolicyBindingNarrative } from './policy-binding';
 export { buildTranslationPairs } from './translation';
 export {
+  buildChainOfIntent,
+  type ChainNode,
+  type ChainNodeState,
+  type ChainOfIntentInput,
+} from './chain-of-intent';
+export {
   runPreSubmissionQa,
   qaSummary,
   hasBlockingFinding,

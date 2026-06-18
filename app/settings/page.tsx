@@ -55,7 +55,7 @@ export default async function SettingsPage({
   }>;
 }) {
   const params = await searchParams;
-  const activeTab: TabKey = isTabKey(params.tab) ? params.tab : 'connections';
+  const activeTab: TabKey = isTabKey(params.tab) ? params.tab : 'integrations';
   const justDisconnected = params.stripe === 'disconnected';
   const slackNotice: SlackNotice =
     params.connected === 'slack' ? 'connected' : params.slack === 'disconnected' ? 'disconnected' : null;
@@ -126,6 +126,7 @@ export default async function SettingsPage({
       email={user.email ?? ''}
       fullName={fullName}
       businessName={businessName}
+      hasMerchant={membership !== null}
       activeTab={activeTab}
       justDisconnected={justDisconnected}
       businessInitial={businessInitial}

@@ -22,7 +22,7 @@ import {
   type GuidanceResult,
 } from '@/lib/guidance';
 import { DashboardView, type StripeConnection } from './dashboard-view';
-import { deriveGuidanceSignals, OPEN_STATUSES } from './signals';
+import { deriveGuidanceSignals, deriveNeedsAttentionCount, OPEN_STATUSES } from './signals';
 
 export const metadata = {
   title: 'Dashboard · Verdact',
@@ -144,6 +144,10 @@ export default async function DashboardPage({
     }
   }
 
+  // Adaptive-dashboard trigger (redesign plan §2.2), derived server-side from the
+  // same data the view renders. 0 → MODE A (health-hero); >=1 → MODE B (dispute-hero).
+  const needsAttentionCount = deriveNeedsAttentionCount(disputes, efwAlerts);
+
   return (
     <DashboardView
       email={user.email}
@@ -158,6 +162,7 @@ export default async function DashboardPage({
       justConnected={justConnected}
       stripeError={stripeError}
       guidance={guidance}
+      needsAttentionCount={needsAttentionCount}
     />
   );
 }

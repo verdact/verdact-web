@@ -30,6 +30,10 @@ export function AuditFunnel() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [score, setScore] = useState<AuditScore | null>(null);
+  // Whether the server confirmed it dispatched the recap email. The client-side
+  // fallback never reaches the server, so it stays false and the result page
+  // softens its copy rather than claiming an email was sent.
+  const [emailed, setEmailed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const settledNum = useMemo(() => {
@@ -102,7 +106,7 @@ export function AuditFunnel() {
     // Reveal the result and capture a PII-free funnel event — aggregate score
     // signals only. The email and the raw dispute rows are never sent to PostHog;
     // they live only in Supabase `audit_leads` (the system of record).
-    const reveal = (s: AuditScore, scoredBy: 'server' | 'client') => {
+    const reveal = (s: AuditScore, scoredBy: 'server' | 'client', didEmail: boolean) => {
       track('audit_result_viewed', {
         scored_by: scoredBy,
         entry_mode: mode,
@@ -117,6 +121,7 @@ export function AuditFunnel() {
             : Math.round(s.rate.ratioPercent * 100) / 100,
       });
       setScore(s);
+      setEmailed(didEmail);
       setPhase('result');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -136,18 +141,20 @@ export function AuditFunnel() {
 
       if (!res.ok) {
         // Fall back to a client-side score so the merchant still gets a result.
+        // The server never stored a lead here, so no email was sent.
         reveal(
           computeAuditScore(activeDisputes, {
             settledTransactionCount: settledNum,
             windowDays: parseInt(windowDays, 10) || 90,
           }),
           'client',
+          false,
         );
         return;
       }
 
-      const data = (await res.json()) as { score: AuditScore };
-      reveal(data.score, 'server');
+      const data = (await res.json()) as { score: AuditScore; emailed?: boolean };
+      reveal(data.score, 'server', Boolean(data.emailed));
     } catch {
       reveal(
         computeAuditScore(activeDisputes, {
@@ -155,6 +162,7 @@ export function AuditFunnel() {
           windowDays: parseInt(windowDays, 10) || 90,
         }),
         'client',
+        false,
       );
     } finally {
       setSubmitting(false);
@@ -206,6 +214,7 @@ export function AuditFunnel() {
           <AuditResult
             score={score}
             email={email}
+            emailed={emailed}
             onRestart={() => {
               setPhase('entry');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -437,7 +446,7 @@ function Entry(props: EntryProps) {
             <div className={styles.submitBlock}>
               <div className="field">
                 <label htmlFor="audit-email">
-                  Where should we send your audit? <span className={styles.req}>*</span>
+                  Your email for this audit <span className={styles.req}>*</span>
                 </label>
                 <input
                   id="audit-email"
@@ -454,7 +463,7 @@ function Entry(props: EntryProps) {
                   <p className="err" id="audit-email-err">{emailError}</p>
                 ) : (
                   <p className="help" id="audit-email-help">
-                    We send your result here and use it to pre-load your history if you create an account.
+                    We attach your result to this email and use it to pre-load your history if you create an account.
                   </p>
                 )}
               </div>
@@ -499,7 +508,7 @@ function PreviewCard({ score }: { score: AuditScore }) {
   const pct = rate.ratioPercent;
   return (
     <div className={styles.previewCard}>
-      <p className={styles.previewStat}>{pct == null ? '—' : `${pct.toFixed(2)}%`}</p>
+      <p className={styles.previewStat}>{pct == null ? 'No rate yet' : `${pct.toFixed(2)}%`}</p>
       <p className={styles.previewStatLabel}>estimated dispute rate</p>
       <dl className={styles.previewList}>
         <div>

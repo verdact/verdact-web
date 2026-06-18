@@ -9,20 +9,41 @@ import {
   DisconnectStripe,
   DisconnectSlack,
   DeleteAccount,
+  SettingsTabs,
   type BusinessInitial,
   type PoliciesInitial,
 } from './settings-client';
 import s from './settings.module.css';
 
-export type TabKey = 'connections' | 'business' | 'policies' | 'notifications' | 'account';
+// Redesign 2026-06 (Port decision #4): Settings consolidated from 5 tabs to 3.
+//   Integrations  = Stripe + Slack connections + the manual-first email card
+//   Business      = business profile + the merged Policies group
+//   Account       = identity / security / plan, a quiet notifications line, danger zone
+// Legacy tab keys (connections / policies / notifications) are still accepted so
+// old bookmarks resolve, and the dev preview route keeps compiling. They are
+// normalized to one of the three live tabs by resolveTab().
+export type ActiveTab = 'integrations' | 'business' | 'account';
+type LegacyTab = 'connections' | 'policies' | 'notifications';
+export type TabKey = ActiveTab | LegacyTab;
 
-const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: 'connections', label: 'Connections' },
+const TABS: Array<{ key: ActiveTab; label: string }> = [
+  { key: 'integrations', label: 'Integrations' },
   { key: 'business', label: 'Business' },
-  { key: 'policies', label: 'Policies' },
-  { key: 'notifications', label: 'Notifications' },
   { key: 'account', label: 'Account' },
 ];
+
+// Old → new mapping so /settings?tab=connections and friends still land somewhere.
+const LEGACY_MAP: Record<LegacyTab, ActiveTab> = {
+  connections: 'integrations',
+  policies: 'business',
+  notifications: 'account',
+};
+
+function resolveTab(tab: TabKey): ActiveTab {
+  return tab === 'integrations' || tab === 'business' || tab === 'account'
+    ? tab
+    : LEGACY_MAP[tab];
+}
 
 export type SettingsStripe = {
   processor_account_id: string;
@@ -41,6 +62,13 @@ export type SettingsViewProps = {
   email: string;
   fullName: string;
   businessName: string | null;
+  // False when the signed-in user has no active merchant membership. The
+  // workspace-scoped tabs (integrations, business) and the account-deletion
+  // request all need a workspace, so we show an honest state instead of forms
+  // that would fail with "Workspace not found". Optional so the dev-only
+  // preview route can render the full populated UI without supplying it; the
+  // real /settings always passes it explicitly.
+  hasMerchant?: boolean;
   activeTab: TabKey;
   justDisconnected: boolean;
   businessInitial: BusinessInitial;
@@ -53,11 +81,12 @@ export type SettingsViewProps = {
 
 export function isTabKey(value: string | undefined): value is TabKey {
   return (
-    value === 'connections' ||
+    value === 'integrations' ||
     value === 'business' ||
+    value === 'account' ||
+    value === 'connections' ||
     value === 'policies' ||
-    value === 'notifications' ||
-    value === 'account'
+    value === 'notifications'
   );
 }
 
@@ -67,6 +96,7 @@ export function SettingsView({
   email,
   fullName,
   businessName,
+  hasMerchant = true,
   activeTab,
   justDisconnected,
   businessInitial,
@@ -76,211 +106,285 @@ export function SettingsView({
   slackNotice,
   slackError,
 }: SettingsViewProps) {
+  const tab = resolveTab(activeTab);
+  // Tabs that operate on a workspace. With no membership these would render
+  // forms whose actions fail server-side, so we swap in an honest panel.
+  const workspaceTab = tab === 'integrations' || tab === 'business';
+
   return (
     <AppShell email={email} businessName={businessName} active="settings">
       <div className={s.page}>
         <div className={s.headerText}>
           <h1 className={s.pageTitle}>Settings</h1>
-          <p className={s.sub}>Connections, business details, evidence policies, and your account.</p>
+          <p className={s.sub}>Your integrations, business details, and account.</p>
         </div>
 
-        <nav className={s.tabs} aria-label="Settings sections">
-          {TABS.map((tab) => (
-            <a
-              key={tab.key}
-              href={`/settings?tab=${tab.key}`}
-              className={`${s.tab} ${activeTab === tab.key ? s.tabActive : ''}`}
-              aria-current={activeTab === tab.key ? 'page' : undefined}
-            >
-              {tab.label}
-            </a>
-          ))}
-        </nav>
+        <SettingsTabs tabs={TABS} activeTab={tab} />
 
-        {justDisconnected && activeTab === 'connections' ? (
-          <div className={s.banner} role="status">
-            Stripe disconnected. Your dispute history is still here, and you can reconnect any time.
-          </div>
+        {workspaceTab && !hasMerchant ? <NoWorkspacePanel activeTab={tab} /> : null}
+
+        {tab === 'integrations' && hasMerchant ? (
+          <IntegrationsTab
+            justDisconnected={justDisconnected}
+            stripe={stripe}
+            slack={slack}
+            slackNotice={slackNotice}
+            slackError={slackError}
+          />
         ) : null}
 
-        {slackNotice === 'connected' && activeTab === 'connections' ? (
-          <div className={s.banner} role="status">
-            Slack connected. Open any dispute to import the messages where the customer agreed,
-            accepted, or used the work.
-          </div>
-        ) : null}
-        {slackNotice === 'disconnected' && activeTab === 'connections' ? (
-          <div className={s.banner} role="status">
-            Slack disconnected. Imported messages stay on your disputes, and you can reconnect any
-            time.
-          </div>
-        ) : null}
-        {slackError && activeTab === 'connections' ? (
-          <div className={s.banner} role="status">
-            {slackError}
-          </div>
+        {tab === 'business' && hasMerchant ? (
+          <BusinessTab businessInitial={businessInitial} policiesInitial={policiesInitial} />
         ) : null}
 
-        {activeTab === 'connections' ? (
-          <ConnectionsPanel stripe={stripe} slack={slack} />
+        {tab === 'account' ? (
+          <AccountPanel email={email} fullName={fullName} hasMerchant={hasMerchant} />
         ) : null}
-        {activeTab === 'business' ? (
-          <section className={s.panel}>
-            <div className={s.panelHead}>
-              <h2 className={s.panelTitle}>Business details</h2>
-              <p className={s.panelDesc}>
-                What you sell and how you deliver it. Verdact uses this to frame the strongest
-                version of your evidence.
-              </p>
-            </div>
-            <BusinessForm initial={businessInitial} />
-          </section>
-        ) : null}
-        {activeTab === 'policies' ? (
-          <section className={s.panel}>
-            <div className={s.panelHead}>
-              <h2 className={s.panelTitle}>Evidence policies</h2>
-              <p className={s.panelDesc}>
-                Your refund, cancellation, and terms. These are the policies banks look for, so
-                having them ready makes every submission stronger.
-              </p>
-            </div>
-            <PoliciesForm initial={policiesInitial} />
-          </section>
-        ) : null}
-        {activeTab === 'notifications' ? <NotificationsPanel /> : null}
-        {activeTab === 'account' ? <AccountPanel email={email} fullName={fullName} /> : null}
       </div>
     </AppShell>
   );
 }
 
-// ── Connections panel ────────────────────────────────────────────────────────
+// ── Integrations tab (Stripe + Slack + manual-first email evidence) ───────────
 
-function ConnectionsPanel({ stripe, slack }: { stripe: SettingsStripe; slack: SettingsSlack }) {
+type IntegrationsTabProps = {
+  justDisconnected: boolean;
+  stripe: SettingsStripe;
+  slack: SettingsSlack;
+  slackNotice: SlackNotice;
+  slackError: string | null;
+};
+
+function IntegrationsTab({
+  justDisconnected,
+  stripe,
+  slack,
+  slackNotice,
+  slackError,
+}: IntegrationsTabProps) {
   return (
-    <section className={s.panel}>
-      <div className={s.panelHead}>
-        <h2 className={s.panelTitle}>Connections</h2>
-        <p className={s.panelDesc}>
-          Connect the accounts Verdact watches for disputes. Your email evidence is added per
-          dispute in the workbench, not connected here.
-        </p>
-      </div>
+    <div
+      id="settings-panel-integrations"
+      role="tabpanel"
+      aria-labelledby="settings-tab-integrations"
+      tabIndex={0}
+      className={s.stack}
+    >
+      {justDisconnected ? (
+        <div className={s.banner} role="status">
+          Stripe disconnected. Your dispute history is still here, and you can reconnect any time.
+        </div>
+      ) : null}
+      {slackNotice === 'connected' ? (
+        <div className={s.banner} role="status">
+          Slack connected. Open any dispute to import the messages where the customer agreed,
+          accepted, or used the work.
+        </div>
+      ) : null}
+      {slackNotice === 'disconnected' ? (
+        <div className={s.banner} role="status">
+          Slack disconnected. Imported messages stay on your disputes, and you can reconnect any
+          time.
+        </div>
+      ) : null}
+      {slackError ? (
+        <div className={s.banner} role="status">
+          {slackError}
+        </div>
+      ) : null}
 
-      <div className={s.connRow}>
-        <div className={s.connLeft}>
-          <div className={`${s.connIcon} ${s.connIconStripe}`}>S</div>
-          <div>
-            <p className={s.connName}>Stripe</p>
-            <p className={s.connDesc}>
-              The connected account Verdact watches for disputes and early fraud warnings. We store
-              the account ID only, never your API keys.
-            </p>
-            {stripe ? (
-              <p className={s.connMeta}>
-                {formatStripeAccountId(stripe.processor_account_id)}
-                {stripe.livemode ? '' : ' · test mode'}
-                {stripe.connected_at ? ` · connected ${formatDate(stripe.connected_at)}` : ''}
+      <section className={s.panel}>
+        <div className={s.panelHead}>
+          <h2 className={s.panelTitle}>Integrations</h2>
+          <p className={s.panelDesc}>
+            Connect the accounts Verdact reads from. Email evidence is added per dispute in the
+            workbench, not connected here.
+          </p>
+        </div>
+
+        <div className={s.connRow}>
+          <div className={s.connLeft}>
+            <div className={`${s.connIcon} ${s.connIconStripe}`}>S</div>
+            <div>
+              <p className={s.connName}>Stripe</p>
+              <p className={s.connDesc}>
+                The connected account Verdact watches for disputes and early fraud warnings. We
+                store the account ID only, never your API keys.
               </p>
-            ) : null}
+              {stripe ? (
+                <p className={s.connMeta}>
+                  {formatStripeAccountId(stripe.processor_account_id)}
+                  {stripe.livemode ? '' : ' · test mode'}
+                  {stripe.connected_at ? ` · connected ${formatDate(stripe.connected_at)}` : ''}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className={s.connRight}>
+            {stripe ? (
+              <>
+                <span className={`${s.statusPill} ${s.statusPillConnected}`}>
+                  <span className={`${s.statusDot} ${s.statusDotOn}`} aria-hidden="true" />
+                  Connected
+                </span>
+                <DisconnectStripe accountLabel={formatStripeAccountId(stripe.processor_account_id)} />
+              </>
+            ) : (
+              <a href="/api/stripe/connect/start" className={s.connectBtn}>
+                Connect Stripe
+              </a>
+            )}
           </div>
         </div>
-        <div className={s.connRight}>
-          {stripe ? (
-            <>
-              <span className={`${s.statusPill} ${s.statusPillConnected}`}>
-                <span className={`${s.statusDot} ${s.statusDotOn}`} aria-hidden="true" />
-                Connected
-              </span>
-              <DisconnectStripe accountLabel={formatStripeAccountId(stripe.processor_account_id)} />
-            </>
-          ) : (
-            <a href="/api/stripe/connect/start" className={s.connectBtn}>
-              Connect Stripe
-            </a>
-          )}
+
+        <hr className={s.divider} />
+
+        <div className={s.connRow}>
+          <div className={s.connLeft}>
+            <div className={s.connIcon}>#</div>
+            <div>
+              <p className={s.connName}>Slack</p>
+              <p className={s.connDesc}>
+                Import the messages where a customer agreed, accepted, or used the work, per dispute.
+                Verdact reads only the channel you open and saves only the messages you pick.
+              </p>
+              {slack ? (
+                <p className={s.connMeta}>
+                  {slack.team_name ? slack.team_name : 'Workspace connected'}
+                  {slack.connected_at ? ` · connected ${formatDate(slack.connected_at)}` : ''}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className={s.connRight}>
+            {slack ? (
+              <>
+                <span className={`${s.statusPill} ${s.statusPillConnected}`}>
+                  <span className={`${s.statusDot} ${s.statusDotOn}`} aria-hidden="true" />
+                  Connected
+                </span>
+                <DisconnectSlack workspaceLabel={slack.team_name} />
+              </>
+            ) : (
+              <a href="/api/slack/connect/start" className={s.connectBtn}>
+                Connect Slack
+              </a>
+            )}
+          </div>
         </div>
+
+        <hr className={s.divider} />
+
+        <div className={s.connRow}>
+          <div className={s.connLeft}>
+            <div className={s.connIcon} aria-hidden="true">
+              @
+            </div>
+            <div>
+              <p className={s.connName}>Email evidence</p>
+              <p className={s.connDesc}>
+                Add email evidence by upload, paste, or screenshot inside any dispute. There is
+                nothing to connect here.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className={s.trustLine}>
+          We store your account ID only, never your keys, and never train on your data.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+// ── Business tab (profile + merged Policies group) ────────────────────────────
+
+function BusinessTab({
+  businessInitial,
+  policiesInitial,
+}: {
+  businessInitial: BusinessInitial;
+  policiesInitial: PoliciesInitial;
+}) {
+  return (
+    <section
+      id="settings-panel-business"
+      role="tabpanel"
+      aria-labelledby="settings-tab-business"
+      tabIndex={0}
+      className={s.panel}
+    >
+      <div className={s.panelHead}>
+        <h2 className={s.panelTitle}>Business details</h2>
+        <p className={s.panelDesc}>
+          Tell Verdact about your business so drafted responses match how you actually operate.
+        </p>
       </div>
+      <BusinessForm initial={businessInitial} />
 
       <hr className={s.divider} />
 
-      <div className={s.connRow}>
-        <div className={s.connLeft}>
-          <div className={s.connIcon}>#</div>
-          <div>
-            <p className={s.connName}>Slack</p>
-            <p className={s.connDesc}>
-              Import the messages where a customer agreed, accepted, or used the work, per dispute.
-              Verdact reads only the channel you open and saves only the messages you pick.
-            </p>
-            {slack ? (
-              <p className={s.connMeta}>
-                {slack.team_name ? slack.team_name : 'Workspace connected'}
-                {slack.connected_at ? ` · connected ${formatDate(slack.connected_at)}` : ''}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className={s.connRight}>
-          {slack ? (
-            <>
-              <span className={`${s.statusPill} ${s.statusPillConnected}`}>
-                <span className={`${s.statusDot} ${s.statusDotOn}`} aria-hidden="true" />
-                Connected
-              </span>
-              <DisconnectSlack workspaceLabel={slack.team_name} />
-            </>
-          ) : (
-            <a href="/api/slack/connect/start" className={s.connectBtn}>
-              Connect Slack
-            </a>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Notifications panel (disabled preview) ───────────────────────────────────
-
-function NotificationsPanel() {
-  const previews: Array<{ label: string; desc: string }> = [
-    { label: 'Account-health alerts', desc: 'A heads-up before your dispute rate approaches the 0.75% line.' },
-    { label: 'New dispute notifications', desc: 'When a dispute opens and the clock starts.' },
-    { label: 'Deadline reminders', desc: 'Before an open dispute is due.' },
-    { label: 'Early fraud warnings', desc: 'When a refund now could prevent a dispute.' },
-  ];
-
-  return (
-    <section className={s.panel}>
       <div className={s.panelHead}>
-        <h2 className={s.panelTitle}>Notifications</h2>
+        <h3 className={s.subhead}>Policies</h3>
         <p className={s.panelDesc}>
-          Alerts are on the way. During beta, every alert is available to you at no charge. You will
-          be able to choose what reaches you here.
+          Your refund, cancellation, and terms. These are the policies banks look for, so having
+          them ready makes every submission stronger.
         </p>
       </div>
-      <div className={s.previewList}>
-        {previews.map((item) => (
-          <div key={item.label} className={s.previewItem}>
-            <div>
-              <p className={s.previewLabel}>{item.label}</p>
-              <p className={s.previewDesc}>{item.desc}</p>
-            </div>
-            <span className={s.toggleGhost} aria-hidden="true" />
-          </div>
-        ))}
-      </div>
+      <PoliciesForm initial={policiesInitial} />
     </section>
   );
 }
 
-// ── Account panel ────────────────────────────────────────────────────────────
+// ── No-workspace state ────────────────────────────────────────────────────────
+// Shown on workspace-scoped tabs when the signed-in user has no active merchant
+// membership. Honest: explains why these settings are unavailable and what still
+// works, instead of forms that submit and fail with "Workspace not found".
 
-function AccountPanel({ email, fullName }: { email: string; fullName: string }) {
+function NoWorkspacePanel({ activeTab }: { activeTab: ActiveTab }) {
   return (
-    <div className={s.stack}>
+    <section
+      id={`settings-panel-${activeTab}`}
+      role="tabpanel"
+      aria-labelledby={`settings-tab-${activeTab}`}
+      tabIndex={0}
+      className={s.panel}
+    >
+      <div className={s.panelHead}>
+        <h2 className={s.panelTitle}>No workspace yet</h2>
+        <p className={s.panelDesc}>
+          Your login is not attached to a workspace, so integrations and business details are not
+          available yet. You can still update your name, email, and password under the Account tab.
+          If you expected a workspace here, contact the Verdact team.
+        </p>
+      </div>
+      <a href="/settings?tab=account" className={s.connectBtn}>
+        Go to Account
+      </a>
+    </section>
+  );
+}
+
+// ── Account panel (identity / security / plan / notifications note / danger) ──
+
+function AccountPanel({
+  email,
+  fullName,
+  hasMerchant,
+}: {
+  email: string;
+  fullName: string;
+  hasMerchant: boolean;
+}) {
+  return (
+    <div
+      id="settings-panel-account"
+      role="tabpanel"
+      aria-labelledby="settings-tab-account"
+      tabIndex={0}
+      className={s.stack}
+    >
       <section className={s.panel}>
         <div className={s.panelHead}>
           <h2 className={s.panelTitle}>Account</h2>
@@ -299,17 +403,21 @@ function AccountPanel({ email, fullName }: { email: string; fullName: string }) 
           </p>
           <span className={s.planTag}>Beta · all unlocked</span>
         </div>
+        <hr className={s.divider} />
+        <p className={s.quietNote}>Email notifications are coming soon.</p>
         <SignOutButton />
       </section>
 
-      <section className={s.danger}>
-        <h2 className={s.dangerTitle}>Delete account</h2>
-        <p className={s.dangerText}>
-          This sends a deletion request to the Verdact team. We action it within 2 business days and
-          email you to confirm. Your data is not removed immediately.
-        </p>
-        <DeleteAccount />
-      </section>
+      {hasMerchant ? (
+        <section className={s.danger}>
+          <h2 className={s.dangerTitle}>Danger zone</h2>
+          <p className={s.dangerText}>
+            This sends a deletion request to the Verdact team. We action it within 2 business days
+            and email you to confirm. Your data is not removed immediately.
+          </p>
+          <DeleteAccount />
+        </section>
+      ) : null}
     </div>
   );
 }

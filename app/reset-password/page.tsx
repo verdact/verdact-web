@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { AuthFrame } from '../_components/auth-chrome';
+import { LockIcon } from '../_components/auth-icons';
 import { createClient } from '@/lib/supabase/server';
 import { ResetPasswordRecoveryGate } from './_components/ResetPasswordRecoveryGate';
 
@@ -35,7 +36,8 @@ export default async function ResetPasswordPage() {
             Choose a new password<span className="auth-dot">.</span>
           </h1>
           <p className="auth-sub">
-            Set a new password for your Verdact workspace.
+            Set a new password for your Verdact account. You will use it the next
+            time you sign in.
           </p>
         </div>
 
@@ -44,6 +46,12 @@ export default async function ResetPasswordPage() {
           style={{ '--i': 1, marginTop: 'var(--space-6)' } as React.CSSProperties}
         >
           <ResetPasswordRecoveryGate serverCanReset={canReset} />
+
+          <p className="auth-trust" style={{ marginTop: 'var(--space-6)' }}>
+            <LockIcon />
+            We store your Stripe account ID only, never your keys, and never
+            train on your data.
+          </p>
         </div>
       </div>
     </AuthFrame>

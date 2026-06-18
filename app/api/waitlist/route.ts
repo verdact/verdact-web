@@ -3,6 +3,7 @@ import { waitlistSignupSchema } from '@/lib/waitlist/schema';
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/audit/rate-limit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { captureGeoBestEffort } from '@/lib/geo/capture';
+import { sendWaitlistConfirmationEmail } from '@/lib/email';
 
 // Node runtime: uses node:crypto (rate-limit) and the service-role client.
 export const runtime = 'nodejs';
@@ -86,6 +87,11 @@ export async function POST(request: Request) {
 
     // Best-effort, env-gated geo capture. Never blocks or fails the signup.
     await captureGeoBestEffort(supabase, 'waitlist_signups', 'email', email, request.headers);
+
+    // Fire-and-forget the "you're on the list" confirmation. Only on a genuinely
+    // new insert (the duplicate path returns above), so re-submits do not re-mail.
+    // Never blocks or fails the signup; no-ops when no email key is configured.
+    void sendWaitlistConfirmationEmail(email);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
     console.error('[api/waitlist] insert threw:', message);
