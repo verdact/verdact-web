@@ -25,6 +25,7 @@ import { ChainOfIntentTimeline } from './chain-of-intent-timeline';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
+import { prepareStripeEvidence } from '@/lib/evidence/submission';
 import {
   buildResolutionPlan,
   strengthFromPercent,
@@ -303,6 +304,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       mime_type: f.mime_type,
       content_size_bytes: f.content_size_bytes,
       created_at: f.created_at,
+      processor_file_id: f.processor_file_id,
+      supabase_path: f.supabase_path,
     })),
     narrative,
     analysis: evidenceAnalysis,
@@ -315,6 +318,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     `Verdact evidence packet: dispute ${record.processor_dispute_id} (${formatReason(record.reason)})`,
   );
   const downloadFilename = `verdact-packet-${record.processor_dispute_id}.txt`;
+  const preparedSubmission = prepareStripeEvidence(packet);
+  const stripeUploadReadyCount = packet.exhibits.length - preparedSubmission.missingStripeUploads.length;
 
   // ── Stage 1E: guided resolution + honest strength + case context ────────────
   // The merchant may have recorded that no formal delivery/acceptance proof
@@ -437,6 +442,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             canDownload={downloadGate.allowed}
             packetText={packetText}
             downloadFilename={downloadFilename}
+            pdfHref={`/dashboard/disputes/${record.id}/packet-pdf`}
             reasonLabel={`${reasonProfile.networkLabel} ${reasonProfile.shortReason}`}
           />
         </div>
@@ -453,6 +459,9 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
         canExport={exportGate.allowed}
         canSubmit={submitGate.allowed}
         resolveCount={resolutionPlan?.actionableCount ?? 0}
+        stripeFieldCount={Object.keys(preparedSubmission.evidence).length}
+        stripeUploadReadyCount={stripeUploadReadyCount}
+        stripeUploadMissingCount={preparedSubmission.missingStripeUploads.length}
       />
     </AppShell>
   );
@@ -927,13 +936,24 @@ function BottomActionBar({
   canExport,
   canSubmit,
   resolveCount,
+  stripeFieldCount,
+  stripeUploadReadyCount,
+  stripeUploadMissingCount,
 }: {
   approved: boolean;
   submitted: boolean;
   canExport: boolean;
   canSubmit: boolean;
   resolveCount: number;
+  stripeFieldCount: number;
+  stripeUploadReadyCount: number;
+  stripeUploadMissingCount: number;
 }) {
+  const fileStatus =
+    stripeUploadMissingCount > 0
+      ? `${stripeUploadMissingCount} attached ${stripeUploadMissingCount === 1 ? 'file still needs' : 'files still need'} a Stripe upload ID.`
+      : `${stripeUploadReadyCount} attached ${stripeUploadReadyCount === 1 ? 'file has' : 'files have'} a Stripe upload ID.`;
+
   return (
     <div className="sticky bottom-0 z-10 border-t border-rule-strong bg-surface-2 text-ink-soft">
       <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-4 px-6 py-4 md:px-10">
@@ -948,9 +968,11 @@ function BottomActionBar({
                 ? 'Record approved. Filing workflow controls stay gated.'
                 : 'Nothing is sent to the bank yet.'}
           </span>{' '}
-          {approved
-            ? 'Submission actions will be wired in the filing workflow stage.'
-            : 'Submit unlocks only after the missing item is resolved and the merchant approves.'}
+          {submitted
+            ? 'Monitoring continues from Stripe webhook updates.'
+            : approved
+              ? `Prepared ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'}. ${fileStatus} Filing stays locked until the submission workflow stage.`
+              : `Packet maps to ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'} so far. ${fileStatus} Submit unlocks only after gaps are resolved and the merchant approves.`}
         </p>
         {resolveCount > 0 && !submitted ? (
           <a

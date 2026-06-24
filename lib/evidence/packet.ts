@@ -42,6 +42,8 @@ export interface PacketFileInput {
   mime_type: string | null;
   content_size_bytes: number | null;
   created_at: string;
+  processor_file_id?: string | null;
+  supabase_path?: string | null;
 }
 
 export interface PacketInput {
@@ -90,6 +92,8 @@ export interface PacketExhibit {
   purposeLabel: string;
   sizeBytes: number | null;
   mime: string | null;
+  processorFileId: string | null;
+  supabasePath: string | null;
 }
 
 // Stable identifiers for each readiness check. UI copy can change freely; the
@@ -234,6 +238,8 @@ export function buildEvidencePacket(input: PacketInput): EvidencePacket {
       purposeLabel: PURPOSE_LABELS[purpose],
       sizeBytes: f.content_size_bytes,
       mime: f.mime_type,
+      processorFileId: f.processor_file_id ?? null,
+      supabasePath: f.supabase_path ?? null,
     };
   });
 

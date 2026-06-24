@@ -18,12 +18,14 @@ export function PacketView({
   canDownload,
   packetText,
   downloadFilename,
+  pdfHref,
   reasonLabel,
 }: {
   packet: EvidencePacket;
   canDownload: boolean;
   packetText: string;
   downloadFilename: string;
+  pdfHref: string;
   // C-E1: the detected reason code, shown as the bank-ready header so each
   // mapped field reads against the requirement it satisfies.
   reasonLabel: string;
@@ -110,9 +112,19 @@ export function PacketView({
             Resolve the QA blocker above before downloading. You can still view and edit the packet.
           </p>
         ) : (
-          <PaidGate action="download_packet" allowed={canDownload}>
-            <PacketDownloadButton text={packetText} filename={downloadFilename} label="Download packet" />
-          </PaidGate>
+          <>
+            <PaidGate action="download_packet" allowed={canDownload}>
+              <PacketDownloadButton text={packetText} filename={downloadFilename} label="Download text packet" />
+            </PaidGate>
+            <PaidGate action="download_packet" allowed={canDownload}>
+              <a
+                className="rounded-md border border-rule-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-soft"
+                href={pdfHref}
+              >
+                Download PDF packet
+              </a>
+            </PaidGate>
+          </>
         )}
       </div>
     </section>

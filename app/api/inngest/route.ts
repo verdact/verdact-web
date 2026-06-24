@@ -5,6 +5,7 @@ import {
   accountHealthRecompute,
 } from '../../../lib/inngest/functions/account-health-recompute';
 import { rotateTokenKeys } from '../../../lib/inngest/functions/rotate-token-keys';
+import { stripeDisputesBackfill } from '../../../lib/inngest/functions/stripe-disputes-backfill';
 import { stripeWebhookReceived } from '../../../lib/inngest/functions/stripe-webhook-received';
 
 // Expose the Inngest API route to register functions
@@ -14,6 +15,7 @@ export const { GET, POST, PUT } = serve({
     accountHealthDailyFanout,
     accountHealthRecompute,
     rotateTokenKeys,
+    stripeDisputesBackfill,
     stripeWebhookReceived,
   ],
 });
