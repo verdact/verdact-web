@@ -15,7 +15,9 @@ function isProtectedPath(pathname: string): boolean {
     pathname === '/onboarding' ||
     pathname.startsWith('/onboarding/') ||
     pathname === '/settings' ||
-    pathname.startsWith('/settings/')
+    pathname.startsWith('/settings/') ||
+    pathname === '/account-health' ||
+    pathname.startsWith('/account-health/')
   );
 }
 

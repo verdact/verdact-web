@@ -53,6 +53,8 @@ committed. `NEXT_PUBLIC_`-prefixed vars are exposed to the browser — never put
 | `ADMIN_GEO_CAPTURE` | Set `on` to enable best-effort geo capture (off by default) |
 | `VERDACT_BETA_ALL_UNLOCKED` | Master beta flag; anything but `false`/`0` unlocks gated actions |
 | `VERDACT_AUTO_SUBMIT_ENABLED` | Auto-submit kill switch; hard-off unless exactly `true` |
+| `VERDACT_SUBMISSION_ENABLED` | LIVE Stripe filing kill switch; hard-off unless exactly `true` (default off — the submission flow ships inert; flip only after the legal gates close) |
+| `VERDACT_SUBMISSION_SIGNING_KEY` | Optional HMAC key signing the immutable submitted payload (a sha256 is still recorded if unset) |
 
 ## Google OAuth Reviewer Path
 
