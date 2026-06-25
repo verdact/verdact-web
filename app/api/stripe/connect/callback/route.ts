@@ -4,6 +4,7 @@ import { createStripeClient } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
 import { ACCOUNT_HEALTH_RECOMPUTE_EVENT } from '@/lib/account-health/vamp-snapshots';
+import { STRIPE_DISPUTES_BACKFILL_EVENT } from '@/lib/inngest/functions/stripe-disputes-backfill';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -91,22 +92,33 @@ export async function GET(request: NextRequest) {
     console.error('[stripe/connect/callback] onboarding_completed update failed:', metaErr);
   }
 
-  // Backfill the first account-health snapshot immediately so the dashboard and
-  // Account Health page have a real read soon after connecting, instead of
-  // waiting for the daily cron. Forced past the 24h cache. A send failure must
-  // never break the connect redirect, so it is swallowed with a log.
+  // Backfill the first account-health snapshot and recent disputes immediately
+  // after connecting, instead of waiting for the daily cron or a future webhook.
+  // A send failure must never break the connect redirect, so it is swallowed
+  // with a log.
   try {
-    await inngest.send({
-      name: ACCOUNT_HEALTH_RECOMPUTE_EVENT,
-      data: {
-        merchantId: membership.merchant.id,
-        processorConnectionId: savedConnection?.id ?? existing?.id,
-        force: true,
-        source: 'connect-backfill',
+    const processorConnectionId = savedConnection?.id ?? existing?.id;
+    await inngest.send([
+      {
+        name: ACCOUNT_HEALTH_RECOMPUTE_EVENT,
+        data: {
+          merchantId: membership.merchant.id,
+          processorConnectionId,
+          force: true,
+          source: 'connect-backfill',
+        },
       },
-    });
+      {
+        name: STRIPE_DISPUTES_BACKFILL_EVENT,
+        data: {
+          merchantId: membership.merchant.id,
+          processorConnectionId,
+          source: 'connect-backfill',
+        },
+      },
+    ]);
   } catch (sendErr) {
-    console.error('[stripe/connect/callback] account-health backfill send failed:', sendErr);
+    console.error('[stripe/connect/callback] post-connect backfill send failed:', sendErr);
   }
 
   const res = NextResponse.redirect(to('/dashboard?connected=stripe'));

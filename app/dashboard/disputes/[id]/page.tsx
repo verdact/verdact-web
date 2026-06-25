@@ -945,12 +945,12 @@ function BottomActionBar({
             {submitted
               ? 'This record has already been submitted.'
               : approved
-                ? 'Record approved. Filing workflow controls stay gated.'
+                ? 'Record approved — nothing is sent to the bank yet.'
                 : 'Nothing is sent to the bank yet.'}
           </span>{' '}
           {approved
-            ? 'Submission actions will be wired in the filing workflow stage.'
-            : 'Submit unlocks only after the missing item is resolved and the merchant approves.'}
+            ? "Filing to Stripe isn't available during beta — we'll email you the moment it opens, and nothing is ever sent without your review."
+            : 'Submit unlocks after the missing items are resolved and you approve — and filing to Stripe opens after beta.'}
         </p>
         {resolveCount > 0 && !submitted ? (
           <a
@@ -986,7 +986,7 @@ function BottomActionBar({
             title={
               submitted
                 ? 'This record has already been submitted.'
-                : 'Submission is wired in a later stage. Nothing is sent to the bank during beta.'
+                : "Filing to Stripe isn't available during beta. We'll email you when it opens — and nothing is ever sent without your review."
             }
           >
             Review and submit
