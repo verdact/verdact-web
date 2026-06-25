@@ -26,3 +26,15 @@ grant insert         on public.audit_log           to service_role;
 -- even considered (the kill switch + entitlement gate still apply on top).
 alter table public.merchant_profiles
   add column if not exists submission_opt_in boolean not null default false;
+
+-- Double-file guard (security review 2026-06-25): at most ONE active (in_progress)
+-- or succeeded attempt per dispute. A second concurrent OR sequential submit's
+-- in_progress insert violates this partial unique index and is surfaced as
+-- attempt_conflict before any Stripe call — closing the read-then-write race on
+-- attempt_number. A retry after a FAILED attempt is still allowed (failed/unknown
+-- rows are excluded). Ops note: a row stuck 'in_progress' (crash mid-flight) blocks
+-- new attempts until reconciled to 'failed'/'unknown' — intentional: prefer
+-- blocking over double-filing real evidence.
+create unique index if not exists submission_attempts_one_active_per_dispute
+  on public.submission_attempts (dispute_id)
+  where status in ('in_progress', 'succeeded');

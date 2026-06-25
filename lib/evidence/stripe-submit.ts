@@ -267,7 +267,8 @@ export async function submitEvidenceToStripe(ctx: SubmitContext): Promise<Submit
         processor_response: { schema_version: SCHEMA_VERSION, id: response.id, status: response.status },
         finished_at: now,
       })
-      .eq('id', attemptId);
+      .eq('id', attemptId)
+      .eq('merchant_id', ctx.merchantId);
 
     await insertDisputeEvent(supabase, ctx, 'submission_succeeded', {
       schema_version: SCHEMA_VERSION,
@@ -295,7 +296,8 @@ export async function submitEvidenceToStripe(ctx: SubmitContext): Promise<Submit
         },
         finished_at: new Date().toISOString(),
       })
-      .eq('id', attemptId);
+      .eq('id', attemptId)
+      .eq('merchant_id', ctx.merchantId);
 
     await insertDisputeEvent(supabase, ctx, 'submission_failed', {
       schema_version: SCHEMA_VERSION,
