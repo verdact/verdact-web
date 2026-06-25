@@ -1,9 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { getMerchant, verifySession } from '@/lib/dal';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { parseEvidenceDraft } from '@/lib/evidence/draft';
+import { submitEvidenceToStripe, type SubmitReason } from '@/lib/evidence/stripe-submit';
 
 /**
  * Workbench mutations (R2 sub-stage 1).
@@ -186,4 +188,156 @@ export async function setAcceptanceUnavailableAction(input: {
 
   revalidatePath(`/dashboard/disputes/${disputeId}`);
   return { ok: true };
+}
+
+// ─── Approve / sign-off ──────────────────────────────────────────────────────
+
+const SIGN_OFF_TEXT_VERSION = 'v1';
+
+export interface ApproveEvidenceResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Record the merchant's explicit sign-off on this evidence record. Sets the three
+ * columns the disputes_submission_requires_approval CHECK demands before
+ * submitted_at can ever be set (evidence_approved_at + _by + sign_off_at), so this
+ * MUST precede any submit. Owner/admin only.
+ */
+export async function approveEvidenceAction(input: {
+  disputeId: string;
+}): Promise<ApproveEvidenceResult> {
+  const disputeId = input.disputeId?.trim();
+  if (!disputeId) return { ok: false, error: 'Missing dispute reference.' };
+
+  const user = await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { ok: false, error: 'No merchant account found.' };
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    return { ok: false, error: 'You do not have permission to approve this record.' };
+  }
+
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from('disputes')
+    .select('id, status, submitted_at')
+    .eq('id', disputeId)
+    .eq('merchant_id', membership.merchant.id)
+    .maybeSingle();
+  if (!row) return { ok: false, error: 'Dispute not found.' };
+  if ((row as { submitted_at: string | null }).submitted_at) {
+    return { ok: false, error: 'This record has already been submitted.' };
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('disputes')
+    .update({
+      evidence_approved_at: now,
+      evidence_approved_by: user.id,
+      sign_off_at: now,
+      sign_off_text_version: SIGN_OFF_TEXT_VERSION,
+    })
+    .eq('id', disputeId)
+    .eq('merchant_id', membership.merchant.id);
+  if (error) return { ok: false, error: 'Could not record your approval.' };
+
+  // Best-effort append-only audit event (dispute_events insert is service-role
+  // granted). A failure here does not undo the approval.
+  try {
+    const service = createServiceClient();
+    await service.from('dispute_events').insert({
+      merchant_id: membership.merchant.id,
+      dispute_id: disputeId,
+      event_type: 'evidence_approved',
+      actor_kind: 'user',
+      payload: { schema_version: 'v1', approved_by: user.id, sign_off_text_version: SIGN_OFF_TEXT_VERSION },
+    });
+  } catch (err) {
+    console.error('[approve] dispute_events insert failed:', err instanceof Error ? err.message : err);
+  }
+
+  revalidatePath(`/dashboard/disputes/${disputeId}`);
+  return { ok: true };
+}
+
+// ─── Submit to Stripe ────────────────────────────────────────────────────────
+
+export interface SubmitToStripeResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Submit the approved evidence record to Stripe. Thin wrapper: it re-verifies the
+ * session + role, captures the request IP/UA for the audit row, then delegates to
+ * the fail-closed submitEvidenceToStripe engine. It NEVER passes a client-supplied
+ * payload — the engine re-derives the packet from disputeId.
+ */
+export async function submitToStripeAction(input: {
+  disputeId: string;
+}): Promise<SubmitToStripeResult> {
+  const disputeId = input.disputeId?.trim();
+  if (!disputeId) return { ok: false, error: 'Missing dispute reference.' };
+
+  const user = await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { ok: false, error: 'No merchant account found.' };
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    return { ok: false, error: 'You do not have permission to submit this record.' };
+  }
+
+  const hdrs = await headers();
+  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  const ua = hdrs.get('user-agent') || null;
+
+  const result = await submitEvidenceToStripe({
+    user,
+    merchantId: membership.merchant.id,
+    disputeId,
+    requestIp: ip,
+    requestUserAgent: ua,
+  });
+
+  revalidatePath(`/dashboard/disputes/${disputeId}`);
+  if (result.ok) return { ok: true };
+  return { ok: false, error: messageForSubmitReason(result.reason, result.message) };
+}
+
+function messageForSubmitReason(reason: SubmitReason, detail?: string): string {
+  switch (reason) {
+    case 'kill_switch_off':
+      return 'Filing to Stripe is not open yet. We will tell you the moment it is.';
+    case 'not_opted_in':
+      return 'Turn on submission in Settings before filing.';
+    case 'not_approved':
+      return 'Approve the record before submitting.';
+    case 'no_entitlement':
+      return 'Submitting to Stripe is available on the paid plan.';
+    case 'already_submitted':
+      return 'This record has already been submitted.';
+    case 'dispute_not_submittable':
+      return 'This dispute is not in a state where evidence can be submitted.';
+    case 'past_deadline':
+      return 'The response deadline for this dispute has passed.';
+    case 'not_connected':
+      return 'Connect your Stripe account before submitting.';
+    case 'account_mismatch':
+      return 'This dispute belongs to a different Stripe account than the one connected.';
+    case 'evidence_incomplete':
+      return detail ? `Evidence is not ready yet: ${detail}.` : 'Some required evidence is still missing.';
+    case 'audit_write_failed':
+      return 'We could not record the submission safely, so nothing was sent. Please try again.';
+    case 'attempt_conflict':
+      return 'A submission is already in progress for this dispute.';
+    case 'stripe_error':
+      return detail ? `Stripe rejected the submission: ${detail}` : 'Stripe rejected the submission.';
+    case 'not_found':
+      return 'Dispute not found.';
+    case 'load_error':
+      return 'We could not load this dispute right now. Please try again.';
+    default:
+      return 'Could not submit the record.';
+  }
 }
