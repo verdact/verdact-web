@@ -26,6 +26,8 @@ import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
 import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
 import { prepareStripeEvidence } from '@/lib/evidence/submission';
+import { isSubmissionEnabled } from '@/lib/evidence/submission-flag';
+import { SubmitToStripeButton } from './submit-to-stripe-button';
 import {
   buildResolutionPlan,
   strengthFromPercent,
@@ -166,7 +168,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       supabase
         .from('merchant_profiles')
         .select(
-          'id, product_description, delivery_method, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, logs_user_activity',
+          'id, product_description, delivery_method, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, logs_user_activity, submission_opt_in',
         )
         .eq('merchant_id', membership.merchant.id)
         .maybeSingle(),
@@ -235,6 +237,13 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
   ]);
   const approved = Boolean(record.evidence_approved_at);
   const submitted = Boolean(record.submitted_at);
+  // Submission state for the workbench submit control. The submit engine re-checks
+  // every one of these server-side; these only drive honest UI states.
+  const submissionEnabled = isSubmissionEnabled();
+  const optedIn = profile?.submission_opt_in === true;
+  const isClosed = ['won', 'lost', 'warning_closed'].includes(record.status);
+  const submittable = record.status === 'needs_response';
+  const pastDeadline = record.due_by ? Date.parse(record.due_by) < Date.now() : false;
   const evidenceItems = buildEvidenceItems(record, files, approved);
   const businessName = membership.merchant.business_name?.trim() || null;
   const parsedDraft = parseEvidenceDraft(record.evidence_draft);
@@ -454,8 +463,14 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       </section>
 
       <BottomActionBar
+        disputeId={record.id}
         approved={approved}
         submitted={submitted}
+        isClosed={isClosed}
+        pastDeadline={pastDeadline}
+        submittable={submittable}
+        submissionEnabled={submissionEnabled}
+        optedIn={optedIn}
         canExport={exportGate.allowed}
         canSubmit={submitGate.allowed}
         resolveCount={resolutionPlan?.actionableCount ?? 0}
@@ -931,8 +946,14 @@ function AccountRiskPanel({ ratio }: { ratio: number | null }) {
 }
 
 function BottomActionBar({
+  disputeId,
   approved,
   submitted,
+  isClosed,
+  pastDeadline,
+  submittable,
+  submissionEnabled,
+  optedIn,
   canExport,
   canSubmit,
   resolveCount,
@@ -940,8 +961,14 @@ function BottomActionBar({
   stripeUploadReadyCount,
   stripeUploadMissingCount,
 }: {
+  disputeId: string;
   approved: boolean;
   submitted: boolean;
+  isClosed: boolean;
+  pastDeadline: boolean;
+  submittable: boolean;
+  submissionEnabled: boolean;
+  optedIn: boolean;
   canExport: boolean;
   canSubmit: boolean;
   resolveCount: number;
@@ -965,14 +992,20 @@ function BottomActionBar({
             {submitted
               ? 'This record has already been submitted.'
               : approved
-                ? 'Record approved. Filing workflow controls stay gated.'
+                ? submissionEnabled && optedIn
+                  ? 'Record approved and ready to submit.'
+                  : 'Record approved.'
                 : 'Nothing is sent to the bank yet.'}
           </span>{' '}
           {submitted
             ? 'Monitoring continues from Stripe webhook updates.'
-            : approved
-              ? `Prepared ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'}. ${fileStatus} Filing stays locked until the submission workflow stage.`
-              : `Packet maps to ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'} so far. ${fileStatus} Submit unlocks only after gaps are resolved and the merchant approves.`}
+            : !submissionEnabled
+              ? 'Filing to Stripe opens after beta, and nothing is ever sent without your sign-off.'
+              : !optedIn
+                ? 'Turn submission on in Settings to file, and nothing is ever sent without your sign-off.'
+                : approved
+                  ? `Prepared ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'}. ${fileStatus}`
+                  : `Packet maps to ${stripeFieldCount} Stripe evidence ${stripeFieldCount === 1 ? 'field' : 'fields'} so far. ${fileStatus} Submit unlocks after gaps are resolved and you approve.`}
         </p>
         {resolveCount > 0 && !submitted ? (
           <a
@@ -998,24 +1031,20 @@ function BottomActionBar({
           </button>
         </PaidGate>
         <PaidGate action="submit_to_stripe" allowed={canSubmit} previewAvailable={false}>
-          {/* Submission is intentionally inert during beta — the real Stripe
-              filing channel is not wired. Disabled so it never reads as a live
-              action; the Locked badge makes the gated state explicit. */}
-          <button
-            className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            type="button"
-            disabled
-            title={
-              submitted
-                ? 'This record has already been submitted.'
-                : 'Submission is wired in a later stage. Nothing is sent to the bank during beta.'
-            }
-          >
-            Review and submit
-            <span className="rounded-sm bg-white/20 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em]">
-              Locked
-            </span>
-          </button>
+          {/* The real submit control. State is prop-driven and honest: it shows an
+              Approve step first, then a submit that reflects the kill switch and the
+              per-merchant opt-in. It never reads as a live action while filing is
+              off, and it routes through the fail-closed server actions. */}
+          <SubmitToStripeButton
+            disputeId={disputeId}
+            approved={approved}
+            submitted={submitted}
+            isClosed={isClosed}
+            pastDeadline={pastDeadline}
+            submittable={submittable}
+            submissionEnabled={submissionEnabled}
+            optedIn={optedIn}
+          />
         </PaidGate>
       </div>
     </div>
@@ -1114,6 +1143,7 @@ type ProfileRow = {
   cancellation_policy_text: string | null;
   cancellation_policy_url: string | null;
   logs_user_activity: string | null;
+  submission_opt_in: boolean | null;
 } | null;
 
 // Nested customer PII selected via the disputes.pii_id relationship. billing_address
