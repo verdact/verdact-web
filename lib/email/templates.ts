@@ -126,6 +126,40 @@ export function waitlistConfirmationEmail(input: { appUrl: string | null }): Ema
   };
 }
 
+// ─── Welcome on Stripe connect ───────────────────────────────────────────────
+
+export function welcomeConnectedEmail(input: {
+  appUrl: string | null;
+  businessName?: string | null;
+}): EmailBody {
+  const name = input.businessName?.trim();
+  const opener = name ? `Stripe is connected for ${name}.` : 'Your Stripe account is connected to Verdact.';
+
+  const lines = [
+    opener,
+    'We are pulling your recent disputes now so you can build and view a structured evidence packet for each one. Building and viewing is free during the beta.',
+    'Filing is off during the beta. Nothing is ever submitted to Stripe without your sign-off, and we will tell you the moment filing opens.',
+    input.appUrl
+      ? `You can pick up where the disputes land here: ${input.appUrl}/dashboard`
+      : 'Open your dashboard to see your disputes as they land.',
+  ];
+
+  const bodyHtml = [
+    paragraphHtml(lines[0]),
+    paragraphHtml(lines[1]),
+    paragraphHtml(lines[2]),
+    input.appUrl
+      ? `<p style="font-size:15px;margin:0 0 16px;"><a href="${escapeHtml(input.appUrl)}/dashboard" style="color:#0f6b4f;font-weight:600;">Open your dashboard</a></p>`
+      : paragraphHtml(lines[3]),
+  ].join('');
+
+  return {
+    subject: 'Stripe is connected to Verdact',
+    text: lines.join('\n\n'),
+    html: layout({ heading: 'Stripe is connected', bodyHtml, appUrl: input.appUrl }),
+  };
+}
+
 // ─── Account-deletion acknowledgement ────────────────────────────────────────
 
 export function deletionAckEmail(input: { appUrl: string | null }): EmailBody {

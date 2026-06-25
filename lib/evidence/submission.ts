@@ -23,9 +23,16 @@ export function prepareStripeEvidence(packet: EvidencePacket): PreparedStripeEvi
   const evidence: StripeEvidencePayload = {};
   const blockedReasons: string[] = [];
 
+  // Text evidence fields. Their lengths are the ONLY thing that counts toward
+  // Stripe's evidence text limit. The file-upload fields added below carry Stripe
+  // file ids (fil_...), which must NOT be counted as evidence text — counting them
+  // both inflated the total and risked falsely blocking a valid packet.
+  let textCharacterCount = 0;
   for (const field of packet.fields) {
     if (field.present && field.value.trim()) {
-      evidence[field.key] = field.value.trim();
+      const value = field.value.trim();
+      evidence[field.key] = value;
+      textCharacterCount += value.length;
     }
   }
 
@@ -53,7 +60,6 @@ export function prepareStripeEvidence(packet: EvidencePacket): PreparedStripeEvi
   if (missingStripeUploads.length > 0) blockedReasons.push('stripe_file_uploads_missing');
   if (duplicateFieldExhibits.length > 0) blockedReasons.push('multiple_files_for_single_stripe_field');
 
-  const textCharacterCount = Object.values(evidence).reduce((sum, value) => sum + value.length, 0);
   if (textCharacterCount > TEXT_LIMIT) blockedReasons.push('stripe_text_character_limit_exceeded');
 
   return {

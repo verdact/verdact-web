@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getMerchant, verifySession } from '@/lib/dal';
+import { can } from '@/lib/entitlements/can';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeEvidence } from '@/lib/evidence';
 import { buildEvidenceSignals } from '@/lib/evidence/build-signals';
@@ -59,10 +60,22 @@ type ProfileRow = {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  await verifySession();
+  const user = await verifySession();
   const membership = await getMerchant();
   if (!membership) {
     return NextResponse.json({ error: 'No merchant account found.' }, { status: 403 });
+  }
+
+  // Server-side entitlement gate. The workbench hides the download link via the
+  // client PaidGate, but a direct GET would otherwise bypass it. During beta
+  // can() returns allowed (VERDACT_BETA_ALL_UNLOCKED); once billing lands this
+  // 403s a Free-tier merchant in lockstep with the hidden UI link.
+  const downloadGate = await can(user, 'download_packet');
+  if (!downloadGate.allowed) {
+    return NextResponse.json(
+      { error: 'Downloading the evidence packet is available on the paid plan.' },
+      { status: 403 },
+    );
   }
 
   const supabase = await createClient();

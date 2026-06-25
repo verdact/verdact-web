@@ -4,6 +4,7 @@ import { sendEmail, type EmailSendResult } from './client';
 import {
   auditRecapEmail,
   waitlistConfirmationEmail,
+  welcomeConnectedEmail,
   deletionAckEmail,
   type AuditRecapInput,
 } from './templates';
@@ -50,5 +51,13 @@ export function sendWaitlistConfirmationEmail(to: string): Promise<EmailSendResu
 
 export function sendDeletionAckEmail(to: string): Promise<EmailSendResult> {
   const body = deletionAckEmail({ appUrl: appUrl() });
+  return sendEmail({ to, subject: body.subject, text: body.text, html: body.html });
+}
+
+export function sendWelcomeConnectedEmail(
+  to: string,
+  opts?: { businessName?: string | null },
+): Promise<EmailSendResult> {
+  const body = welcomeConnectedEmail({ appUrl: appUrl(), businessName: opts?.businessName ?? null });
   return sendEmail({ to, subject: body.subject, text: body.text, html: body.html });
 }

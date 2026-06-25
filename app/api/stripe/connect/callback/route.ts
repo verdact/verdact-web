@@ -3,6 +3,7 @@ import { getMerchant, verifySession } from '@/lib/dal';
 import { createStripeClient } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
+import { sendWelcomeConnectedEmail } from '@/lib/email/send';
 import { ACCOUNT_HEALTH_RECOMPUTE_EVENT } from '@/lib/account-health/vamp-snapshots';
 import { STRIPE_DISPUTES_BACKFILL_EVENT } from '@/lib/inngest/functions/stripe-disputes-backfill';
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
   if (!code) return NextResponse.redirect(to('/dashboard?stripe_error=no_code'));
 
-  await verifySession();
+  const user = await verifySession();
 
   const membership = await getMerchant();
   if (!membership) return NextResponse.redirect(to('/dashboard?stripe_error=no_merchant'));
@@ -96,29 +97,44 @@ export async function GET(request: NextRequest) {
   // after connecting, instead of waiting for the daily cron or a future webhook.
   // A send failure must never break the connect redirect, so it is swallowed
   // with a log.
-  try {
-    const processorConnectionId = savedConnection?.id ?? existing?.id;
-    await inngest.send([
-      {
-        name: ACCOUNT_HEALTH_RECOMPUTE_EVENT,
-        data: {
-          merchantId: membership.merchant.id,
-          processorConnectionId,
-          force: true,
-          source: 'connect-backfill',
+  const processorConnectionId = savedConnection?.id ?? existing?.id ?? null;
+  if (!processorConnectionId) {
+    // Both the update and the insert returned no row id (maybeSingle null). The
+    // connection state is ambiguous, so skip the backfill fan-out rather than
+    // sending events with an undefined connection id.
+    console.error('[stripe/connect/callback] no processor_connection id after upsert; skipping backfill');
+  } else {
+    try {
+      await inngest.send([
+        {
+          name: ACCOUNT_HEALTH_RECOMPUTE_EVENT,
+          data: {
+            merchantId: membership.merchant.id,
+            processorConnectionId,
+            force: true,
+            source: 'connect-backfill',
+          },
         },
-      },
-      {
-        name: STRIPE_DISPUTES_BACKFILL_EVENT,
-        data: {
-          merchantId: membership.merchant.id,
-          processorConnectionId,
-          source: 'connect-backfill',
+        {
+          name: STRIPE_DISPUTES_BACKFILL_EVENT,
+          data: {
+            merchantId: membership.merchant.id,
+            processorConnectionId,
+            source: 'connect-backfill',
+          },
         },
-      },
-    ]);
-  } catch (sendErr) {
-    console.error('[stripe/connect/callback] post-connect backfill send failed:', sendErr);
+      ]);
+    } catch (sendErr) {
+      console.error('[stripe/connect/callback] post-connect backfill send failed:', sendErr);
+    }
+  }
+
+  // Welcome email on the FIRST connect only (not on reconnect of an existing
+  // connection). Fire-and-forget: sendWelcomeConnectedEmail never throws and
+  // no-ops when RESEND_API_KEY is unset, so a mail failure cannot block the
+  // redirect into the dashboard.
+  if (!existing && processorConnectionId && user.email) {
+    void sendWelcomeConnectedEmail(user.email, { businessName: membership.merchant.business_name });
   }
 
   const res = NextResponse.redirect(to('/dashboard?connected=stripe'));
