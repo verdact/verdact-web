@@ -118,4 +118,38 @@ describe('prepareStripeEvidence', () => {
     expect(prepared.duplicateFieldExhibits).toHaveLength(1);
     expect(prepared.blockedReasons).toContain('multiple_files_for_single_stripe_field');
   });
+
+  it('counts only text fields toward the Stripe text limit, never uploaded file ids', () => {
+    const fileId = `file_${'a'.repeat(40)}`;
+    const prepared = prepareStripeEvidence(
+      packet({
+        fields: [
+          {
+            key: 'uncategorized_text',
+            label: 'The argument',
+            value: 'x'.repeat(100),
+            source: 'Your account',
+            present: true,
+          },
+        ],
+        exhibits: [
+          {
+            id: 'file-row-1',
+            name: 'Service documentation',
+            stripeField: 'service_documentation',
+            purposeLabel: 'Service documentation',
+            sizeBytes: 1000,
+            mime: 'application/pdf',
+            processorFileId: fileId,
+            supabasePath: null,
+          },
+        ],
+      }),
+    );
+
+    // Exactly the 100 text chars; the 45-char file id must NOT be counted.
+    expect(prepared.textCharacterCount).toBe(100);
+    expect(prepared.blockedReasons).not.toContain('stripe_text_character_limit_exceeded');
+    expect(prepared.evidence.service_documentation).toBe(fileId);
+  });
 });
