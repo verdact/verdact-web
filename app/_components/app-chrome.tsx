@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 import { VerdactLogo } from "./verdact-logo";
 
@@ -31,25 +32,25 @@ export function AppShell({
       {/* ── Left rail (desktop) ─────────────────────────────────────── */}
       <aside className="app-rail">
         <div className="app-rail__head">
-          <a href="/dashboard" className="app-rail__logo">
+          <Link href="/dashboard" className="app-rail__logo">
             <VerdactLogo variant="mark" className="h-8 w-8 shrink-0" />
             <div className="app-rail__workspace">
               <span className="app-rail__workspace-label">workspace</span>
               <span className="app-rail__workspace-name">{displayName}</span>
             </div>
-          </a>
+          </Link>
         </div>
 
         <nav className="app-rail__nav" aria-label="App navigation">
           {NAV_ITEMS.map((item) => (
-            <a
+            <Link
               key={item.key}
               href={item.href}
               className={`app-rail__link${active === item.key ? " is-active" : ""}`}
               aria-current={active === item.key ? "page" : undefined}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -72,9 +73,9 @@ export function AppShell({
 
       {/* ── Mobile top bar ───────────────────────────────────────────── */}
       <header className="app-topbar">
-        <a href="/dashboard" className="app-topbar__logo" aria-label="Dashboard">
+        <Link href="/dashboard" className="app-topbar__logo" aria-label="Dashboard">
           <VerdactLogo variant="lockup" className="h-6 w-auto" />
-        </a>
+        </Link>
         <span className="app-topbar__workspace">{displayName}</span>
       </header>
 
@@ -86,14 +87,14 @@ export function AppShell({
       {/* ── Mobile bottom nav ────────────────────────────────────────── */}
       <nav className="app-bottom-nav" aria-label="App navigation">
         {NAV_ITEMS.map((item) => (
-          <a
+          <Link
             key={item.key}
             href={item.href}
             className={`app-bottom-nav__item${active === item.key ? " is-active" : ""}`}
             aria-current={active === item.key ? "page" : undefined}
           >
             <span>{item.label}</span>
-          </a>
+          </Link>
         ))}
       </nav>
     </div>

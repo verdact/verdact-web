@@ -87,7 +87,8 @@
 }
 
 .panel {
-  width: min(520px, 100%);
+  /* Wider on desktop so it reads as a proper dialog, not a narrow phone column. */
+  width: min(600px, 100%);
   max-height: calc(100dvh - var(--space-8));
   overflow-y: auto;
   background: var(--panel);

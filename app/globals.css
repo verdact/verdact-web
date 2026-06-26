@@ -213,7 +213,8 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 @media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]) .app-shell {
+  html:not([data-theme="light"]) .app-shell,
+  html:not([data-theme="light"]) body:has(.app-shell) [data-feedback-root] {
     color-scheme: dark;
 
     /* Redesign 2026-06 dark: deep green-tinted near-black, brighter legible
@@ -314,7 +315,8 @@
   }
 }
 
-html[data-theme="dark"] .app-shell {
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] body:has(.app-shell) [data-feedback-root] {
   color-scheme: dark;
 
   /* Redesign 2026-06 dark (manual toggle). Mirrors the prefers-color-scheme

@@ -378,7 +378,7 @@ export function FeedbackWidget() {
             if (e.target === e.currentTarget) closePanel();
           }}
         >
-          <div className={s.panel} role="document" ref={panelRef}>
+          <div className={s.panel} role="document" ref={panelRef} data-feedback-root>
             {view === 'form' ? (
               <>
                 <div className={s.head}>
@@ -593,6 +593,7 @@ export function FeedbackWidget() {
       {promptOpen ? (
         <div
           className={`${s.prompt} ${promptShown ? s.isOpen : ''}`}
+          data-feedback-root
           role="region"
           aria-label="Quick feedback request"
         >
