@@ -4,6 +4,8 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+> **Lane update (2026-06-24):** Codex is retired. **Claude now owns this `verdact-web/` build lane** (app source, `lib/`, components, migrations, config) in addition to strategy/design/docs. Where this file says "Codex" or "you," read it as the build agent (Claude): claim under your own agent name in `../ACTIVE_WORK.md` and write logs to `../logs/YYYY-MM-DD-claude-<topic>.md`.
+
 ## Token Discipline
 
 - One focused task per session. If the user asks for multiple unrelated things, complete the first before starting the next.

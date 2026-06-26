@@ -162,6 +162,19 @@
 .formMsgOk { color: var(--verdict); }
 .formMsgError { color: var(--gap-text); }
 
+/* ── Filing opt-in (real, functional checkbox) ──────────────────── */
+.toggleRow { display: flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; }
+.toggleCheckbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--verdict);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.toggleCheckbox:disabled { cursor: default; }
+.toggleLabel { font-size: 13.5px; color: var(--ink); line-height: 1.45; cursor: pointer; }
+
 /* ── Connections ────────────────────────────────────────────────── */
 
 .connRow {

@@ -1,5 +1,6 @@
 import { inngest } from '../client';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { enrichDisputePii } from '@/lib/evidence/dispute-pii';
 
 /**
  * Durable processor for stored Stripe webhook events (Milestone B / Stage 1C).
@@ -64,6 +65,21 @@ function chargeId(charge: unknown): string | null {
     return String((charge as { id: unknown }).id);
   }
   return null;
+}
+
+// Mirrors networkFromDispute in stripe-disputes-backfill.ts but reads the raw
+// stored-payload object (the webhook never has a typed Stripe.Dispute). Keeps
+// live-arriving disputes consistent with backfilled ones instead of null.
+function networkFromDispute(dispute: Record<string, unknown>): string {
+  const pmd = dispute.payment_method_details as
+    | { type?: string; card?: { brand?: string } }
+    | undefined;
+  const brand = pmd?.type === 'card' ? pmd.card?.brand?.toLowerCase() : null;
+  if (brand === 'visa') return 'visa';
+  if (brand === 'mastercard') return 'mastercard';
+  if (brand === 'amex' || brand === 'american express') return 'amex';
+  if (brand === 'discover') return 'discover';
+  return 'unknown';
 }
 
 export const stripeWebhookReceived = inngest.createFunction(
@@ -150,6 +166,7 @@ export const stripeWebhookReceived = inngest.createFunction(
                 amount: typeof dispute.amount === 'number' ? dispute.amount : null,
                 currency: typeof dispute.currency === 'string' ? dispute.currency : null,
                 reason: typeof dispute.reason === 'string' ? dispute.reason : null,
+                network: networkFromDispute(dispute),
                 status: internalStatus,
                 due_by: unixToIso(evidenceDetails?.due_by),
                 outcome: statusToOutcome(internalStatus),
@@ -157,10 +174,24 @@ export const stripeWebhookReceived = inngest.createFunction(
               },
               { onConflict: 'processor,processor_dispute_id' },
             )
-            .select('id')
+            .select('id, pii_id')
             .single();
           if (error) throw error;
           return data;
+        });
+
+        // Best-effort: pull the customer's identity (name / email / billing
+        // address) off the underlying charge and link dispute_pii. Non-fatal —
+        // wrapped helper never throws, so a PII failure never blocks ingestion.
+        await step.run('enrich-dispute-pii', async () => {
+          return enrichDisputePii({
+            supabase,
+            merchantId: row.merchant_id as string,
+            disputeId: disputeRow.id as string,
+            currentPiiId: (disputeRow as { pii_id?: string | null }).pii_id ?? null,
+            chargeId: chargeId(dispute.charge),
+            stripeAccountId: row.processor_account_id as string | null,
+          });
         });
 
         // Minimal audit trail (memoized per run; one row per distinct event).

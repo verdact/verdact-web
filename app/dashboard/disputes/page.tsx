@@ -45,7 +45,7 @@ export default async function DisputesPage({
 }) {
   const params = await searchParams;
   const filterParam = typeof params.filter === 'string' ? params.filter : undefined;
-  const filter: DisputeFilter = isDisputeFilter(filterParam) ? filterParam : 'needs-action';
+  const explicitFilter: DisputeFilter | null = isDisputeFilter(filterParam) ? filterParam : null;
 
   const user = await verifySession();
   const membership = await getMerchant();
@@ -65,6 +65,21 @@ export default async function DisputesPage({
   }
 
   const disputes = membership ? await getDisputes() : [];
+
+  // Default view: needs-action, but fall back to a non-empty filter when nothing
+  // needs a response yet, so a freshly-synced merchant whose disputes are all
+  // under_review/closed does not misread "Nothing needs you right now" as "no
+  // disputes". An explicit ?filter= in the URL always wins.
+  let filter: DisputeFilter = explicitFilter ?? 'needs-action';
+  if (!explicitFilter && disputes.length > 0) {
+    const needsActionCount = disputes.filter((d) => d.status === 'needs_response').length;
+    if (needsActionCount === 0) {
+      const openCount = disputes.filter(
+        (d) => d.status === 'needs_response' || d.status === 'under_review' || d.status === 'submitted',
+      ).length;
+      filter = openCount > 0 ? 'open' : 'all';
+    }
+  }
 
   // Proof-on-file pillars for the respondable disputes — one batched read,
   // grouped by dispute. Powers the honest "Worth responding" chip (present vs

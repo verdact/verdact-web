@@ -41,6 +41,7 @@ type ProfileRow = {
   policy_disclosure_location: string | null;
   transaction_description_template: string | null;
   logs_user_activity: string | null;
+  submission_opt_in: boolean | null;
 };
 
 export default async function SettingsPage({
@@ -64,6 +65,8 @@ export default async function SettingsPage({
   const user = await verifySession();
   const membership = await getMerchant();
   const businessName = membership?.merchant?.business_name?.trim() || null;
+  // Filing on the merchant's behalf is an owner/admin decision.
+  const canManageFiling = membership?.role === 'owner' || membership?.role === 'admin';
   const fullName =
     typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : '';
 
@@ -76,7 +79,7 @@ export default async function SettingsPage({
       supabase
         .from('merchant_profiles')
         .select(
-          'product_description, delivery_method, customer_type, persona, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, tos_url, policy_disclosure_location, transaction_description_template, logs_user_activity',
+          'product_description, delivery_method, customer_type, persona, refund_policy_text, refund_policy_url, cancellation_policy_text, cancellation_policy_url, tos_url, policy_disclosure_location, transaction_description_template, logs_user_activity, submission_opt_in',
         )
         .eq('merchant_id', membership.merchant.id)
         .maybeSingle(),
@@ -135,6 +138,8 @@ export default async function SettingsPage({
       slack={slack}
       slackNotice={slackNotice}
       slackError={slackError}
+      submissionOptIn={profile?.submission_opt_in ?? false}
+      canManageFiling={canManageFiling}
     />
   );
 }

@@ -132,6 +132,45 @@ export async function updatePoliciesAction(
   }
 }
 
+export async function updateSubmissionOptInAction(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { error: 'Workspace not found. Sign out and back in.' };
+
+  // Authorizing Verdact to file on the merchant's behalf is an owner/admin
+  // decision, not something a member or viewer can flip.
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    return { error: 'Only an owner or admin can change filing settings.' };
+  }
+
+  const optIn = field(formData, 'submissionOptIn') === 'on';
+
+  try {
+    const { error } = await (await createClient()).from('merchant_profiles').upsert(
+      {
+        merchant_id: membership.merchant.id,
+        submission_opt_in: optIn,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'merchant_id' },
+    );
+    if (error) throw error;
+
+    revalidatePath('/settings');
+    return {
+      ok: true,
+      message: optIn
+        ? 'Filing on your behalf is on. Nothing is ever sent without your explicit review and sign-off, and filing only runs once it opens.'
+        : 'Filing on your behalf is off. You build and review evidence; nothing is sent to Stripe.',
+    };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
 export async function updateNameAction(
   _prev: SettingsState,
   formData: FormData,

@@ -1,6 +1,7 @@
 import type Stripe from 'stripe';
 import { createStripeClient } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
+import { extractPiiFromCharge, writeDisputePii } from '@/lib/evidence/dispute-pii';
 import { inngest } from '../client';
 
 export const STRIPE_DISPUTES_BACKFILL_EVENT = 'verdact/stripe.disputes.backfill';
@@ -62,7 +63,9 @@ export const stripeDisputesBackfill = inngest.createFunction(
       const stripe = createStripeClient();
       return collectStripeList(
         stripe.disputes.list(
-          { created: { gte: since }, limit: PAGE_LIMIT },
+          // Expand the charge so customer-identity enrichment below needs no
+          // extra per-dispute Stripe calls.
+          { created: { gte: since }, limit: PAGE_LIMIT, expand: ['data.charge'] },
           { stripeAccount: connection.processor_account_id },
         ),
         MAX_BACKFILL_ROWS,
@@ -100,10 +103,51 @@ export const stripeDisputesBackfill = inngest.createFunction(
       if (error) throw error;
     });
 
+    // Best-effort customer-identity enrichment. The list above expanded the
+    // charge, so this needs NO extra Stripe calls — it reads back the dispute ids
+    // and writes dispute_pii for those with usable billing details. Fully
+    // non-throwing: a failure here never fails the import.
+    const piiEnriched = await step.run('enrich-dispute-pii', async () => {
+      const processorDisputeIds = rows.map((r) => r.processor_dispute_id);
+      const { data: idRows } = await supabase
+        .from('disputes')
+        .select('id, processor_dispute_id, pii_id')
+        .eq('merchant_id', connection.merchant_id)
+        .in('processor_dispute_id', processorDisputeIds);
+      if (!idRows) return 0;
+
+      const byProcessorId = new Map(
+        idRows.map((d) => [
+          d.processor_dispute_id as string,
+          d as { id: string; pii_id: string | null },
+        ]),
+      );
+
+      let enriched = 0;
+      for (const dispute of disputes) {
+        const internal = byProcessorId.get(dispute.id);
+        if (!internal) continue;
+        const charge = dispute.charge;
+        if (!charge || typeof charge !== 'object') continue;
+        const fields = extractPiiFromCharge(charge as Stripe.Charge);
+        if (!fields) continue;
+        const result = await writeDisputePii({
+          supabase,
+          merchantId: connection.merchant_id,
+          disputeId: internal.id,
+          currentPiiId: internal.pii_id,
+          fields,
+        });
+        if (result.enriched) enriched += 1;
+      }
+      return enriched;
+    });
+
     return {
       merchantId,
       processorConnectionId,
       imported: rows.length,
+      piiEnriched,
       capped: disputes.length >= MAX_BACKFILL_ROWS,
       source: data.source ?? 'event',
     };

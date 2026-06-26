@@ -47,8 +47,14 @@ export async function dismissGuidanceAction(ruleId: string): Promise<void> {
         .eq('id', latest.id)
         .eq('merchant_id', membership.merchant.id);
     }
-  } catch {
-    // Best-effort cadence: a failed dismiss just means the tip isn't rested.
+  } catch (error) {
+    // Best-effort cadence: a failed dismiss just means the tip isn't rested — it
+    // never 500s the dashboard. But log it instead of swallowing, so a systemic
+    // dismiss failure (e.g. a grant/RLS regression) is visible rather than silent.
+    console.error('[guidance] dismiss failed', {
+      ruleId,
+      message: error instanceof Error ? error.message : 'unknown error',
+    });
   }
 
   revalidatePath('/dashboard');

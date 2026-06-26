@@ -9,6 +9,7 @@ import { signOutAction } from '@/lib/auth/actions';
 import {
   updateBusinessAction,
   updatePoliciesAction,
+  updateSubmissionOptInAction,
   updateNameAction,
   updateEmailAction,
   updatePasswordAction,
@@ -356,6 +357,44 @@ export function PoliciesForm({ initial }: { initial: PoliciesInitial }) {
         </button>
         <FormMessage state={state} />
       </div>
+    </form>
+  );
+}
+
+// ── Filing opt-in (authorize Verdact to file approved evidence to Stripe) ─────
+// Go-live prerequisite: the submit engine fail-closes unless this is true. It is
+// inert during beta (the global kill switch short-circuits first), but the
+// merchant can set their preference now. Owner/admin only.
+
+export function FilingForm({ optedIn, canManage }: { optedIn: boolean; canManage: boolean }) {
+  const [state, formAction, pending] = useActionState(updateSubmissionOptInAction, undefined);
+
+  return (
+    <form action={formAction} className={s.form}>
+      <label className={s.toggleRow}>
+        <input
+          type="checkbox"
+          name="submissionOptIn"
+          defaultChecked={optedIn}
+          disabled={!canManage}
+          className={s.toggleCheckbox}
+        />
+        <span className={s.toggleLabel}>Let Verdact file approved evidence to Stripe on my behalf</span>
+      </label>
+      <p className={s.hint}>
+        Off by default. Even when on, nothing is ever filed without your explicit review and sign-off.
+        Filing to Stripe is not active during the beta, so this only takes effect once live filing opens.
+      </p>
+      {canManage ? (
+        <div className={s.actions}>
+          <button type="submit" className={s.saveBtn} disabled={pending}>
+            {pending ? 'Saving…' : 'Save filing preference'}
+          </button>
+          <FormMessage state={state} />
+        </div>
+      ) : (
+        <p className={s.hint}>Only an owner or admin can change this.</p>
+      )}
     </form>
   );
 }

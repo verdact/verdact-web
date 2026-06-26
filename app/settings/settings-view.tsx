@@ -2,6 +2,7 @@ import { AppShell } from '../_components/app-chrome';
 import {
   BusinessForm,
   PoliciesForm,
+  FilingForm,
   NameForm,
   EmailForm,
   PasswordForm,
@@ -77,6 +78,10 @@ export type SettingsViewProps = {
   slack: SettingsSlack;
   slackNotice: SlackNotice;
   slackError: string | null;
+  // Filing opt-in (merchant_profiles.submission_opt_in). Optional so the dev
+  // preview can render without them; real /settings always passes them.
+  submissionOptIn?: boolean;
+  canManageFiling?: boolean;
 };
 
 export function isTabKey(value: string | undefined): value is TabKey {
@@ -105,6 +110,8 @@ export function SettingsView({
   slack,
   slackNotice,
   slackError,
+  submissionOptIn = false,
+  canManageFiling = true,
 }: SettingsViewProps) {
   const tab = resolveTab(activeTab);
   // Tabs that operate on a workspace. With no membership these would render
@@ -130,6 +137,8 @@ export function SettingsView({
             slack={slack}
             slackNotice={slackNotice}
             slackError={slackError}
+            submissionOptIn={submissionOptIn}
+            canManageFiling={canManageFiling}
           />
         ) : null}
 
@@ -153,6 +162,8 @@ type IntegrationsTabProps = {
   slack: SettingsSlack;
   slackNotice: SlackNotice;
   slackError: string | null;
+  submissionOptIn: boolean;
+  canManageFiling: boolean;
 };
 
 function IntegrationsTab({
@@ -161,6 +172,8 @@ function IntegrationsTab({
   slack,
   slackNotice,
   slackError,
+  submissionOptIn,
+  canManageFiling,
 }: IntegrationsTabProps) {
   return (
     <div
@@ -293,6 +306,17 @@ function IntegrationsTab({
         <p className={s.trustLine}>
           We store your account ID only, never your keys, and never train on your data.
         </p>
+      </section>
+
+      <section className={s.panel}>
+        <div className={s.panelHead}>
+          <h2 className={s.panelTitle}>Filing</h2>
+          <p className={s.panelDesc}>
+            Choose whether Verdact may submit approved evidence to Stripe for you. You stay in control
+            of every filing.
+          </p>
+        </div>
+        <FilingForm optedIn={submissionOptIn} canManage={canManageFiling} />
       </section>
     </div>
   );
