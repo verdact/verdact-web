@@ -1,4 +1,7 @@
 .dialog {
+  /* Native <dialog> modals center via the UA margin:auto; a global reset zeroes
+     it, which parked this in the top-left corner. Restore it explicitly. */
+  margin: auto;
   width: min(560px, calc(100vw - 32px));
   border: 1px solid var(--hairline);
   border-radius: 12px;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { PERSONA_OPTIONS } from '@/lib/guidance';
 import { disconnectStripeAction } from '@/lib/stripe/actions';
@@ -36,6 +37,23 @@ function FormMessage({ state }: { state: SettingsState }) {
     );
   }
   return null;
+}
+
+// Submit button for the disconnect dialogs that reflects the in-flight server
+// action. Without it the click looked dead for 1-2s before the modal closed,
+// which read as a glitch. useFormStatus reports the parent form's pending state.
+function DisconnectSubmit({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      className={s.dialogConfirm}
+      disabled={pending}
+      aria-busy={pending}
+    >
+      {pending ? 'Disconnecting…' : label}
+    </button>
+  );
 }
 
 // ── Settings tablist (URL-as-state + roving arrow-key focus) ─────────────────
@@ -537,9 +555,7 @@ export function DisconnectStripe({ accountLabel }: { accountLabel: string | null
               Keep connected
             </button>
             <form action={disconnectStripeAction}>
-              <button type="submit" className={s.dialogConfirm}>
-                Disconnect Stripe
-              </button>
+              <DisconnectSubmit label="Disconnect Stripe" />
             </form>
           </div>
         </div>
@@ -574,9 +590,7 @@ export function DisconnectSlack({ workspaceLabel }: { workspaceLabel: string | n
               Keep connected
             </button>
             <form action={disconnectSlackAction}>
-              <button type="submit" className={s.dialogConfirm}>
-                Disconnect Slack
-              </button>
+              <DisconnectSubmit label="Disconnect Slack" />
             </form>
           </div>
         </div>
