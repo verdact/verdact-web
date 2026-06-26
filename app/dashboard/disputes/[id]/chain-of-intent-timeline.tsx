@@ -60,6 +60,15 @@ function ChainNodeRow({ node }: { node: ChainNode }) {
           {node.when ? <span className={styles.coiWhen}>{node.when}</span> : null}
         </p>
         <p className={styles.coiDetail}>{node.detail}</p>
+        {isGap ? (
+          <a
+            href="#add-evidence"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-action underline underline-offset-4 hover:text-action-deep"
+          >
+            Fix this in Build
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        ) : null}
       </div>
     </li>
   );

@@ -1,0 +1,343 @@
+/*
+ * Evidence Workbench — guided 3-stage shell (Redesign 2026-06-26).
+ *
+ * The per-dispute page was a single 13-section scroll that overwhelmed a stressed
+ * merchant. This module styles the calm, guided replacement: a sticky step
+ * indicator (Build -> Review -> Approve and file) plus the in-page stage sections.
+ *
+ * Every value reads the canonical redesign tokens from app/globals.css. NO new
+ * hex, no palette of its own. The workbench renders INSIDE `.app-shell`, so dark
+ * mode inherits automatically (tokens flip under `.app-shell[data-theme="dark"]`).
+ * The onboarding module is explicitly light-only and scoped OUTSIDE `.app-shell`,
+ * so it is deliberately NOT reused here.
+ *
+ * Two-color law: verdict green = done/safe/forward motion; vermilion (--gap) is
+ * reserved for true merchant-closable blockers only and never appears in this
+ * navigation chrome. Status is always icon + text, never colour alone.
+ */
+
+/* ── Sticky step indicator ────────────────────────────────────────────────── */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.barInner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.7rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .barInner {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+.prog {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.progStep {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* The connective rule between steps (layout-only; nothing animated here). */
+.progStep:not(:last-child)::after {
+  content: "";
+  height: 1px;
+  width: clamp(10px, 3vw, 44px);
+  background: var(--hairline);
+  margin: 0 0.4rem;
+  flex: 0 0 auto;
+}
+
+.progBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  padding: 0.3rem 0.45rem;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  color: var(--ink-3);
+  font-family: inherit;
+  min-height: 40px;
+  transition: background-color var(--dur-1, 150ms) ease;
+}
+
+.progBtn:hover:not(.progDisabled) {
+  background: var(--panel-wash);
+}
+
+.progBtn:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 2px;
+}
+
+.progNum {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.progLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Current step: mint ring + verdict numeral. */
+.progCurrent {
+  color: var(--ink);
+}
+.progCurrent .progNum {
+  border-color: var(--verdict);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+
+/* Done step: verdict-tint fill + verdict check (dark-safe; high contrast). */
+.progDone {
+  color: var(--ink-2);
+}
+.progDone .progNum {
+  border-color: var(--verdict);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+
+.progDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Slim readiness summary on the right of the bar (no percentage, no dial). */
+.barSummary {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* The single-line "Step n of 3 · Label" shown only on narrow screens. */
+.barStepLabel {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── Stage sections ───────────────────────────────────────────────────────── */
+.stages {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .stages {
+    padding: 2rem 2.5rem;
+  }
+}
+
+.stageSection {
+  min-width: 0;
+}
+
+/* Collapsed stage: a single calm, clickable summary line. */
+.stageSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 0.9rem 1.15rem;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: inherit;
+  box-shadow: var(--elev-1);
+  transition: border-color 150ms ease;
+}
+
+.stageSummary:hover {
+  border-color: var(--verdict);
+}
+
+.stageSummary:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 2px;
+}
+
+.stageSummaryNum {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline);
+  background: var(--panel-wash);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+.stageSummaryNumDone {
+  border-color: var(--verdict);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+}
+
+.stageSummaryText {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.stageSummaryTitle {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stageSummaryHint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.stageSummaryChevron {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+
+/* Expanded stage body. */
+.stageBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stageBody:focus-visible {
+  outline: none;
+}
+
+.stageHeading {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.7rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.stageHint {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* Stage footer: back / forward navigation. */
+.stageFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.stageFooterSpacer {
+  flex: 1 1 auto;
+}
+
+/* ── Stage entrance (reduced-motion safe; opacity/transform only) ──────────── */
+.stageRise {
+  animation: stageRise 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes stageRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stageRise {
+    animation: none;
+  }
+  .progBtn {
+    transition: none;
+  }
+}
+
+/* ── Narrow screens (<=380px): numerals-only bar + single step label ──────── */
+@media (max-width: 380px) {
+  .progLabel {
+    display: none;
+  }
+  .barSummary {
+    display: none;
+  }
+  .barStepLabel {
+    display: block;
+  }
+  .barInner {
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    padding: 0.6rem 1rem;
+  }
+  .stages {
+    padding: 1rem;
+  }
+}

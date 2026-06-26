@@ -66,7 +66,7 @@ export function ResolveMissingProof({ plan }: { plan: ResolutionPlan }) {
   );
 }
 
-function RouteRow({ route }: { route: ResolveRoute }) {
+export function RouteRow({ route }: { route: ResolveRoute }) {
   return (
     <a
       href={route.href}
