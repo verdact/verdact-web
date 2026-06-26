@@ -202,6 +202,7 @@ export function BuildStage({ data }: { data: WorkbenchData }) {
         confirmedCount={confirmedCount}
         totalChecks={totalChecks}
         strength={strength}
+        primaryGapKey={resolutionPlan?.key ?? null}
       />
 
       <div id="add-evidence" className="scroll-mt-24 space-y-5">
@@ -439,6 +440,12 @@ export function FileStage({ data }: { data: WorkbenchData }) {
 // Convenience: the focus card slot, so page.tsx and the dev harness build it the
 // same way.
 export function WorkbenchFocusCard({ data }: { data: WorkbenchData }) {
+  // First-dispute / no-profile state: NoProfileFirstOpen is already the single
+  // lead-bordered focus inside Build. Suppress the next-step card here so a
+  // frightened first-time merchant never faces two competing green hero CTAs.
+  if (!data.hasProfile && !data.submitted && !data.approved && !data.isClosed) {
+    return null;
+  }
   return (
     <NextStepCard
       plan={data.resolutionPlan}

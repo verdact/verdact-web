@@ -301,7 +301,10 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     totalChecks,
     strength,
     resolutionPlan,
-    showAcceptanceCard: !acceptanceConfirmed,
+    // Keep the card mounted whenever the "I do not have this. Record why." link
+    // can render (resolutionPlan.allowUnavailable), so that deep link is never a
+    // dead anchor, even once the record is approved with the delivery gap open.
+    showAcceptanceCard: resolutionPlan?.allowUnavailable === true || !acceptanceConfirmed,
     acceptanceNoted,
     acceptanceReason: acceptance?.reason ?? null,
     chainNodes,

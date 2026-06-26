@@ -78,7 +78,8 @@
   padding: 0.3rem 0.45rem;
   border-radius: var(--radius-input);
   cursor: pointer;
-  color: var(--ink-3);
+  /* --ink-2 so the upcoming-step label clears WCAG 1.4.3 in light mode. */
+  color: var(--ink-2);
   font-family: inherit;
   min-height: 40px;
   transition: background-color var(--dur-1, 150ms) ease;
@@ -220,7 +221,7 @@
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ink-3);
+  color: var(--ink-2);
   flex: 0 0 auto;
 }
 

@@ -30,7 +30,7 @@ export function NextStepCard({ plan, submitted, approved, isClosed }: NextStepCa
         tone="trust"
         eyebrow="Filed"
         title="This record has been filed."
-        body="We will watch for the bank's response and keep you posted."
+        body="We will watch for the bank's response. You can check this record any time."
         ctaLabel="View what was filed"
         ctaHref="#stage-review"
       />

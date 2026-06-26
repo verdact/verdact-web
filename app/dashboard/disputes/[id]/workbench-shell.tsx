@@ -105,8 +105,18 @@ export function WorkbenchShell({
     (anchor: string) => {
       const owner = ANCHOR_STAGE[anchor] ?? 'build';
       goToStage(owner);
+      const reduce =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Double rAF so the owning stage has un-hidden and painted before we open a
+      // collapsed <details> target and scroll. Honor reduced-motion explicitly: a
+      // JS smooth scroll ignores the CSS scroll-behavior override.
       requestAnimationFrame(() => {
-        document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        requestAnimationFrame(() => {
+          const el = document.getElementById(anchor);
+          if (el instanceof HTMLDetailsElement) el.open = true;
+          el?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        });
       });
     },
     [goToStage],
@@ -180,9 +190,9 @@ export function WorkbenchShell({
                     </span>
                     <span className={styles.progLabel}>{STAGE_LABELS[st]}</span>
                     <span className="sr-only">
-                      {`Step ${i + 1} of 3: ${STAGE_LABELS[st]}${
-                        done ? ', done' : active ? ', current step' : ''
-                      }${locked ? ', locked until you open Review' : ''}`}
+                      {`Step ${i + 1} of 3${done ? ', done' : active ? ', current step' : ''}${
+                        locked ? ', locked until you open Review' : ''
+                      }`}
                     </span>
                   </button>
                 </li>
@@ -210,7 +220,6 @@ export function WorkbenchShell({
                   <button
                     type="button"
                     className={styles.stageSummary}
-                    aria-expanded={false}
                     onClick={() => {
                       if (locked) {
                         setLiveMsg('Open Review first, then you can approve and file.');
@@ -241,6 +250,7 @@ export function WorkbenchShell({
                   }}
                   hidden={!active}
                   tabIndex={-1}
+                  aria-label={STAGE_LABELS[st]}
                   className={styles.stageBody}
                 >
                   {stageContent[st]}

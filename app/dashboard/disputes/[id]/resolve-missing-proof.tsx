@@ -1,5 +1,5 @@
 import type { ResolutionPlan, ResolveRoute } from '@/lib/evidence/resolution';
-import { AlertIcon, ChevronRightIcon, DocIcon } from '../../dash-icons';
+import { AlertIcon, ChevronRightIcon } from '../../dash-icons';
 import styles from './workbench.module.css';
 
 /**

@@ -35,11 +35,16 @@ export function ReadinessChecklist({
   confirmedCount,
   totalChecks,
   strength,
+  primaryGapKey,
 }: {
   checks: PacketReadinessCheck[];
   confirmedCount: number;
   totalChecks: number;
   strength: EvidenceStrength;
+  // The single highest-priority open gap (from the resolution plan). Only this
+  // row reads vermilion; the other open items stay a neutral "To add", so the
+  // checklist never looks like a four-alarm failing report card.
+  primaryGapKey?: ReadinessKey | null;
 }) {
   const open = checks.filter((c) => !c.done);
   const done = checks.filter((c) => c.done);
@@ -68,7 +73,13 @@ export function ReadinessChecklist({
 
       <ul className="px-6 py-1">
         {open.length > 0 ? (
-          open.map((check) => <ChecklistRow key={check.key} check={check} />)
+          open.map((check) => (
+            <ChecklistRow
+              key={check.key}
+              check={check}
+              isPrimaryGap={primaryGapKey == null ? false : check.key === primaryGapKey}
+            />
+          ))
         ) : (
           <li className="flex items-center gap-3 py-4 text-sm text-ink-soft">
             <span className={`${styles.statusDotOk} h-5 w-5`} aria-hidden="true">
@@ -95,18 +106,27 @@ export function ReadinessChecklist({
   );
 }
 
-function ChecklistRow({ check }: { check: PacketReadinessCheck }) {
-  const closable = MERCHANT_CLOSABLE.includes(check.key);
+function ChecklistRow({
+  check,
+  isPrimaryGap = false,
+}: {
+  check: PacketReadinessCheck;
+  isPrimaryGap?: boolean;
+}) {
+  const openClosable = !check.done && MERCHANT_CLOSABLE.includes(check.key);
+  // Two-color law: only the ONE primary gap (the next step) reads vermilion; the
+  // other open items are a calm neutral "To add", not alarm.
+  const alarm = openClosable && isPrimaryGap;
   const dotClass = check.done
     ? styles.statusDotOk
-    : closable
+    : alarm
       ? styles.statusDotGap
       : styles.statusDotNeutral;
-  const pillClass = check.done ? styles.pillVerdict : closable ? styles.pillGap : styles.pillNeutral;
-  const statusWord = check.done ? 'Confirmed' : closable ? 'Add this' : 'Pending';
+  const pillClass = check.done ? styles.pillVerdict : alarm ? styles.pillGap : styles.pillNeutral;
+  const statusWord = check.done ? 'Confirmed' : openClosable ? (alarm ? 'Add this' : 'To add') : 'Pending';
   const icon = check.done ? (
     <CheckIcon className="h-3 w-3" />
-  ) : closable ? (
+  ) : alarm ? (
     <AlertIcon className="h-3 w-3" />
   ) : (
     <InfoCircleIcon className="h-3 w-3" />

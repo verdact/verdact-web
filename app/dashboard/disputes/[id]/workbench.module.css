@@ -98,7 +98,9 @@
 
 .pillNeutral {
   composes: pill;
-  color: var(--ink-3);
+  /* --ink-2 (not --ink-3) so the small mono label clears WCAG 1.4.3 (4.5:1) on
+     the panel-wash surface in light mode. */
+  color: var(--ink-2);
   background: var(--panel-wash);
   border-color: var(--hairline);
 }
@@ -122,7 +124,7 @@
   padding: 0.18rem 0.45rem;
   border-radius: var(--radius-input);
   border: 1px solid var(--hairline);
-  color: var(--ink-3);
+  color: var(--ink-2);
   background: var(--panel-wash);
 }
 
