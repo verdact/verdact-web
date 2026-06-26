@@ -125,6 +125,11 @@ function MergeSuggestions({ suggestions }: { suggestions: MergeSuggestion[] }) {
             <MergeCandidate label={sg.linkedLabel} pairIndex="B" />
           </div>
 
+          <p className={s.suggestReason}>
+            Linking groups their disputes together for your view. It never changes or files anything,
+            and you can undo it.
+          </p>
+
           <div className={s.suggestActions}>
             <ConfirmMergeForm suggestion={sg} />
             <RejectMergeForm suggestion={sg} />

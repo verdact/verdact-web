@@ -71,7 +71,7 @@ export function ConfirmMergeForm({ suggestion }: { suggestion: MergeSuggestion }
       <SuggestionFields suggestion={suggestion} includeReason />
       <button type="submit" className={s.suggestConfirm} disabled={pending} aria-busy={pending}>
         {!pending && MERGE_ICON}
-        {pending ? 'Linking…' : 'Yes, merge'}
+        {pending ? 'Linking…' : 'Yes, same customer'}
       </button>
       <Feedback state={state} />
     </form>
