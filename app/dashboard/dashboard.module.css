@@ -182,13 +182,6 @@
   margin: 0;
 }
 
-.standMuted {
-  color: var(--ink-2);
-  font-weight: 600;
-  font-size: clamp(1.15rem, 2vw, 1.35rem);
-  max-width: 40ch;
-}
-
 /* The calm account-safety reassurance (D1), rendered via the shared ReassureCard
    so it reads as protection, not warning. Shown once per screen; the small top
    margin gives it air below the standing qualifier. */
@@ -268,13 +261,6 @@
 
 /* Health cell */
 
-.health {
-  background: var(--panel);
-  border: 1px solid var(--edge-green);
-  border-radius: 9px;
-  padding: 11px 14px;
-}
-
 .healthCalibrating {
   font-size: 18px;
   font-weight: 700;
@@ -283,96 +269,7 @@
   margin: 6px 0 3px;
 }
 
-.meter {
-  height: 7px;
-  border-radius: 4px;
-  background: var(--hairline);
-  position: relative;
-  margin: 9px 0 7px;
-}
-
-.meterFill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: var(--verdict);
-  border-radius: 4px;
-  transition: width 300ms var(--ease-out);
-}
-
-.meterFillGap { background: var(--gap); }
-
-.meterLine {
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 2px;
-  background: var(--ink-2);
-}
-
-.hrow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--verdict);
-}
-
-.hrowGap { color: var(--gap-text); }
-
-.tick,
-.tickGap {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--verdict);
-  border-radius: 50%;
-  display: inline-block;
-  position: relative;
-  flex: none;
-}
-
-.tickGap { border-color: var(--gap); }
-
-.tick::after,
-.tickGap::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 1px;
-  width: 4px;
-  height: 7px;
-  border: solid var(--verdict);
-  border-width: 0 2px 2px 0;
-  transform: rotate(40deg);
-}
-
-.tickGap::after { border-color: var(--gap); }
-
 /* ── Section header (The record) ────────────────────────────────── */
-
-.sec {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 2px;
-}
-
-.secRight {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-}
-
-.sort {
-  font-size: 12px;
-  color: var(--ink-2);
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
-  padding: 5px 11px;
-  background: var(--panel);
-}
 
 .vlink {
   font-size: 12.5px;
@@ -978,13 +875,6 @@
 
 .tipBand { margin: 0; }
 
-.tipBandHead {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-
 .tipCard {
   display: flex;
   align-items: flex-start;
@@ -1051,7 +941,6 @@
 /* ── Guidance section wrapper (MODE B rail) ─────────────────────── */
 
 .guideSection { display: flex; flex-direction: column; gap: var(--space-3); }
-.guideHead { display: flex; align-items: center; }
 
 /* ── Health card (shared chrome; MODE B compact + MODE A hero) ──── */
 
@@ -1378,8 +1267,7 @@
 
   .isLit .stagger { transition: none !important; }
 
-  .cardMeterFill,
-  .meterFill {
+  .cardMeterFill {
     transition: none !important;
   }
 }
