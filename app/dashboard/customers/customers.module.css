@@ -465,12 +465,15 @@
 .mergeName { font-size: 0.875rem; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mergeEmail { font-size: 0.78rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* C2 — per-candidate dispute evidence line (real, sr-readable text) */
+/* C2 — per-candidate dispute evidence line. The underlying text is natural case
+   so screen readers read "2 disputes, latest: product not received"; the
+   uppercase is purely the mono-eyebrow visual treatment the spec prescribes. */
 .mergeEvidence {
   font-family: var(--font-mono);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--ink-2);
   margin-top: 1px;
   white-space: normal;

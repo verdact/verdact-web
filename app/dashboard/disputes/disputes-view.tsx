@@ -184,9 +184,19 @@ function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
         ? s.rowOpen
         : '';
 
+  // One coherent plain-English name for the row link, so a screen reader hears a
+  // single sentence ("Product not received, needs response, due in 4 days, $1,250,
+  // build response") instead of concatenated mono badges and figures. Restates the
+  // full state in words (Section 4 a11y) without changing any visible markup.
+  const rowAria = rowAriaLabel(dispute, status.label, isOpen, hours, action.label);
+
   return (
-    <a href={`/dashboard/disputes/${dispute.id}`} className={`${s.row} ${railClass}`}>
-      <div className={s.rowStatus}>
+    <a
+      href={`/dashboard/disputes/${dispute.id}`}
+      className={`${s.row} ${railClass}`}
+      aria-label={rowAria}
+    >
+      <div className={s.rowStatus} aria-hidden="true">
         <StatusBadge tone={status.tone} icon={status.icon}>
           {status.label}
         </StatusBadge>
@@ -195,22 +205,27 @@ function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
       <div className={s.rowInfo}>
         <span className={s.rowReason}>{dispute.reason ?? 'Dispute'}</span>
         {dispute.network ? (
-          <span className={s.rowNetwork}>{dispute.network}</span>
+          <span className={s.rowNetwork} aria-hidden="true">{dispute.network}</span>
         ) : null}
+        {/* The readiness chip carries its own merchant-actionable wording, so it
+            stays in the a11y tree; the row label intentionally omits it to keep
+            the link name short. */}
         {showReadiness && <ReadinessChip proof={proof} />}
       </div>
 
-      <span className={s.rowAmount}>
+      <span className={s.rowAmount} aria-hidden="true">
         {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
       </span>
 
       {isOpen && dispute.due_by ? (
         <Deadline dueBy={dispute.due_by} hours={hours} tier={tier} />
       ) : (
-        <span className={s.rowSettled}>{closedDeadlineLabel(dispute.status)}</span>
+        <span className={s.rowSettled} aria-hidden="true">
+          {closedDeadlineLabel(dispute.status)}
+        </span>
       )}
 
-      <span className={`${s.rowAction} ${action.className}`}>
+      <span className={`${s.rowAction} ${action.className}`} aria-hidden="true">
         {action.label}
         {action.forward ? <ArrowRightIcon className={s.rowActionIcon} /> : null}
       </span>
@@ -235,11 +250,10 @@ function Deadline({
     tier === 'urgent' ? s.deadlineUrgent : tier === 'soon' ? s.deadlineSoon : '';
   const figure = deadlineFigure(hours);
 
+  // Visual figure only — the row link's aria-label already states the deadline in
+  // plain words, so this is hidden from the a11y tree to avoid double-announcing.
   return (
-    <span
-      className={`${s.rowDeadline} ${tierClass}`}
-      aria-label={deadlineAria(dueBy, hours)}
-    >
+    <span className={`${s.rowDeadline} ${tierClass}`} aria-hidden="true">
       <ClockIcon className={s.deadlineIcon} />
       <span className={s.deadlineFig}>
         <span className={s.deadlineNum}>{figure.lead}</span>
@@ -347,6 +361,27 @@ function actionPresentation(status: string): ActionPresentation {
     return { label: 'Review', className: s.actionSecondary, forward: false };
   }
   return { label: 'View', className: s.actionQuiet, forward: false };
+}
+
+// Compose one plain-English accessible name for the whole row link, so a screen
+// reader announces a single coherent sentence instead of the concatenated mono
+// badges and display figures inside (which read as noise). Restates the full
+// state in words — Section 4 a11y. Presentation only; no data path changes.
+function rowAriaLabel(
+  dispute: Dispute,
+  statusLabel: string,
+  isOpen: boolean,
+  hours: number | null,
+  actionLabel: string,
+): string {
+  const reason = dispute.reason ?? 'Dispute';
+  const amount =
+    dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'amount unavailable';
+  const deadline =
+    isOpen && dispute.due_by
+      ? deadlineAria(dispute.due_by, hours)
+      : `${closedDeadlineLabel(dispute.status)}`;
+  return `${reason}. ${statusLabel}. ${deadline}. ${amount}. ${actionLabel}.`;
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────

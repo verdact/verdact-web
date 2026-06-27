@@ -1,15 +1,28 @@
-/* ─── Onboarding wizard. Redesign 2026-06, light only ───────────────────────
+/* ─── Onboarding wizard. Redesign 2026-06-27, light only ────────────────────
    Renders outside .app-shell, so it stays light like marketing/auth (the dark
-   tokens in globals.css are scoped to .app-shell). Slim top bar, a centered
-   560px wizard on the paper ground, a thin step progress bar, and one open step
-   at a time. Redesign tokens only: no hardcoded hex.
+   tokens in globals.css are scoped to .app-shell). This redesign brings the
+   surface up to the Evidence Workbench gold standard: a layered porcelain
+   ground, a labeled stepper with inverted emphasis, oversized editorial step
+   numerals against mono eyebrows, a dominant Stripe action card, de-alarmed
+   --watch status for "do this later / required-but-not-broken", and designed
+   hover / focus / active states.
+
+   Two-color law (strict): --verdict = done / safe / forward; --gap (vermilion)
+   appears ONLY on the page-level redirect-error banner and inline field
+   validation. The Stripe-skip consequence is neutral guidance (--watch /
+   --ink-2), never alarm. Status is always icon + text. No hardcoded hex.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .shell {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--paper);
+  /* Layered ground: warm verdict + mint washes over paper for calm depth,
+     mirroring the workbench radial-wash technique. Light-only by design. */
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 55%),
+    radial-gradient(100% 70% at 0% 100%, color-mix(in srgb, var(--mint) 14%, transparent), transparent 50%),
+    var(--paper);
   color: var(--ink);
 }
 
@@ -38,14 +51,16 @@
   height: 26px;
   border-radius: 7px;
   background: var(--verdict);
-  color: #fff;
+  color: var(--on-verdict);
   display: grid;
   place-items: center;
   font-weight: 800;
   font-size: 14px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint) 30%, transparent);
 }
 
-/* Quiet skip action, lifted to the 44px AA target. */
+/* Quiet skip action, lifted to the 44px AA target. Designed hover with a
+   subtle border so it reads as intentional, not an afterthought. */
 .skipBtn {
   display: inline-flex;
   align-items: center;
@@ -58,16 +73,23 @@
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background var(--d-fast, 150ms) var(--ease, ease),
-    color var(--d-fast, 150ms) var(--ease, ease);
+  transition: background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 .skipBtn:hover {
   background: var(--panel-wash);
   color: var(--ink);
+  border-color: var(--hairline);
 }
 
-/* ── Centered wizard ────────────────────────────────────────────── */
+.skipBtn:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 2px;
+}
+
+/* ── Wizard column ──────────────────────────────────────────────── */
 
 .main {
   flex: 1;
@@ -75,19 +97,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-8) var(--space-8) var(--space-16);
+  /* Top-anchored, not vertically centered, so step length changes never jump
+     the column up and down between steps. */
+  justify-content: flex-start;
+  padding: clamp(var(--space-8), 6vh, var(--space-16)) var(--space-8) var(--space-16);
 }
 
 .wiz {
   width: 100%;
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-/* Entrance: respects reduced motion via globals.css media query. */
+/* Entrance: respects reduced motion (media query below). */
 .rise {
-  animation: onbRise var(--d-slow, 460ms) var(--ease, cubic-bezier(0.23, 1, 0.32, 1)) both;
+  animation: onbRise var(--duration-slow) var(--ease-out) both;
 }
 
 @keyframes onbRise {
@@ -101,38 +125,69 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rise {
-    animation: none;
-  }
-}
+/* ── Labeled stepper ────────────────────────────────────────────── */
 
-/* ── Thin step progress bar ─────────────────────────────────────── */
+.stepper {
+  margin-bottom: var(--space-8);
+}
 
 .prog {
   display: flex;
   gap: 8px;
   list-style: none;
-  margin: 0 0 var(--space-8);
+  margin: 0 0 var(--space-3);
   padding: 0;
 }
 
 .progStep {
   flex: 1;
-  height: 5px;
+  height: 6px;
   border-radius: var(--radius-pill);
   background: var(--paper-2);
   box-shadow: inset 0 0 0 1px var(--hairline);
+  transition: background var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
+/* Done steps recede; the CURRENT step is the most prominent (inverted from the
+   old pale-mint-as-current, which read backwards). */
 .progDone {
   background: var(--verdict);
+  opacity: 0.5;
   box-shadow: none;
 }
 
 .progCurrent {
-  background: var(--mint);
-  box-shadow: none;
+  background: var(--verdict);
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--verdict),
+    0 2px 8px -2px color-mix(in srgb, var(--verdict) 40%, transparent);
+}
+
+/* Single shared caption line replacing the old per-step "Step X of Y" eyebrow
+   and the invisible bar labels. Mono, on-brand, legible at a glance. */
+.progCaption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.progCaptionNum {
+  color: var(--verdict);
+}
+
+.progCaptionDot {
+  color: var(--ink-3);
+}
+
+.progCaptionName {
+  color: var(--ink-2);
 }
 
 /* ── Step content ───────────────────────────────────────────────── */
@@ -140,37 +195,101 @@
 .step {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
+}
+
+/* Per-step content stagger, mirroring the workbench wbStepIn. Reduced-motion
+   gated below. */
+.step > * {
+  animation: onbStepIn var(--duration-slow) var(--ease-out) both;
+}
+.step > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.step > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.step > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.step > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.step > *:nth-child(n + 6) {
+  animation-delay: 300ms;
+}
+
+@keyframes onbStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Shared step header: oversized editorial numeral + mono eyebrow ── */
+
+.stepHead {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: clamp(0.9rem, 2vw, 1.6rem);
+}
+
+.stepNumeral {
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 9vw, 5.4rem);
+  font-weight: 800;
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+  color: color-mix(in srgb, var(--ink) 12%, transparent);
+  font-variant-numeric: lining-nums;
+  user-select: none;
+  margin-top: 0.1rem;
+}
+
+.stepHeadText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--verdict);
   margin: 0;
 }
 
 .eyebrow::before {
   content: '';
-  width: 20px;
+  width: 22px;
   height: 2px;
-  background: var(--rule-strong);
+  background: var(--verdict);
+  border-radius: 2px;
   flex: 0 0 auto;
 }
 
 .stepTitle {
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: clamp(30px, 4vw, 46px);
-  line-height: 1.05;
+  line-height: 1.04;
   letter-spacing: -0.03em;
   color: var(--ink);
   margin: 0;
   max-width: 20ch;
+  text-wrap: balance;
 }
 
 .stepBody {
@@ -181,27 +300,185 @@
   max-width: 52ch;
 }
 
-/* ── "What to expect" / scope trust rows ────────────────────────── */
+/* ── Welcome: calm cover with a hero moment ─────────────────────── */
+
+.stepWelcome {
+  gap: var(--space-8);
+}
+
+.welcomeCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 60%),
+    var(--panel);
+  border: 1px solid var(--edge-green);
+  box-shadow: var(--elev-1);
+}
+
+.actionAside {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* ── Stripe success affirmation band (OAuth win) ────────────────── */
+
+.successBand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-md);
+  background: var(--verdict-tint);
+  border: 1px solid var(--edge-green);
+  color: var(--verdict);
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: var(--elev-1);
+}
+
+.successBand b {
+  font-weight: 700;
+}
+
+.successBandIcon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--verdict);
+}
+
+/* ── Stripe dominant action card (deep field, dark in both themes) ── */
+
+.connectCard {
+  background:
+    radial-gradient(150% 120% at 0% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, rgba(183, 224, 203, 0.1), transparent 50%),
+    linear-gradient(155deg, var(--verdict-deep) 0%, var(--verdict-abyss) 100%);
+  border: 1px solid color-mix(in srgb, var(--verdict) 35%, transparent);
+  border-radius: var(--radius-md);
+  padding: clamp(1.4rem, 3vw, 1.9rem);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1.4rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 44px -20px rgba(6, 47, 36, 0.55);
+}
+
+.connectText {
+  min-width: 0;
+}
+
+.connectEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin: 0 0 0.55rem;
+}
+
+.connectEyebrowIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+}
+
+.connectHead {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.6vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.connectSub {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--mint) 65%, #ffffff);
+  margin: 0.5rem 0 0;
+  line-height: 1.5;
+  max-width: 42ch;
+  opacity: 0.94;
+}
+
+.connectCta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: #ffffff;
+  color: var(--verdict-deep);
+  border: none;
+  cursor: pointer;
+  font-size: 0.97rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 0.95rem 1.5rem;
+  border-radius: var(--radius-input);
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 10px 24px -8px rgba(0, 0, 0, 0.4);
+  transition: transform var(--duration-normal) var(--ease-spring),
+    background var(--duration-normal) var(--ease-out);
+}
+
+.connectCta:hover {
+  background: color-mix(in srgb, var(--mint) 65%, #ffffff);
+  transform: translateY(-2px);
+}
+
+.connectCta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.connectCta:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+}
+
+.connectCtaIcon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+}
+
+/* ── Trust rows (re-ranked: ReassureCard lead + two lighter rows) ── */
+
+.trustLead {
+  margin: 0;
+}
 
 .trust {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
   list-style: none;
-  margin: var(--space-2) 0 0;
+  margin: 0;
   padding: 0;
-  max-width: 52ch;
+  max-width: 56ch;
 }
 
 .trustRow {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 0.6rem;
   font-size: 13px;
   color: var(--ink-2);
   line-height: 1.5;
 }
 
-.trustRow svg {
+.trustRowIcon {
   width: 15px;
   height: 15px;
   color: var(--verdict);
@@ -209,51 +486,24 @@
   margin-top: 1px;
 }
 
-.connectedNote {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--verdict);
-  margin: 0;
-}
+/* ── Stripe skip: honest, NON-ALARM consequence (neutral, never gap) ── */
 
-.connectedNote svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-}
-
-/* ── Facts (welcome bullets) ────────────────────────────────────── */
-
-.facts {
+.skipConsequence {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  list-style: none;
-  margin: var(--space-2) 0 0;
-  padding: 0;
-  max-width: 52ch;
+  gap: 0.6rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: var(--radius-md);
+  background: var(--watch-tint);
+  border: 1px solid var(--watch-edge);
 }
 
-.fact {
-  position: relative;
-  padding-left: var(--space-5);
-  font-size: 14px;
+.skipConsequenceText {
+  margin: 0;
+  font-size: 13.5px;
   color: var(--ink-2);
   line-height: 1.5;
-}
-
-.fact::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--verdict);
+  max-width: 56ch;
 }
 
 /* ── Persona select (skippable "about you" step) ────────────────── */
@@ -262,28 +512,37 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
-  margin-top: var(--space-1);
 }
 
 .personaCard {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.7rem;
   text-align: left;
   padding: var(--space-4);
   min-height: 44px;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-md);
   border: 1px solid var(--rule-strong);
   background: var(--panel);
+  box-shadow: var(--elev-1);
   cursor: pointer;
-  transition: border-color var(--d-fast, 150ms) var(--ease, ease),
-    background var(--d-fast, 150ms) var(--ease, ease),
-    box-shadow var(--d-fast, 150ms) var(--ease, ease);
+  transition: border-color var(--duration-normal) var(--ease-out),
+    background var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
 }
 
 .personaCard:hover {
   border-color: var(--edge-green);
   background: var(--verdict-tint);
+  box-shadow: var(--elev-2);
+  transform: translateY(-1px);
+}
+
+.personaCard:active {
+  transform: scale(0.98);
 }
 
 .personaCard:focus-visible {
@@ -291,9 +550,40 @@
   outline-offset: 2px;
 }
 
+/* While submitting, keep the clicked card emphasized and fade only the rest, so
+   it reads as "saving your choice", not "the whole step broke". */
 .personaCard:disabled {
   opacity: 0.55;
   cursor: default;
+  transform: none;
+}
+
+.personaCard[aria-busy='true'] {
+  opacity: 1;
+  border-color: var(--verdict);
+  background: var(--verdict-tint);
+  box-shadow: var(--elev-2);
+}
+
+.personaIndex {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  padding-top: 0.15rem;
+}
+
+.personaCard:hover .personaIndex,
+.personaCard[aria-busy='true'] .personaIndex {
+  color: var(--verdict);
+}
+
+.personaText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .personaLabel {
@@ -308,7 +598,65 @@
   line-height: 1.45;
 }
 
-/* ── Form fields ────────────────────────────────────────────────── */
+.personaSaving {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--verdict);
+}
+
+/* Equal-prominence skip link, lifted above the grid so the quiz never feels
+   like a trap. Calm verdict underline, not a buried secondary button. */
+.skipLinkLead {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 32px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--verdict);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+}
+
+.skipLinkLead:hover {
+  color: var(--verdict-press);
+}
+
+.skipLinkLead:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 2px;
+  border-radius: var(--radius-input);
+}
+
+.skipLinkLead:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Form fields (Basics) ───────────────────────────────────────── */
+
+.fieldPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: clamp(1.1rem, 2.4vw, 1.5rem);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--elev-1);
+}
 
 .field {
   display: flex;
@@ -328,12 +676,12 @@
   padding: 11px 13px;
   border-radius: var(--radius-input);
   border: 1px solid var(--rule-strong);
-  background: var(--panel);
+  background: var(--paper);
   color: var(--ink);
   font-size: 14.5px;
   font-family: inherit;
-  transition: border-color var(--d-fast, 150ms) var(--ease, ease),
-    box-shadow var(--d-fast, 150ms) var(--ease, ease);
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .input:focus {
@@ -351,14 +699,85 @@
   color: var(--ink-3);
 }
 
+.inputError {
+  border-color: var(--gap);
+}
+
+.inputError:focus {
+  border-color: var(--gap);
+  box-shadow: 0 0 0 3px var(--gap-tint);
+}
+
+.fieldError {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--gap-text);
+}
+
+.fieldErrorIcon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+/* ── Finish: genuine arrival ────────────────────────────────────── */
+
+.stepFinish {
+  gap: var(--space-6);
+}
+
+.finishSeal {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--verdict-tint);
+  color: var(--verdict);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--verdict) 14%, transparent);
+}
+
+.finishSealIcon {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.finishBadge {
+  display: flex;
+}
+
+.finishReassure {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+.finishReassureIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--verdict);
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
 /* ── Actions ────────────────────────────────────────────────────── */
 
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   flex-wrap: wrap;
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .primaryBtn {
@@ -373,13 +792,15 @@
   font-weight: 600;
   letter-spacing: 0.005em;
   background: var(--verdict);
-  color: #fff;
+  color: var(--on-verdict);
   border: 1px solid transparent;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform var(--d-fast, 150ms) var(--ease, ease),
-    background var(--d-fast, 150ms) var(--ease, ease);
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 50%, transparent);
+  transition: transform var(--duration-normal) var(--ease-spring),
+    background var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .primaryBtn svg {
@@ -389,52 +810,30 @@
 
 .primaryBtn:hover {
   background: var(--verdict-press);
+  transform: translateY(-2px);
 }
 
 .primaryBtn:active {
-  transform: scale(0.975);
+  transform: translateY(0) scale(0.975);
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 3px;
 }
 
 .primaryBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
-.secondaryBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 11px 18px;
-  border-radius: var(--radius-input);
-  font-size: 14.5px;
-  font-weight: 600;
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--rule-strong);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color var(--d-fast, 150ms) var(--ease, ease),
-    color var(--d-fast, 150ms) var(--ease, ease),
-    background var(--d-fast, 150ms) var(--ease, ease);
-}
-
-.secondaryBtn:hover {
-  border-color: var(--verdict);
-  color: var(--verdict);
-}
-
-.secondaryBtn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* Quiet underline-style skip ("Skip for now, I will connect later"). */
+/* Quiet underline-style skip ("Do this later"). */
 .skipLink {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 32px;
   align-self: flex-start;
   background: none;
   border: 0;
@@ -445,11 +844,18 @@
   color: var(--verdict);
   text-decoration: underline;
   text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
   cursor: pointer;
 }
 
 .skipLink:hover {
   color: var(--verdict-press);
+}
+
+.skipLink:focus-visible {
+  outline: 2px solid var(--verdict);
+  outline-offset: 2px;
+  border-radius: var(--radius-input);
 }
 
 /* ── Form messages ──────────────────────────────────────────────── */
@@ -464,14 +870,29 @@
   color: var(--gap-text);
 }
 
-/* Page-level banner for redirect errors (e.g. ?error=complete_failed). Sits
-   above the step progress so it is visible whichever step renders. */
+/* Page-level banner for redirect errors (e.g. ?error=complete_failed). This is
+   the ONE legitimate vermilion in onboarding: a genuine blocker the founder
+   must retry. Icon + text, never colour alone. */
 .pageError {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 var(--space-6);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-input);
+  border-radius: var(--radius-md);
   border: 1px solid var(--gap);
   background: var(--gap-tint);
   color: var(--gap-text);
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+
+.pageErrorIcon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────── */
@@ -514,16 +935,58 @@
   .foot {
     padding: var(--space-5);
   }
+  .stepHead {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .stepNumeral {
+    font-size: 3rem;
+  }
+  .connectCard {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+  .connectCta {
+    width: 100%;
+  }
   .actions {
     flex-direction: column;
     align-items: stretch;
   }
-  .primaryBtn,
-  .secondaryBtn {
+  .actionAside {
+    text-align: center;
+  }
+  .primaryBtn {
     width: 100%;
     justify-content: center;
   }
   .personaGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+  .step > * {
+    animation: none !important;
+  }
+  .progStep {
+    transition: none;
+  }
+  .personaCard,
+  .primaryBtn,
+  .connectCta {
+    transition: border-color var(--duration-fast) var(--ease-out),
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+  .personaCard:hover,
+  .primaryBtn:hover,
+  .connectCta:hover {
+    transform: none;
   }
 }

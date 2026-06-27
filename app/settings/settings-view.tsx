@@ -1,7 +1,6 @@
 import { AppShell } from '../_components/app-chrome';
 import { SectionBar } from '@/app/_components/ui/section-bar';
 import { StatusBadge } from '@/app/_components/ui/status-badge';
-import { ReassureCard } from '@/app/_components/ui/reassure-card';
 import {
   PlugIcon,
   DocIcon,

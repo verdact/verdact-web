@@ -1,8 +1,22 @@
+import type { ReactNode } from 'react';
 import { AppShell } from '../_components/app-chrome';
 import { ConnectStripePanel } from '../_components/connect-stripe-panel';
+import { SectionBar } from '../_components/ui/section-bar';
+import { StatusBadge } from '../_components/ui/status-badge';
+import { ReassureCard } from '../_components/ui/reassure-card';
+import { GlossaryTerm } from '../_components/ui/glossary-term';
 import { type Dispute, type EfwAlert } from '@/lib/dal';
-import { URGENT_DAYS, type GuidanceItem, type GuidanceResult, type HealthBand } from '@/lib/guidance';
-import { AlertIcon, CheckIcon, InfoCircleIcon, ShieldIcon } from './dash-icons';
+import { type GuidanceItem, type GuidanceResult, type HealthBand } from '@/lib/guidance';
+import {
+  AlertIcon,
+  CheckIcon,
+  ClockIcon,
+  InfoCircleIcon,
+  ShieldIcon,
+  ListIcon,
+  RouteIcon,
+  ArrowRightIcon,
+} from './dash-icons';
 import { dismissGuidanceAction } from './actions';
 import {
   OPEN_STATUSES,
@@ -10,11 +24,22 @@ import {
   GAUGE_MAX_FRACTION,
   bandFor,
   daysUntil,
+  deadlineTier,
+  type DeadlineTier,
   byDeadlineThenCreated,
   freshnessLabel,
   deriveNeedsAttentionCount,
 } from './signals';
 import s from './dashboard.module.css';
+
+// Deadline pill class for the row/case figure (calm 3-step gradient, not binary).
+// Only a genuinely urgent/over-deadline case earns vermilion; "soon" is amber and
+// comfortable stays neutral. Thresholds live in signals.ts; never re-derived here.
+function deadClass(tier: DeadlineTier): string {
+  if (tier === 'urgent') return `${s.dead} ${s.deadUrgent}`;
+  if (tier === 'soon') return `${s.dead} ${s.deadSoon}`;
+  return s.dead;
+}
 
 // At most this many guidance tips render on the dashboard at once (redesign plan
 // §3.2: one "do this now" gap/action + one "get safer" prevention).
@@ -125,9 +150,13 @@ export function DashboardView({
   const pinnedTip = cappedBand[0] ?? null;
   const railTips = cappedBand.slice(1);
 
+  // Masthead title — a named greeting, never the dead word "Dashboard". The live
+  // standing is carried by the sentence below (Section 3), not the title.
+  const deskTitle = businessName ?? 'Your dispute desk';
+
   return (
     <AppShell email={email} businessName={businessName} active="dashboard">
-      <div className={s.page}>
+      <div className={`${s.page} ${s.isLit}`}>
         {justConnected && (
           <div className={s.banner} role="status">
             <CheckIcon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -141,9 +170,14 @@ export function DashboardView({
           </div>
         )}
 
-        {/* ── Masthead: h1 + connection chip ──────────────────────────── */}
-        <header className={s.top}>
-          <h1 className={s.title}>Dashboard</h1>
+        {/* ── Masthead: mono eyebrow + display title + quiet connection chip ── */}
+        <header className={`${s.top} ${s.stagger}`}>
+          <div className={s.mast}>
+            <span className={s.mastKicker} aria-hidden="true">
+              Your standing
+            </span>
+            <h1 className={s.title}>{deskTitle}</h1>
+          </div>
           {hasStripe ? (
             <span className={`${s.chip} ${s.chipConnected}`}>
               <span className={s.chipDot} aria-hidden="true" />
@@ -151,10 +185,10 @@ export function DashboardView({
               {`  ·  ${formatStripeAccountId(stripeConnection!.processor_account_id)}`}
             </span>
           ) : (
-            <a href="/api/stripe/connect/start" className={`${s.chip} ${s.chipGhost}`}>
+            <span className={`${s.chip} ${s.chipGhost}`}>
               <span className={s.chipDot} aria-hidden="true" />
-              Connect Stripe
-            </a>
+              Stripe not connected
+            </span>
           )}
         </header>
 
@@ -211,18 +245,22 @@ export function DashboardView({
 function DashToolbar({ s, connectedAt }: { s: CssModuleStyles; connectedAt: string | null }) {
   const fresh = freshnessLabel(connectedAt);
   return (
-    <div className={s.toolbar}>
-      {fresh ? (
-        <span className={s.fresh} aria-label={`Synced from Stripe ${fresh}`}>
-          <span className={s.freshDot} aria-hidden="true" />
-          Synced from Stripe <span className={s.num}>{fresh}</span>
+    <div className={`${s.toolbar} ${s.stagger}`}>
+      <span
+        className={s.fresh}
+        aria-label={fresh ? `Watching your Stripe account, synced ${fresh}` : 'Watching your Stripe account'}
+      >
+        <span className={s.freshShield} aria-hidden="true">
+          <ShieldIcon />
         </span>
-      ) : (
-        <span className={s.fresh}>
-          <span className={s.freshDot} aria-hidden="true" />
-          Watching your Stripe account
-        </span>
-      )}
+        Watching your Stripe account
+        {fresh && (
+          <>
+            {' · synced '}
+            <span className={s.num}>{fresh}</span>
+          </>
+        )}
+      </span>
       <a href="/dashboard" className={s.refresh} aria-label="Refresh from Stripe">
         <RefreshIcon className={s.refreshIcon} />
         Refresh
@@ -277,29 +315,44 @@ function ModeBDashboard({
     efwCount: actionableEfw.length,
   });
 
+  // The single-open-case panic path: the case is why the founder is here, so it
+  // renders FIRST and the pinned tip drops below it (D2). The account-safety
+  // line also rides with the standing block only in this one-case state.
+  const singleCase = openDisputes.length === 1;
+
   return (
     <>
-      {/* Standing sentence (dispute leads, safety follows) */}
-      <p className={s.stand}>{standing}</p>
+      {/* Standing block: bold lead line + muted qualifier (D3 split), then the
+          calm account-safety reassurance once (D1), where the founder is most scared. */}
+      <div className={`${s.standBlock} ${s.stagger}`}>
+        <p className={s.stand}>{standing.lead}</p>
+        {standing.sub && <p className={s.standNote}>{standing.sub}</p>}
+        {singleCase && (
+          <ReassureCard
+            className={s.safetyCard}
+            icon={<ShieldIcon />}
+            title="One dispute will not suspend your Stripe account"
+          >
+            Take the time to respond well. Verdact never files anything without your say-so.
+          </ReassureCard>
+        )}
+      </div>
 
-      {/* Ledger line — persistent dispute-rate-vs-line context */}
-      <Ledger
-        s={s}
-        collapsed={openDisputes.length === 1}
-        exposure={exposure}
-        recovered={recovered}
-        healthBand={healthBand}
-        healthConfident={healthConfident}
-        vampRatio={vampRatio}
-        meterPct={meterPct}
-      />
+      {/* Ledger line — the calm money line (recovered leads, exposure as context). */}
+      <div className={s.stagger}>
+        <Ledger s={s} exposure={exposure} recovered={recovered} />
+      </div>
 
-      {/* Pinned tip band: the single highest-priority guidance tip, directly
-          under the standing sentence so >=1 tip is always seen before the
-          docket (plan §3.2-A). The rest of the budget stays in the rail. */}
-      {pinnedTip && <PinnedTipBand s={s} tip={pinnedTip} />}
+      {/* Pinned tip band: when a single case dominates it drops BELOW the case
+          (rendered inside the grid main); otherwise it sits here above the docket
+          so >=1 tip is always seen before a multi-row docket (plan §3.2-A). */}
+      {pinnedTip && !singleCase && (
+        <div className={s.stagger}>
+          <PinnedTipBand s={s} tip={pinnedTip} />
+        </div>
+      )}
 
-      <div className={s.grid}>
+      <div className={`${s.grid} ${s.stagger}`}>
         {/* PRIMARY (hero): the docket */}
         <div className={s.gridMain}>
           <RecordSection
@@ -308,6 +361,7 @@ function ModeBDashboard({
             proofByDispute={proofByDispute}
             hasFiledBefore={hasFiledBefore}
           />
+          {pinnedTip && singleCase && <PinnedTipBand s={s} tip={pinnedTip} />}
           <PreventLane s={s} alerts={actionableEfw} hasOpen={openDisputes.length > 0} />
         </div>
 
@@ -359,23 +413,31 @@ function ModeADashboard({
 
   return (
     <>
-      {/* Standing sentence: protected + watching, all green/neutral (no vermilion) */}
-      <p className={s.stand}>
-        No disputes need you right now. Your account is protected and we are watching.
-      </p>
-      <p className={s.standNote}>
-        We will alert you the moment a dispute is filed.
-        {recovered.count > 0 && (
-          <>
-            {' '}
-            <span className={s.standNoteWin}>{recovered.display} recovered so far.</span>{' '}
-            <span className={s.standNoteFine}>Past outcomes, not a prediction.</span>
-          </>
-        )}
-      </p>
+      {/* Standing block: bold lead + muted qualifier, all green/neutral (no vermilion). */}
+      <div className={`${s.standBlock} ${s.stagger}`}>
+        <p className={s.stand}>No disputes need you right now.</p>
+        <p className={s.standNote}>
+          Your account is protected and we are watching. We will alert you the moment a dispute is filed.
+          {recovered.count > 0 && (
+            <>
+              {' '}
+              <span className={s.standNoteWin}>{recovered.display} recovered so far.</span>{' '}
+              <span className={s.standNoteFine}>Past outcomes, not a prediction.</span>
+            </>
+          )}
+        </p>
+        {/* The account-safety reassurance, once (D1), where the founder is most scared. */}
+        <ReassureCard
+          className={s.safetyCard}
+          icon={<ShieldIcon />}
+          title="One dispute will not suspend your Stripe account"
+        >
+          Take the time to respond well. Verdact never files anything without your say-so.
+        </ReassureCard>
+      </div>
 
       {/* HERO ROW: health meter (dominant) + watching co-hero panel */}
-      <div className={s.heroGrid}>
+      <div className={`${s.heroGrid} ${s.stagger}`}>
         <HeroHealthCard
           s={s}
           band={healthBand}
@@ -387,11 +449,14 @@ function ModeADashboard({
       </div>
 
       {/* DEMOTED docket: calm reassurance card, shown LAST */}
-      <section className={s.docketSection} aria-labelledby="docket-h">
-        <div className={s.sec}>
-          <h2 className={s.eyebrow} id="docket-h">
-            Your disputes
-          </h2>
+      <section className={`${s.docketSection} ${s.stagger}`} aria-labelledby="docket-h">
+        <div className={s.barRow}>
+          <SectionBar
+            className={s.barFlush}
+            icon={<ListIcon />}
+            title="Your disputes"
+            note="What is open, filed, or settled across your account"
+          />
           <a href="/dashboard/disputes" className={s.vlink}>
             View all
           </a>
@@ -401,7 +466,9 @@ function ModeADashboard({
             <ShieldIcon />
           </span>
           <div className={s.calmEmptyCopy}>
-            <p className={s.calmEmptyTitle}>Nothing is filed without you</p>
+            <p className={s.calmEmptyTitle} id="docket-h">
+              Nothing is filed without you
+            </p>
             <p className={s.calmEmptyText}>
               {hasFiledBefore
                 ? 'Nothing is open right now. We are watching your Stripe account and will surface a case here the moment one is filed, with the evidence already gathered.'
@@ -412,12 +479,17 @@ function ModeADashboard({
 
         {filedWaiting.length > 0 && (
           <>
-            <div className={s.sec} style={{ marginTop: 'var(--space-6)' }}>
-              <h2 className={s.eyebrow}>Filed, waiting on the issuer</h2>
+            <SectionBar
+              className={s.barFiled}
+              icon={<ClockIcon />}
+              title="Filed, waiting on the issuer"
+              note="No action needed from you while the issuer reviews"
+            />
+            <div className={s.filedList}>
+              {filedWaiting.map((d) => (
+                <FiledWaitingRow key={d.id} s={s} dispute={d} />
+              ))}
             </div>
-            {filedWaiting.map((d) => (
-              <FiledWaitingRow key={d.id} s={s} dispute={d} />
-            ))}
           </>
         )}
       </section>
@@ -428,13 +500,15 @@ function ModeADashboard({
 function FiledWaitingRow({ s, dispute }: { s: CssModuleStyles; dispute: Dispute }) {
   return (
     <div className={s.filedRow}>
-      <div>
-        <div className={s.statusLabel}>
-          <span className={s.statusDotNeutral} aria-hidden="true" />
-          {dispute.reason ?? 'Dispute'}
+      <div className={s.filedMain}>
+        <div className={s.statusLabel}>{dispute.reason ?? 'Dispute'}</div>
+        <div className={s.filedBadgeRow}>
+          <StatusBadge tone="watch" icon={<ClockIcon />}>
+            Filed, waiting
+          </StatusBadge>
         </div>
         <div className={s.filedSub}>
-          {statusLabel(dispute.status)}. Issuers usually decide within 2 to 6 weeks. We will alert you.
+          Issuers usually decide within 2 to 6 weeks. We will alert you.
         </div>
       </div>
       <span className={`${s.amt} ${s.num}`}>
@@ -448,99 +522,36 @@ function FiledWaitingRow({ s, dispute }: { s: CssModuleStyles; dispute: Dispute 
 
 type AmountSummary = { display: string; count: number; sub: string };
 
+// The calm money line. Recovered (the reassuring number) carries the display
+// weight; exposure is demoted to a context figure framed without the loss
+// connotation ("at stake right now · nothing is lost yet"). The duplicate health
+// cell is gone — health has its own dedicated card in both modes.
 function Ledger({
   s,
-  collapsed,
   exposure,
   recovered,
-  healthBand,
-  healthConfident,
-  vampRatio,
-  meterPct,
 }: {
   s: CssModuleStyles;
-  collapsed: boolean;
   exposure: AmountSummary;
   recovered: AmountSummary;
-  healthBand: HealthBand;
-  healthConfident: boolean;
-  vampRatio: number | null;
-  meterPct: number;
 }) {
+  const hasRecovered = recovered.count > 0;
   return (
-    <div className={`${s.ledger} ${collapsed ? s.ledgerCollapsed : ''}`}>
-      <div className={s.lcell}>
-        <div className={s.lEyebrow}>Open exposure</div>
-        <div className={`${s.fig} ${s.num}`}>{exposure.display}</div>
-        <div className={s.sub}>watching · {exposure.sub}</div>
-      </div>
-      {!collapsed && (
-        <div className={s.lcell}>
-          <div className={s.lEyebrow}>Recovered to date</div>
-          <div className={`${s.fig} ${s.figRecovered} ${s.num}`}>{recovered.display}</div>
-          <div className={s.sub}>lifetime · {recovered.sub}</div>
+    <div className={s.ledger}>
+      {hasRecovered && (
+        <div className={`${s.lcell} ${s.lcellLead}`}>
+          <div className={s.lEyebrow}>Recovered for you</div>
+          <div className={`${s.figLead} ${s.figRecovered} ${s.num}`}>{recovered.display}</div>
+          <div className={s.sub}>lifetime · past outcomes, not a prediction</div>
         </div>
       )}
       <div className={s.lcell}>
-        <LedgerHealthCell
-          s={s}
-          band={healthBand}
-          confident={healthConfident}
-          vampRatio={vampRatio}
-          meterPct={meterPct}
-        />
+        <div className={s.lEyebrow}>At stake right now</div>
+        <div className={`${s.fig} ${s.num}`}>{exposure.display}</div>
+        <div className={s.sub}>
+          across {exposure.count} open case{exposure.count === 1 ? '' : 's'} · nothing is lost yet
+        </div>
       </div>
-    </div>
-  );
-}
-
-function LedgerHealthCell({
-  s,
-  band,
-  confident,
-  vampRatio,
-  meterPct,
-}: {
-  s: CssModuleStyles;
-  band: HealthBand;
-  confident: boolean;
-  vampRatio: number | null;
-  meterPct: number;
-}) {
-  // Honesty gate: no number/band until the snapshot is a confident read.
-  if (!confident || band === 'unknown' || vampRatio === null) {
-    return (
-      <div className={s.health}>
-        <div className={s.lEyebrow}>Account health</div>
-        <div className={s.healthCalibrating}>Calibrating</div>
-        <div className={s.sub}>Too early to score. Not enough settled volume yet.</div>
-      </div>
-    );
-  }
-
-  const pctLabel = `${(vampRatio * 100).toFixed(2)}%`;
-  const label = band === 'healthy' ? 'Healthy' : band === 'close' ? 'Getting close' : 'At risk';
-  const linePct = Math.min((STRIPE_LINE_FRACTION / GAUGE_MAX_FRACTION) * 100, 100);
-  const fillClass =
-    band === 'healthy' ? s.meterFill : `${s.meterFill} ${s.meterFillGap}`;
-  const hrowClass = band === 'healthy' ? s.hrow : `${s.hrow} ${s.hrowGap}`;
-
-  return (
-    <div className={s.health}>
-      <div className={s.lEyebrow}>Account health</div>
-      <div
-        className={s.meter}
-        role="img"
-        aria-label={`Account health: ${label}. Dispute rate ${pctLabel} vs Stripe's 0.75% line.`}
-      >
-        <div className={fillClass} style={{ width: `${meterPct}%` }} />
-        <div className={s.meterLine} style={{ left: `${linePct}%` }} />
-      </div>
-      <div className={hrowClass}>
-        <span className={band === 'healthy' ? s.tick : s.tickGap} aria-hidden="true" />
-        {label} · <span className={s.num}>{pctLabel}</span>
-      </div>
-      <div className={s.sub}>room to Stripe&rsquo;s 0.75% line</div>
     </div>
   );
 }
@@ -590,11 +601,16 @@ function HealthMeter({
         aria-label={`Dispute rate ${d.pctLabel}, ${d.label.toLowerCase()}, with headroom to Stripe's 0.75% line.`}
       >
         <div className={fillClass} style={{ width: `${meterPct}%` }} />
-        <div className={s.cardMeterLine} style={{ left: `${d.linePct}%` }} />
+        {/* The 0.75% threshold, read as a labelled line not decoration. */}
+        <div className={s.cardMeterLine} style={{ left: `${d.linePct}%` }}>
+          <span className={`${s.cardMeterTick} ${s.num}`} aria-hidden="true">
+            0.75%
+          </span>
+        </div>
       </div>
       <div className={s.cardScale}>
         <span>0%</span>
-        <span>Stripe&rsquo;s 0.75% line</span>
+        <span>Stripe&rsquo;s line</span>
         <span className={s.num}>1.5%</span>
       </div>
     </div>
@@ -671,55 +687,64 @@ function HeroHealthCard({
   }
   const d = healthCardData(band, vampRatio);
   return (
-    <a
-      href="/account-health"
-      className={`${s.healthCardLink} ${s.healthCardLinkHero}`}
-      aria-label="Open account health"
-    >
-      <section className={`${s.healthCardChrome} ${s.healthCardHero}`}>
-        <div className={s.healthCardHeadRow}>
-          <div>
-            <span className={s.eyebrow}>Account health</span>
-            <h2 className={s.healthCardTitleHero}>Dispute rate vs Stripe&rsquo;s line</h2>
+    <div className={s.heroHealthWrap}>
+      <a
+        href="/account-health"
+        className={`${s.healthCardLink} ${s.healthCardLinkHero}`}
+        aria-label="Open account health"
+      >
+        <section className={`${s.healthCardChrome} ${s.healthCardHero}`}>
+          <div className={s.healthCardHeadRow}>
+            <div>
+              <span className={s.eyebrow}>Account health</span>
+              <h2 className={s.healthCardTitleHero}>Dispute rate vs Stripe&rsquo;s line</h2>
+            </div>
+            <HealthBadge s={s} band={band} label={d.label} />
           </div>
-          <HealthBadge s={s} band={band} label={d.label} />
-        </div>
-        <HealthMeter s={s} band={band} vampRatio={vampRatio} meterPct={meterPct} hero />
-        <p className={s.healthCardFoot}>
-          {d.isHealthy ? 'You have room to Stripe’s guidance line.' : 'You are approaching Stripe’s guidance line.'}{' '}
-          We recalculate this the moment a new dispute or fraud report lands.{' '}
-          <span className={s.guideLink}>See the detail</span>
-        </p>
-      </section>
-    </a>
+          <HealthMeter s={s} band={band} vampRatio={vampRatio} meterPct={meterPct} hero />
+          <p className={s.healthCardFoot}>
+            {d.isHealthy ? 'You have room to Stripe’s guidance line.' : 'You are approaching Stripe’s guidance line.'}{' '}
+            We recalculate this the moment a new dispute or fraud report lands.{' '}
+            <span className={s.guideLink}>See the detail</span>
+          </p>
+        </section>
+      </a>
+      {/* Gloss the one piece of jargon once per screen, OUTSIDE the card link so
+          the GlossaryTerm button is never nested inside an anchor. */}
+      <p className={s.healthGloss}>
+        Scored against{' '}
+        <GlossaryTerm term="dispute_rate" className={s.glossInline}>
+          Stripe&rsquo;s 0.75% line
+        </GlossaryTerm>
+        .
+      </p>
+    </div>
   );
 }
 
-// Status badge: icon + text, never color alone. Two-color law: green "Safe" only
-// when healthy; vermilion "At risk" only once over Stripe's line (a real gap);
-// "getting close" is a neutral monitoring state, not green-safe and not vermilion.
+// Status badge: icon + text, never color alone — routed through the shared
+// StatusBadge (the single de-alarm enforcement point). Two-color law: green
+// "Safe" only when healthy; vermilion "At risk" only once over Stripe's line (a
+// real gap); "getting close" is a calm watch state, never green-safe nor vermilion.
 function HealthBadge({ s, band, label }: { s: CssModuleStyles; band: HealthBand; label: string }) {
   if (band === 'at-risk') {
     return (
-      <span className={`${s.healthBadge} ${s.healthBadgeGap}`}>
-        <AlertIcon className={s.healthBadgeIcon} />
-        At risk <span className={s.healthBadgeFine}>· {label}</span>
-      </span>
+      <StatusBadge tone="gap" icon={<AlertIcon />} className={s.healthChip}>
+        At risk · {label}
+      </StatusBadge>
     );
   }
   if (band === 'close') {
     return (
-      <span className={`${s.healthBadge} ${s.healthBadgeNeutral}`}>
-        <InfoCircleIcon className={s.healthBadgeIcon} />
-        Watching <span className={s.healthBadgeFine}>· {label}</span>
-      </span>
+      <StatusBadge tone="watch" icon={<InfoCircleIcon />} className={s.healthChip}>
+        Watching · {label}
+      </StatusBadge>
     );
   }
   return (
-    <span className={s.healthBadge}>
-      <CheckIcon className={s.healthBadgeIcon} />
-      Safe <span className={s.healthBadgeFine}>· {label}</span>
-    </span>
+    <StatusBadge tone="done" icon={<CheckIcon />} className={s.healthChip}>
+      Safe · {label}
+    </StatusBadge>
   );
 }
 
@@ -762,9 +787,12 @@ function RecordSection({
   if (openDisputes.length === 0) {
     return (
       <section>
-        <div className={s.sec}>
-          <span className={s.eyebrow}>The record</span>
-        </div>
+        <SectionBar
+          className={s.barFlush}
+          icon={<ListIcon />}
+          title="The record"
+          note="Every open case, listed the moment it lands"
+        />
         <div className={s.well}>
           <p className={s.wellTitle}>Watching your Stripe account.</p>
           <p>
@@ -779,26 +807,51 @@ function RecordSection({
 
   return (
     <section>
-      <div className={s.sec}>
-        <span className={s.eyebrow}>The record</span>
-        <span className={s.secRight}>
-          <span className={s.sort}>Deadline × readiness</span>
-          <a href="/dashboard/disputes" className={s.vlink}>
-            View all
-          </a>
-        </span>
-      </div>
-      {openDisputes.map((d, i) => (
-        <DocketRow
-          key={d.id}
-          s={s}
-          dispute={d}
-          proof={proofByDispute[d.id] ?? []}
-          primary={i === 0}
+      <div className={s.barRow}>
+        <SectionBar
+          className={s.barFlush}
+          icon={<ListIcon />}
+          title="The record"
+          note="Sorted by deadline, then by how ready each case is"
         />
-      ))}
+        <a href="/dashboard/disputes" className={s.vlink}>
+          View all
+        </a>
+      </div>
+      <div className={s.docketRows}>
+        {openDisputes.map((d, i) => (
+          <DocketRow
+            key={d.id}
+            s={s}
+            dispute={d}
+            proof={proofByDispute[d.id] ?? []}
+            primary={i === 0}
+          />
+        ))}
+      </div>
     </section>
   );
+}
+
+// The status badge for a docket case: status drives the base meaning, the
+// deadline tier escalates it. needs_response on a comfortable runway is a calm
+// "Needs you"; near/over deadline earns the vermilion "Needs you now" gap;
+// under_review is always the calm filed-waiting watch state, never alarm.
+function caseStatus(status: string, tier: DeadlineTier): {
+  tone: 'gap' | 'watch' | 'neutral';
+  icon: ReactNode;
+  label: string;
+} {
+  if (status === 'needs_response') {
+    if (tier === 'urgent') {
+      return { tone: 'gap', icon: <AlertIcon />, label: 'Needs you now' };
+    }
+    return { tone: 'neutral', icon: <InfoCircleIcon />, label: 'Needs you' };
+  }
+  if (status === 'under_review') {
+    return { tone: 'watch', icon: <ClockIcon />, label: 'Filed, waiting' };
+  }
+  return { tone: 'neutral', icon: <InfoCircleIcon />, label: statusLabel(status) };
 }
 
 function DocketRow({
@@ -813,7 +866,8 @@ function DocketRow({
   primary: boolean;
 }) {
   const days = dispute.due_by ? daysUntil(dispute.due_by) : null;
-  const urgent = days !== null && days <= URGENT_DAYS;
+  const tier = deadlineTier(days);
+  const status = caseStatus(dispute.status, tier);
   const actionLabel =
     dispute.status === 'needs_response'
       ? 'Build response'
@@ -822,24 +876,30 @@ function DocketRow({
         : 'View';
 
   return (
-    <div className={s.row}>
-      <div>
-        <div className={s.rReason}>
-          <span className={s.sdot} aria-hidden="true" />
-          {dispute.reason ?? 'Dispute'}
-        </div>
-        <div className={`${s.rMeta} ${s.num}`}>
-          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : 'No charge ID'} ·{' '}
-          {statusLabel(dispute.status)}
+    <div className={primary ? `${s.row} ${s.rowPrimary}` : s.row}>
+      <div className={s.rMain}>
+        <div className={s.rReason}>{dispute.reason ?? 'Dispute'}</div>
+        {/* Primary meta is the founder-relevant fact only: status + amount. The
+            charge ID is demoted behind progressive disclosure. */}
+        <div className={s.rBadgeRow}>
+          <StatusBadge tone={status.tone} icon={status.icon}>
+            {status.label}
+          </StatusBadge>
         </div>
         <ProofRow s={s} proof={proof} />
+        {dispute.processor_charge_id && (
+          <details className={s.idDetails}>
+            <summary className={s.idSummary}>Details</summary>
+            <span className={`${s.idValue} ${s.num}`}>{dispute.processor_charge_id}</span>
+          </details>
+        )}
       </div>
       <div className={s.rRight}>
         <div className={`${s.amt} ${s.num}`}>
           {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
         </div>
         {days !== null && (
-          <div className={`${s.dead} ${urgent ? s.deadUrgent : ''} ${s.num}`}>{deadlineLabel(days)}</div>
+          <div className={`${deadClass(tier)} ${s.num}`}>{deadlineLabel(days)}</div>
         )}
         <a
           href={`/dashboard/disputes/${dispute.id}`}
@@ -862,28 +922,45 @@ function SingleCase({
   proof: string[];
 }) {
   const days = dispute.due_by ? daysUntil(dispute.due_by) : null;
-  const urgent = days !== null && days <= URGENT_DAYS;
+  const tier = deadlineTier(days);
+  const status = caseStatus(dispute.status, tier);
   return (
-    <section>
-      <div className={s.sec}>
-        <span className={s.eyebrow}>The case that needs you</span>
-      </div>
+    <section className={s.caseHero}>
+      <span className={s.caseKicker} aria-hidden="true">
+        The case that needs you
+      </span>
       <div className={s.caserec}>
-        <div>
-          <div className={s.caseLabel}>Action needed</div>
+        <div className={s.caseBody}>
+          <div className={s.caseBadgeRow}>
+            <StatusBadge tone={status.tone} icon={status.icon}>
+              {status.label}
+            </StatusBadge>
+          </div>
           <h3 className={s.caseTitle}>{dispute.reason ?? 'Dispute'}</h3>
-          <div className={`${s.caseMeta} ${s.num}`}>
+          <div className={`${s.caseAmt} ${s.num}`}>
             {dispute.amount != null ? formatAmount(dispute.amount, dispute.currency) : 'No amount'}
-            {dispute.processor_charge_id ? ` · ${truncateChargeId(dispute.processor_charge_id)}` : ''}
           </div>
           <ProofRow s={s} proof={proof} />
+          {dispute.processor_charge_id && (
+            <details className={s.idDetails}>
+              <summary className={s.idSummary}>Details</summary>
+              <span className={`${s.idValue} ${s.num}`}>{dispute.processor_charge_id}</span>
+            </details>
+          )}
         </div>
         <div className={s.caseRight}>
           {days !== null && (
-            <div className={`${s.dead} ${urgent ? s.deadUrgent : ''} ${s.num}`}>{deadlineLabel(days)}</div>
+            <div className={s.caseDeadTile}>
+              <span className={s.caseDeadLbl}>Respond by</span>
+              <span className={`${deadClass(tier)} ${s.caseDeadVal} ${s.num}`}>{deadlineLabel(days)}</span>
+            </div>
           )}
-          <a href={`/dashboard/disputes/${dispute.id}`} className={`${s.btn} ${s.btnSolid} ${s.btnBig}`}>
+          <a
+            href={`/dashboard/disputes/${dispute.id}`}
+            className={`${s.btn} ${s.btnSolid} ${s.btnBig} ${s.caseCta}`}
+          >
             Build your response
+            <ArrowRightIcon className={s.btnIcon} />
           </a>
         </div>
       </div>
@@ -934,9 +1011,8 @@ function PreventLane({
     <div className={s.prevent}>
       <span className={s.preventLabel}>Prevent</span>
       <span className={s.preventText}>
-        {alerts.length} early fraud warning{alerts.length === 1 ? '' : 's'}
-        {alerts[0].processor_charge_id ? ` · ${truncateChargeId(alerts[0].processor_charge_id)}` : ''}.
-        Refunding now may stop a dispute before it counts.
+        {alerts.length} early fraud warning{alerts.length === 1 ? '' : 's'}. Refunding now may stop a
+        dispute before it counts.
       </span>
       <a href="/dashboard/disputes" className={`${s.btn} ${s.btnGhost}`}>
         Review
@@ -951,16 +1027,17 @@ function PreventLane({
 // docket. Reuses the same data + dismiss/action grammar as the rail band.
 
 function PinnedTipBand({ s, tip }: { s: CssModuleStyles; tip: GuidanceItem }) {
+  const isGap = tip.severity === 'gap';
   return (
-    <section className={s.tipBand} aria-labelledby="tip-band-h">
-      <div className={s.tipBandHead}>
-        <span className={s.eyebrow} id="tip-band-h">
-          What Verdact is watching
-        </span>
-      </div>
-      <div className={tip.severity === 'gap' ? `${s.tipCard} ${s.tipCardGap}` : s.tipCard}>
+    <section className={s.tipBand} aria-label="What Verdact is watching">
+      <SectionBar
+        className={s.barFlush}
+        icon={<RouteIcon />}
+        title="What Verdact is watching"
+      />
+      <div className={isGap ? `${s.tipCard} ${s.tipCardGap}` : s.tipCard}>
         <span className={s.tipIcon} aria-hidden="true">
-          {tip.severity === 'gap' ? <AlertIcon /> : <InfoCircleIcon />}
+          {isGap ? <AlertIcon /> : <InfoCircleIcon />}
         </span>
         <div className={s.tipBody}>
           <span className={s.guideStrong}>{tip.text}</span>{' '}
@@ -1001,15 +1078,17 @@ function WatchingCoHero({
   return (
     <aside className={s.watchCard} aria-labelledby="watch-h">
       <div className={s.watchHead}>
-        <span className={s.eyebrow}>Always on</span>
+        <span className={s.watchKicker} aria-hidden="true">
+          Always on
+        </span>
         <h2 className={s.watchTitle} id="watch-h">
           What Verdact is watching
         </h2>
       </div>
       <GuidanceTips s={s} band={band} primers={primers} />
-      <p className={s.guideFoot}>
-        Based on your own data. Verdact advises, you decide. Nothing is filed without you.
-      </p>
+      {/* Advisory line only (X3): the account-safety + "nothing filed without you"
+          reassurance lives once in the standing block + calm-empty anchor. */}
+      <p className={s.guideFoot}>Based on your own data. Verdact advises, you decide.</p>
     </aside>
   );
 }
@@ -1030,13 +1109,14 @@ function GuidanceBand({
   heading?: string;
 }) {
   return (
-    <section className={s.guideSection} aria-labelledby={heading ? 'guide-h' : undefined}>
+    <section className={s.guideSection} aria-label={heading}>
       {heading && (
-        <div className={s.guideHead}>
-          <span className={s.eyebrow} id="guide-h">
-            {heading}
-          </span>
-        </div>
+        <SectionBar
+          className={s.barFlush}
+          icon={<RouteIcon />}
+          title={heading}
+          note="Calm, plain-English signals from your own data"
+        />
       )}
       <GuidanceTips s={s} band={band} primers={primers} />
       <p className={s.guideFoot}>Based on your own data. Verdact advises, you decide. No guarantees.</p>
@@ -1059,37 +1139,64 @@ function GuidanceTips({
     <>
       <div className={s.guide}>
         {band.length === 0 ? (
-          <p className={s.guideItem}>
-            <span className={s.guideStrong}>Nothing needs a change right now.</span> We are watching
-            your rate against Stripe&rsquo;s 0.75% line and your evidence patterns.
-          </p>
+          // Calm zero-state: a verdict-tinted reassurance tile, never an empty void.
+          <div className={s.guideTile}>
+            <span className={`${s.guideTileIcon} ${s.guideTileIconOk}`} aria-hidden="true">
+              <CheckIcon />
+            </span>
+            <p className={s.guideItem}>
+              <span className={s.guideStrong}>Nothing needs a change right now.</span> We are watching
+              your rate against Stripe&rsquo;s 0.75% line and your evidence patterns.
+            </p>
+          </div>
         ) : (
-          band.map((item) => (
-            // A div (not a p) so the dismiss <form> is valid flow content. Urgent
-            // tips (deadline / account-risk) never offer dismiss — they show until
-            // the underlying issue resolves.
-            <div key={item.id} className={s.guideItem}>
-              <span className={s.guideStrong}>{item.text}</span>{' '}
-              {item.actionHref ? (
-                <a href={item.actionHref} className={s.guideLink}>
-                  {item.action}
-                </a>
-              ) : (
-                <span className={s.guideLink}>{item.action}</span>
-              )}
-              {!item.urgent && (
-                <form action={dismissGuidanceAction.bind(null, item.id)} className={s.guideDismissForm}>
-                  <button
-                    type="submit"
-                    className={s.guideDismiss}
-                    aria-label={`Dismiss tip: ${item.text}`}
-                  >
-                    Dismiss
-                  </button>
-                </form>
-              )}
-            </div>
-          ))
+          band.map((item) => {
+            // A genuine gap tip carries the vermilion icon tile; monitoring tips
+            // stay verdict. Urgent tips never offer dismiss — they show until the
+            // underlying issue resolves.
+            const isGap = item.severity === 'gap';
+            return (
+              <div
+                key={item.id}
+                className={isGap ? `${s.guideTile} ${s.guideTileGap}` : s.guideTile}
+              >
+                <span
+                  className={
+                    isGap
+                      ? `${s.guideTileIcon} ${s.guideTileIconGap}`
+                      : `${s.guideTileIcon} ${s.guideTileIconOk}`
+                  }
+                  aria-hidden="true"
+                >
+                  {isGap ? <AlertIcon /> : <InfoCircleIcon />}
+                </span>
+                <div className={s.guideItem}>
+                  <span className={s.guideStrong}>{item.text}</span>{' '}
+                  {item.actionHref ? (
+                    <a href={item.actionHref} className={s.guideLink}>
+                      {item.action}
+                    </a>
+                  ) : (
+                    <span className={s.guideLink}>{item.action}</span>
+                  )}
+                  {!item.urgent && (
+                    <form
+                      action={dismissGuidanceAction.bind(null, item.id)}
+                      className={s.guideDismissForm}
+                    >
+                      <button
+                        type="submit"
+                        className={s.guideDismiss}
+                        aria-label={`Dismiss tip: ${item.text}`}
+                      >
+                        Dismiss
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
       {primers.length > 0 && (
@@ -1110,38 +1217,54 @@ function GuidanceTips({
 function NotConnected({ s }: { s: CssModuleStyles }) {
   return (
     <>
+      {/* Connect Stripe is the gate, not a peer to-do (D7): the connect panel is
+          the dominant action; the checklist below is "what happens next". */}
       <ConnectStripePanel context="dashboard" />
-      <p className={`${s.stand} ${s.standMuted}`}>
-        Once you connect, your standing and open cases appear here.
-      </p>
+
       <section>
-        <div className={s.sec}>
-          <span className={s.eyebrow}>
-            The record <span className={s.sampleTag}>Sample</span>
+        <SectionBar
+          className={s.barFlush}
+          icon={<ListIcon />}
+          title="The record"
+          note="A preview of how your cases will look here"
+        />
+
+        {/* The sample is watermarked unmistakably (D6): EXAMPLE caption + diagonal
+            mark + reduced opacity, so nobody reads the $1,800 as their own. */}
+        <p className={s.exampleCaption}>
+          Example only. Your real cases appear here the moment you connect Stripe.
+        </p>
+        <div className={s.exampleFrame}>
+          <span className={s.exampleMark} aria-hidden="true">
+            EXAMPLE
           </span>
-        </div>
-        <div className={`${s.row} ${s.muted}`}>
-          <div>
-            <div className={s.rReason}>
-              <span className={s.sdot} aria-hidden="true" />
-              Services not rendered
+          <div className={`${s.row} ${s.muted}`}>
+            <span className="sr-only">Example data, not a real case.</span>
+            <div className={s.rMain}>
+              <div className={s.rReason}>Services not rendered</div>
+              <div className={s.rBadgeRow}>
+                <StatusBadge tone="neutral" icon={<InfoCircleIcon />}>
+                  Needs you
+                </StatusBadge>
+              </div>
+              <div className={s.proof}>
+                <span className={s.proofOk}>Delivery</span>
+                <span className={s.proofOk}>Scope</span>
+              </div>
             </div>
-            <div className={`${s.rMeta} ${s.num}`}>ch_0000…0000 · Needs response</div>
-            <div className={s.proof}>
-              <span className={s.proofOk}>Delivery</span>
-              <span className={s.proofOk}>Scope</span>
+            <div className={s.rRight}>
+              <div className={`${s.amt} ${s.num}`}>$1,800</div>
+              <div className={`${s.dead} ${s.num}`}>Due in 8 days</div>
+              <span className={`${s.btn} ${s.btnGhost}`}>Build response</span>
             </div>
           </div>
-          <div className={s.rRight}>
-            <div className={`${s.amt} ${s.num}`}>$1,800</div>
-            <div className={`${s.dead} ${s.num}`}>Due in 8 days</div>
-            <span className={`${s.btn} ${s.btnGhost}`}>Build response</span>
-          </div>
         </div>
+
         <div className={s.checklist}>
-          <div className={`${s.ci} ${s.ciFirst}`}>
+          <p className={s.checklistLead}>What happens next</p>
+          <div className={s.ci}>
             <span className={s.ciBox} aria-hidden="true" />
-            Connect Stripe to find your disputes and account health
+            We find your disputes and account health from Stripe
           </div>
           <div className={s.ci}>
             <span className={s.ciBox} aria-hidden="true" />
@@ -1159,6 +1282,12 @@ function NotConnected({ s }: { s: CssModuleStyles }) {
 
 // ── Derivation helpers ───────────────────────────────────────────────────────
 
+// A two-part standing block (D3): a bold dispute/health LEAD line and a muted
+// SUB qualifier. The strings are unchanged from the single-sentence version —
+// this only splits them on the existing sentence boundary so the lead reads bold
+// and the qualifier reads muted, with this function staying the single source.
+type StandingSentence = { lead: string; sub: string };
+
 function buildStandingSentence({
   healthBand,
   healthConfident,
@@ -1171,7 +1300,7 @@ function buildStandingSentence({
   openCount: number;
   nearestDays: number | null;
   efwCount?: number;
-}): string {
+}): StandingSentence {
   const healthClause =
     !healthConfident || healthBand === 'unknown'
       ? 'Your account health is still calibrating'
@@ -1188,11 +1317,14 @@ function buildStandingSentence({
       efwCount === 1
         ? 'One early fraud warning needs a decision'
         : `${efwCount} early fraud warnings need a decision`;
-    return `${warn}. ${healthClause}.`;
+    return { lead: `${warn}.`, sub: `${healthClause}.` };
   }
 
   if (openCount === 0) {
-    return "You're set up. Nothing needs you right now. Here's what Verdact is watching.";
+    return {
+      lead: "You're set up. Nothing needs you right now.",
+      sub: "Here's what Verdact is watching.",
+    };
   }
 
   if (openCount === 1) {
@@ -1206,7 +1338,7 @@ function buildStandingSentence({
             : nearestDays === 1
               ? 'One case needs you by tomorrow'
               : `One case needs you in ${nearestDays} days`;
-    return `${when}. ${healthClause}.`;
+    return { lead: `${when}.`, sub: `${healthClause}.` };
   }
 
   const nearest =
@@ -1219,7 +1351,7 @@ function buildStandingSentence({
           : nearestDays === 1
             ? `${openCount} cases are open; the nearest is due tomorrow`
             : `${openCount} cases are open; the nearest is due in ${nearestDays} days`;
-  return `${healthClause}. ${nearest}.`;
+  return { lead: `${nearest}.`, sub: `${healthClause}.` };
 }
 
 function summarizeAmount(disputes: Dispute[]): AmountSummary {
@@ -1262,11 +1394,6 @@ function formatAmount(cents: number, currency: string | null): string {
 function formatStripeAccountId(accountId: string): string {
   if (accountId.length <= 12) return accountId;
   return `${accountId.slice(0, 8)}...${accountId.slice(-4)}`;
-}
-
-function truncateChargeId(chargeId: string): string {
-  if (chargeId.length <= 16) return chargeId;
-  return `${chargeId.slice(0, 8)}…${chargeId.slice(-4)}`;
 }
 
 function statusLabel(status: string): string {
