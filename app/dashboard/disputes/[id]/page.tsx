@@ -15,10 +15,10 @@ import { parseEvidenceDraft } from '@/lib/evidence/draft';
 import { WorkbenchShell, type Stage } from './workbench-shell';
 import {
   CaseHomeHeader,
+  WorkbenchReassurance,
   BuildStage,
   ReviewStage,
   FileStage,
-  WorkbenchFocusCard,
   type WorkbenchData,
   type WorkbenchDispute,
   type EvidenceFile,
@@ -274,22 +274,15 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     submitted || isClosed ? 'file' : resolutionPlan === null ? 'review' : 'build';
   const doneState = { build: resolutionPlan === null, review: approved, file: submitted };
   const requireReviewBeforeFile = !submitted && !isClosed;
-  const readinessSummary = `${confirmedCount} of ${totalChecks} items confirmed`;
   const filingScope = `${packet.exhibits.length} ${packet.exhibits.length === 1 ? 'item' : 'items'} will be filed to Stripe`;
-  const stageSummaries: Record<Stage, string> = {
-    build: resolutionPlan ? resolutionPlan.title : 'Your evidence is ready to review',
-    review: 'The full record, exactly as the bank will read it',
-    file: submitted
-      ? 'This record has been filed'
-      : approved
-        ? 'Approved. Take the final step when you are ready'
-        : 'Approve and file when you are ready',
-  };
+  // Genuinely-missing items left to add, for the honest "N to add" spine state.
+  const missingCount = resolutionPlan?.actionableCount ?? 0;
 
   const data: WorkbenchData = {
     record,
     files,
     customerName,
+    customerEmail: pii?.customer_email?.trim() || null,
     reasonProfile: { networkLabel: reasonProfile.networkLabel, shortReason: reasonProfile.shortReason },
     pastDeadline,
     filingScope,
@@ -331,14 +324,14 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   return (
     <AppShell email={user.email} businessName={businessName} active="disputes">
-      <CaseHomeHeader data={data} />
       <WorkbenchShell
         defaultStage={defaultStage}
         doneState={doneState}
         requireReviewBeforeFile={requireReviewBeforeFile}
-        readinessSummary={readinessSummary}
-        stageSummaries={stageSummaries}
-        focusCard={<WorkbenchFocusCard data={data} />}
+        missingCount={missingCount}
+        fileReady={resolutionPlan === null}
+        header={<CaseHomeHeader data={data} />}
+        reassurance={<WorkbenchReassurance data={data} />}
         buildStage={<BuildStage data={data} />}
         reviewStage={<ReviewStage data={data} />}
         fileStage={<FileStage data={data} />}

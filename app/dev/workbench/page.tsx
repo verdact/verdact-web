@@ -9,10 +9,10 @@ import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { WorkbenchShell, type Stage } from '../../dashboard/disputes/[id]/workbench-shell';
 import {
   CaseHomeHeader,
+  WorkbenchReassurance,
   BuildStage,
   ReviewStage,
   FileStage,
-  WorkbenchFocusCard,
   type WorkbenchData,
   type WorkbenchDispute,
   type EvidenceFile,
@@ -69,6 +69,9 @@ export default async function WorkbenchPreview({
 
   const { state } = await searchParams;
   const stage: Stage = state === 'review' ? 'review' : state === 'file' ? 'file' : 'build';
+  // ?state=gap → Build stage WITH a business profile but an open evidence gap, so
+  // the deep "do this next" CTA (the missing-item action) renders.
+  const gapState = state === 'gap';
   const populated = stage !== 'build';
   const approved = stage === 'review' || stage === 'file';
   const submitted = stage === 'file';
@@ -76,7 +79,8 @@ export default async function WorkbenchPreview({
   const files: EvidenceFile[] = populated ? POPULATED_EVIDENCE_FILES : [];
   const narrative = populated ? NARRATIVE : '';
 
-  const profile = populated
+  const profile =
+    populated || gapState
     ? {
         id: 'prof_dev',
         product_description: 'Done-for-you onboarding implementation for B2B SaaS teams.',
@@ -177,10 +181,11 @@ export default async function WorkbenchPreview({
     record,
     files,
     customerName: 'Jordan Lee',
+    customerEmail: 'jordan@northwind.example',
     reasonProfile: { networkLabel: reasonProfile.networkLabel, shortReason: reasonProfile.shortReason },
     pastDeadline: false,
     filingScope: `${packet.exhibits.length} ${packet.exhibits.length === 1 ? 'item' : 'items'} will be filed to Stripe`,
-    hasProfile: populated,
+    hasProfile: populated || gapState,
     slackConnected: false,
     packet,
     readiness,
@@ -223,26 +228,17 @@ export default async function WorkbenchPreview({
 
   const defaultStage: Stage = submitted ? 'file' : resolutionPlan === null ? 'review' : 'build';
   const doneState = { build: resolutionPlan === null, review: approved, file: submitted };
-  const stageSummaries: Record<Stage, string> = {
-    build: resolutionPlan ? resolutionPlan.title : 'Your evidence is ready to review',
-    review: 'The full record, exactly as the bank will read it',
-    file: submitted
-      ? 'This record has been filed'
-      : approved
-        ? 'Approved. Take the final step when you are ready'
-        : 'Approve and file when you are ready',
-  };
 
   return (
     <AppShell email="founder@acmesoftware.com" businessName="Acme Software" active="disputes">
-      <CaseHomeHeader data={data} />
       <WorkbenchShell
         defaultStage={defaultStage}
         doneState={doneState}
         requireReviewBeforeFile={!submitted}
-        readinessSummary={`${confirmedCount} of ${totalChecks} items confirmed`}
-        stageSummaries={stageSummaries}
-        focusCard={<WorkbenchFocusCard data={data} />}
+        missingCount={resolutionPlan?.actionableCount ?? 0}
+        fileReady={resolutionPlan === null}
+        header={<CaseHomeHeader data={data} />}
+        reassurance={<WorkbenchReassurance data={data} />}
         buildStage={<BuildStage data={data} />}
         reviewStage={<ReviewStage data={data} />}
         fileStage={<FileStage data={data} />}
