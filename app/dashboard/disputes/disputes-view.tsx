@@ -1,11 +1,34 @@
 import { AppShell } from '../../_components/app-chrome';
 import { ConnectStripePanel } from '../../_components/connect-stripe-panel';
+import { SectionBar } from '../../_components/ui/section-bar';
+import { StatusBadge, type StatusTone } from '../../_components/ui/status-badge';
+import { ReassureCard } from '../../_components/ui/reassure-card';
+import {
+  AlertIcon,
+  ArrowRightIcon,
+  CheckIcon,
+  ClockIcon,
+  EyeIcon,
+  InfoCircleIcon,
+  ListIcon,
+  ShieldIcon,
+} from '../dash-icons';
+import { deadlineTier, type DeadlineTier } from '../signals';
 import { type Dispute } from '@/lib/dal';
 import s from './disputes.module.css';
 
 // Presentational disputes queue/index. Reuses the dashboard's row treatment and
 // helpers, adds filter tabs (needs action / open / all) and a proper empty
 // state. Data wrapper lives in page.tsx; a dev-only route renders this directly.
+//
+// Redesign 2026-06-27 (Claude, design + build lane): brought to the workbench
+// gold standard. De-alarm law — status colour is driven by deadline RUNWAY, not
+// status alone, so a case with days of runway never reads as alarming as one due
+// in hours. Vermilion (--gap) appears only for a genuinely urgent/over deadline
+// or a real merchant-closable gap; everything else routes through the calm
+// --watch token. Status is ALWAYS icon + text via the shared StatusBadge.
+// Money / submission / entitlement logic is untouched — every change here is
+// type, token, copy, layout, status-tone reassignment, or presentation only.
 
 export type DisputeFilter = 'needs-action' | 'open' | 'all';
 
@@ -25,24 +48,41 @@ export type DisputesViewProps = {
 
 const OPEN_STATUSES = new Set(['needs_response', 'under_review', 'submitted']);
 
-// Statuses where a "Worth responding" readiness chip is meaningful: a response
-// can still be built. Closed/resolved cases never carry the chip.
-const RESPONDABLE_STATUSES = new Set(['needs_response', 'under_review']);
-
 // The core proof pillars an evidence record leans on. The chip grades these
-// present (verdict green) vs missing (vermilion "Gap"). This is evidence
+// present (verdict green) vs missing (vermilion "still need"). This is evidence
 // completeness, not a win prediction: strictly no odds, percentages, or
 // guarantees. Reason-code-specific requirements are a later delta (C-F1).
 const REQUIRED_PILLARS = ['Delivery', 'Comms', 'Policy'] as const;
+type Pillar = (typeof REQUIRED_PILLARS)[number];
 
-// Under 48 hours to respond is the only window that earns the vermilion
-// deadline accent. Anything further out stays neutral.
-const URGENT_HOURS = 48;
+// Plain-English gloss for each internal pillar name (X2 / glossary parity). A
+// frightened founder does not know what "Comms" is, so the gap chip speaks in
+// words they can act on. Kept in sync with lib/glossary.ts in spirit.
+const PILLAR_PLAIN: Record<Pillar, string> = {
+  Delivery: 'proof you delivered',
+  Comms: 'messages with the customer',
+  Policy: 'your refund and terms',
+};
 
-const FILTERS: Array<{ key: DisputeFilter; label: string }> = [
-  { key: 'needs-action', label: 'Needs action' },
-  { key: 'open', label: 'Open' },
-  { key: 'all', label: 'All' },
+const FILTERS: Array<{ key: DisputeFilter; label: string; aria: string; hint: string }> = [
+  {
+    key: 'needs-action',
+    label: 'Needs action',
+    aria: 'Needs action: disputes waiting on your response',
+    hint: 'Waiting on your response',
+  },
+  {
+    key: 'open',
+    label: 'Open',
+    aria: 'Open: disputes still in flight (needs response, under review, or submitted)',
+    hint: 'Still in flight',
+  },
+  {
+    key: 'all',
+    label: 'All',
+    aria: 'All disputes, including closed',
+    hint: 'Everything, including closed',
+  },
 ];
 
 export function isDisputeFilter(value: string | undefined): value is DisputeFilter {
@@ -63,16 +103,18 @@ export function DisputesView({
     all: disputes.length,
   };
 
+  const needsAction = counts['needs-action'];
+  const triage = triageHeadline(needsAction);
   const visible = sortByDeadline(filterDisputes(disputes, filter));
 
   return (
     <AppShell email={email} businessName={businessName} active="disputes">
       <div className={s.page}>
         <header className={s.header}>
+          <p className={s.kicker}>Your disputes</p>
           <h1 className={s.title}>Disputes</h1>
-          <p className={s.sub}>
-            Every dispute Verdact is watching, with the strongest cases and nearest deadlines first.
-          </p>
+          <p className={s.triage}>{triage.headline}</p>
+          <p className={s.sub}>{triage.sub}</p>
         </header>
 
         {!stripeConnected ? (
@@ -86,6 +128,8 @@ export function DisputesView({
                   href={`/dashboard/disputes?filter=${tab.key}`}
                   className={`${s.tab} ${filter === tab.key ? s.tabActive : ''}`}
                   aria-current={filter === tab.key ? 'page' : undefined}
+                  aria-label={`${tab.aria}. ${counts[tab.key]} ${counts[tab.key] === 1 ? 'dispute' : 'disputes'}.`}
+                  title={tab.hint}
                 >
                   {tab.label}
                   <span className={s.tabCount}>{counts[tab.key]}</span>
@@ -96,11 +140,19 @@ export function DisputesView({
             {visible.length === 0 ? (
               <EmptyState filter={filter} hasAny={disputes.length > 0} />
             ) : (
-              <div className={s.list}>
-                {visible.map((d) => (
-                  <DisputeRow key={d.id} dispute={d} proof={proofByDispute[d.id] ?? []} />
-                ))}
-              </div>
+              <>
+                <SectionBar
+                  icon={<ListIcon />}
+                  title={listSectionTitle(filter)}
+                  note="Nearest deadline first. Take them one at a time."
+                  className={s.listBar}
+                />
+                <div className={s.list}>
+                  {visible.map((d) => (
+                    <DisputeRow key={d.id} dispute={d} proof={proofByDispute[d.id] ?? []} />
+                  ))}
+                </div>
+              </>
             )}
           </>
         )}
@@ -113,29 +165,39 @@ export function DisputesView({
 
 function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
   const isOpen = OPEN_STATUSES.has(dispute.status);
-  const isRespondable = RESPONDABLE_STATUSES.has(dispute.status);
-  const hours = dispute.due_by ? hoursUntil(dispute.due_by) : null;
-  const isUrgent = isOpen && hours !== null && hours < URGENT_HOURS;
-  const actionLabel =
-    dispute.status === 'needs_response'
-      ? 'Build response'
-      : dispute.status === 'under_review'
-        ? 'Review'
-        : 'View';
+  // The readiness chip is only meaningful while a response can still be started,
+  // i.e. the case is in "needs response". Once filed (under_review/submitted) or
+  // closed, "still need…" would be meaningless and slightly alarming, so it is
+  // hidden post-submission (DI1a).
+  const showReadiness = dispute.status === 'needs_response';
+  const hours = isOpen && dispute.due_by ? hoursUntil(dispute.due_by) : null;
+  const tier = isOpen && dispute.due_by ? deadlineTier(daysFromHours(hours)) : 'none';
+  const status = statusPresentation(dispute.status, tier);
+  const action = actionPresentation(dispute.status);
+  // A genuinely urgent/over deadline is the ONE place vermilion appears on a row
+  // (left accent rail). A comfortable needs-response row gets a calm verdict rail
+  // so "act now" and "you have time" read distinct without alarm.
+  const railClass =
+    tier === 'urgent'
+      ? s.rowUrgent
+      : dispute.status === 'needs_response'
+        ? s.rowOpen
+        : '';
 
   return (
-    <a href={`/dashboard/disputes/${dispute.id}`} className={s.row}>
+    <a href={`/dashboard/disputes/${dispute.id}`} className={`${s.row} ${railClass}`}>
       <div className={s.rowStatus}>
-        <span className={`${s.statusDot} ${dotClass(dispute.status)}`} aria-hidden="true" />
-        <span className={s.rowStatusLabel}>{statusLabel(dispute.status)}</span>
+        <StatusBadge tone={status.tone} icon={status.icon}>
+          {status.label}
+        </StatusBadge>
       </div>
 
       <div className={s.rowInfo}>
         <span className={s.rowReason}>{dispute.reason ?? 'Dispute'}</span>
-        <span className={s.rowId}>
-          {dispute.processor_charge_id ? truncateChargeId(dispute.processor_charge_id) : 'No charge ID'}
-        </span>
-        {isRespondable && <ReadinessChip proof={proof} />}
+        {dispute.network ? (
+          <span className={s.rowNetwork}>{dispute.network}</span>
+        ) : null}
+        {showReadiness && <ReadinessChip proof={proof} />}
       </div>
 
       <span className={s.rowAmount}>
@@ -143,94 +205,176 @@ function DisputeRow({ dispute, proof }: { dispute: Dispute; proof: string[] }) {
       </span>
 
       {isOpen && dispute.due_by ? (
-        <span
-          className={`${s.rowDeadline} ${isUrgent ? s.rowDeadlineUrgent : ''}`}
-          aria-label={deadlineAria(dispute.due_by, hours)}
-        >
-          <ClockIcon />
-          <span>{deadlineLabel(dispute.due_by, hours)}</span>
-        </span>
+        <Deadline dueBy={dispute.due_by} hours={hours} tier={tier} />
       ) : (
-        <span className={s.rowDeadline}>{closedDeadlineLabel(dispute.status)}</span>
+        <span className={s.rowSettled}>{closedDeadlineLabel(dispute.status)}</span>
       )}
 
-      <span className={s.rowAction}>{actionLabel}</span>
+      <span className={`${s.rowAction} ${action.className}`}>
+        {action.label}
+        {action.forward ? <ArrowRightIcon className={s.rowActionIcon} /> : null}
+      </span>
     </a>
   );
 }
 
-// Honest, hedged evidence-strength chip. Grades the present proof pillars
-// (verdict green, icon + text) against the missing required ones (vermilion
-// "Gap"). This is evidence completeness, not a win prediction: strictly no
+// Live deadline cell. Days-left is rendered as a small display figure (the
+// founder's "how much time do I have" at a glance), routed through a three-step
+// gradient (comfortable → neutral, soon → amber warning, urgent → vermilion).
+// The colour never carries meaning the text omits.
+function Deadline({
+  dueBy,
+  hours,
+  tier,
+}: {
+  dueBy: string;
+  hours: number | null;
+  tier: DeadlineTier;
+}) {
+  const tierClass =
+    tier === 'urgent' ? s.deadlineUrgent : tier === 'soon' ? s.deadlineSoon : '';
+  const figure = deadlineFigure(hours);
+
+  return (
+    <span
+      className={`${s.rowDeadline} ${tierClass}`}
+      aria-label={deadlineAria(dueBy, hours)}
+    >
+      <ClockIcon className={s.deadlineIcon} />
+      <span className={s.deadlineFig}>
+        <span className={s.deadlineNum}>{figure.lead}</span>
+        <span className={s.deadlineCap}>{figure.caption(formatDueDate(dueBy))}</span>
+      </span>
+    </span>
+  );
+}
+
+// Honest, hedged evidence-strength chip — renders only for needs_response cases
+// (DI1a). Grades present proof pillars (verdict green) against missing required
+// ones. Plain English: pillar names are glossed to words the founder can act on
+// (DI1c). This is evidence completeness, not a win prediction: strictly no
 // percentages, no odds, no "you'll win", no guarantee.
 function ReadinessChip({ proof }: { proof: string[] }) {
   const present = new Set(proof);
   const missing = REQUIRED_PILLARS.filter((p) => !present.has(p));
 
+  // Not started yet: nothing is missing-and-closable, the founder simply has not
+  // begun. Calm --watch, not vermilion.
   if (proof.length === 0) {
     return (
-      <span className={`${s.chip} ${s.chipGap}`}>
-        <GapIcon />
-        <span>Worth responding: add your proof to start</span>
-      </span>
+      <StatusBadge tone="watch" icon={<AlertIcon />} className={s.readyChip}>
+        Add your proof to start your response
+      </StatusBadge>
     );
   }
 
+  // Required proof present: forward / safe.
   if (missing.length === 0) {
     return (
-      <span className={`${s.chip} ${s.chipReady}`}>
-        <CheckIcon />
-        <span>Worth responding: your required proof is on file</span>
-      </span>
+      <StatusBadge tone="done" icon={<CheckIcon />} className={s.readyChip}>
+        Your key proof is on file
+      </StatusBadge>
     );
   }
 
+  // A genuine, merchant-closable gap: vermilion is earned here.
   return (
-    <span className={`${s.chip} ${s.chipGap}`}>
-      <GapIcon />
-      <span>Worth responding: gap in {formatList(missing)}</span>
-    </span>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg className={s.deadlineIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg className={s.chipIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  );
-}
-
-function GapIcon() {
-  return (
-    <svg className={s.chipIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
-      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-    </svg>
+    <StatusBadge tone="gap" icon={<AlertIcon />} className={s.readyChip}>
+      Still need: {formatList(missing.map((p) => PILLAR_PLAIN[p]))}
+    </StatusBadge>
   );
 }
 
 function EmptyState({ filter, hasAny }: { filter: DisputeFilter; hasAny: boolean }) {
   const copy = emptyCopy(filter, hasAny);
   return (
-    <div className={s.empty}>
-      <p className={s.emptyTitle}>{copy.title}</p>
-      <p className={s.emptyText}>{copy.text}</p>
+    <div role="status" className={s.emptyWrap}>
+      <ReassureCard icon={copy.icon} title={copy.title} className={s.empty}>
+        {copy.text}
+      </ReassureCard>
     </div>
   );
 }
 
+// ── Presentation logic (pure, presentation only) ────────────────────────────
+
+interface StatusPresentation {
+  tone: StatusTone;
+  icon: React.ReactNode;
+  label: string;
+}
+
+// The de-alarm core: status tone is driven by deadline RUNWAY, not status alone.
+// A needs_response case with comfortable runway is calm --watch; only a genuinely
+// urgent/over deadline turns it vermilion. Submitted/under-review read "in
+// motion, in our hands" (watch). Won is forward/safe. Closed states are inert.
+function statusPresentation(status: string, tier: DeadlineTier): StatusPresentation {
+  switch (status) {
+    case 'needs_response':
+      return tier === 'urgent'
+        ? { tone: 'gap', icon: <AlertIcon />, label: 'Needs response' }
+        : { tone: 'watch', icon: <ClockIcon />, label: 'Needs response' };
+    case 'under_review':
+      return { tone: 'watch', icon: <EyeIcon />, label: 'Under review' };
+    case 'submitted':
+      return { tone: 'watch', icon: <EyeIcon />, label: 'Filed' };
+    case 'won':
+      return { tone: 'done', icon: <CheckIcon />, label: 'Won' };
+    case 'lost':
+      return { tone: 'neutral', icon: <InfoCircleIcon />, label: 'Lost' };
+    case 'warning_closed':
+      return { tone: 'neutral', icon: <InfoCircleIcon />, label: 'Closed' };
+    default:
+      return { tone: 'neutral', icon: <InfoCircleIcon />, label: statusLabel(status) };
+  }
+}
+
+interface ActionPresentation {
+  label: string;
+  className: string;
+  forward: boolean;
+}
+
+// Tier the row action by state (DI5): needs_response is the one primary CTA;
+// under_review is a quiet secondary; closed states are a de-emphasized "View" so
+// a settled case never shouts the same as an open one. These are presentational
+// <span>s — the row link itself carries the navigation (no button-in-link).
+function actionPresentation(status: string): ActionPresentation {
+  if (status === 'needs_response') {
+    return { label: 'Build response', className: s.actionPrimary, forward: true };
+  }
+  if (status === 'under_review') {
+    return { label: 'Review', className: s.actionSecondary, forward: false };
+  }
+  return { label: 'View', className: s.actionQuiet, forward: false };
+}
+
 // ── Pure helpers ─────────────────────────────────────────────────────────────
+
+function triageHeadline(needsAction: number): { headline: string; sub: string } {
+  if (needsAction === 0) {
+    return {
+      headline: 'Nothing needs you right now.',
+      sub: 'You are caught up. Verdact is watching your account and will surface anything new here.',
+    };
+  }
+  if (needsAction === 1) {
+    return {
+      headline: 'One dispute needs your response.',
+      sub: 'Everything else is being watched. Start with the one below.',
+    };
+  }
+  return {
+    headline: `${needsAction} disputes need your response.`,
+    sub: 'The nearest deadline is first. Take them one at a time.',
+  };
+}
+
+function listSectionTitle(filter: DisputeFilter): string {
+  if (filter === 'needs-action') return 'Waiting on you';
+  if (filter === 'open') return 'In flight';
+  return 'All disputes';
+}
 
 function filterDisputes(disputes: Dispute[], filter: DisputeFilter): Dispute[] {
   if (filter === 'needs-action') return disputes.filter((d) => d.status === 'needs_response');
@@ -247,38 +391,43 @@ function sortByDeadline(disputes: Dispute[]): Dispute[] {
   });
 }
 
-function emptyCopy(filter: DisputeFilter, hasAny: boolean): { title: string; text: string } {
+function emptyCopy(
+  filter: DisputeFilter,
+  hasAny: boolean,
+): { title: string; text: string; icon: React.ReactNode } {
   if (filter === 'needs-action') {
     return {
       title: 'Nothing needs you right now.',
-      text: 'No dispute is waiting on a response. Verdact will surface new ones here the moment they arrive.',
+      text: 'No dispute is waiting on a response. Verdact will surface a new one here the moment it arrives, with its deadline.',
+      icon: <CheckIcon />,
     };
   }
   if (filter === 'open') {
     return {
       title: 'No open disputes.',
-      text: 'Nothing is currently in flight. Verdact keeps watching and will list new disputes as they open.',
+      text: 'Nothing is in flight. Verdact keeps watching and will list new disputes as they open.',
+      icon: <EyeIcon />,
+    };
+  }
+  if (hasAny) {
+    return {
+      title: 'No disputes match this view.',
+      text: 'Try another filter above.',
+      icon: <InfoCircleIcon />,
     };
   }
   return {
-    title: hasAny ? 'No disputes match this view.' : "You're set up. No disputes yet.",
-    text: hasAny
-      ? 'Try another filter above.'
-      : 'Verdact is watching your account. New disputes and early fraud warnings will appear here.',
+    title: "You're set up. No disputes yet.",
+    text: 'Verdact is watching your account. New disputes and early fraud warnings will appear here. One dispute will not suspend your Stripe account, so there is nothing to fear.',
+    icon: <ShieldIcon />,
   };
-}
-
-function dotClass(status: string): string {
-  if (status === 'needs_response') return s.statusDotAtRisk;
-  if (status === 'won') return s.statusDotHealthy;
-  return s.statusDotNeutral;
 }
 
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
     needs_response: 'Needs response',
     under_review: 'Under review',
-    submitted: 'Submitted',
+    submitted: 'Filed',
     won: 'Won',
     lost: 'Lost',
     warning_closed: 'Closed',
@@ -291,37 +440,61 @@ function hoursUntil(dueBy: string): number {
   return Math.floor(diff / (1000 * 60 * 60));
 }
 
-// "Respond by Jun 24, 4 days left". When under a day, the lead drops to hours
-// left so the urgency reads honestly; when overdue it states the date passed.
-function deadlineLabel(dueBy: string, hours: number | null): string {
-  const by = formatDueDate(dueBy);
-  if (hours === null) return `Respond by ${by}`;
-  if (hours < 0) return `Respond by ${by}, deadline passed`;
-  if (hours < 1) return `Respond by ${by}, under an hour left`;
+// Whole days left, for the shared deadlineTier() thresholds. Rounds toward the
+// nearer day so a deadline 47 hours out reads as "2 days" pressure, not 1.
+function daysFromHours(hours: number | null): number | null {
+  if (hours === null) return null;
+  return Math.ceil(hours / 24);
+}
+
+// The display figure for the deadline cell: a big lead (days/hours number or a
+// short word) plus a muted caption with the date. Honest sub-day language is
+// preserved; it is just routed through the gradient colour at the call site.
+function deadlineFigure(hours: number | null): {
+  lead: string;
+  caption: (by: string) => string;
+} {
+  if (hours === null) {
+    return { lead: '—', caption: (by) => `Respond by ${by}` };
+  }
+  if (hours < 0) {
+    return { lead: 'Past', caption: (by) => `Respond by ${by}, deadline passed` };
+  }
+  if (hours < 1) {
+    return { lead: '<1h', caption: (by) => `Respond by ${by}, under an hour left` };
+  }
   if (hours < 24) {
     const h = Math.floor(hours);
-    return `Respond by ${by}, ${h} hour${h === 1 ? '' : 's'} left`;
+    return { lead: `${h}h`, caption: (by) => `Respond by ${by}, ${h} hour${h === 1 ? '' : 's'} left` };
   }
   const days = Math.floor(hours / 24);
-  return `Respond by ${by}, ${days} day${days === 1 ? '' : 's'} left`;
+  return { lead: `${days}d`, caption: (by) => `Respond by ${by}, ${days} day${days === 1 ? '' : 's'} left` };
+}
+
+// "Respond by Jun 24, 4 days left" — the full plain sentence for the aria-label.
+function deadlineLabel(dueBy: string, hours: number | null): string {
+  return deadlineFigure(hours).caption(formatDueDate(dueBy));
 }
 
 function deadlineAria(dueBy: string, hours: number | null): string {
   return `Response deadline: ${deadlineLabel(dueBy, hours)}`;
 }
 
-// What the deadline cell shows once a case is closed (no live countdown).
+// What the deadline cell shows once a case is settled (no live countdown). Quiet
+// mono tags so a settled row never competes with a live deadline (DI3).
 function closedDeadlineLabel(status: string): string {
-  if (status === 'submitted') return 'Submitted';
-  if (status === 'won' || status === 'lost' || status === 'warning_closed') return 'Closed';
-  return 'None';
+  if (status === 'submitted') return 'Filed';
+  if (status === 'won') return 'Won';
+  if (status === 'lost' || status === 'warning_closed') return 'Closed';
+  return 'No deadline';
 }
 
 function formatDueDate(dueBy: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(dueBy));
 }
 
-// "Delivery, Comms and Policy" — Oxford-free join for the gap chip copy.
+// "proof you delivered and your refund and terms" — Oxford-free join for the
+// gap chip copy.
 function formatList(items: readonly string[]): string {
   if (items.length === 0) return '';
   if (items.length === 1) return items[0];
@@ -336,9 +509,4 @@ function formatAmount(cents: number, currency: string | null): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(cents / 100);
-}
-
-function truncateChargeId(chargeId: string): string {
-  if (chargeId.length <= 16) return chargeId;
-  return `${chargeId.slice(0, 8)}…${chargeId.slice(-4)}`;
 }

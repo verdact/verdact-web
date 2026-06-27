@@ -1,9 +1,12 @@
 /* ─── Customers — per-customer evidence view (R8) — VERDICT redesign dialect ──
-   Groups disputes by customer. "Needs your call" (doubtful merges) is a neutral
-   card with a vermilion "Your call" pill; auto-linked groups carry an undo;
-   repeat-offender groups first. v2 tokens only, so dark mode is automatic
-   inside .app-shell. Restyle of the prior R8 view — every merge/split form
-   class is preserved so the server-action wiring is untouched.
+   Groups disputes by customer, brought up to the Evidence Workbench gold
+   standard (workbench-shell.module.css): single-typeface scale contrast
+   (display numerals vs mono eyebrows), layered porcelain depth (elev-1 / 2 /
+   pop), section bars, and the calm de-alarm law. "Needs your call" (doubtful
+   links) is the page's hero decision surface; auto-linked groups carry an undo;
+   repeat customers sort first and earn elevation. v2 tokens only, so dark mode
+   is automatic inside .app-shell. Every merge/split form class is preserved so
+   the server-action wiring is untouched.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
@@ -17,130 +20,252 @@
 
 /* ── Page intro ─────────────────────────────────────────────────── */
 
-.header { display: flex; flex-direction: column; gap: 4px; }
+.header { display: flex; flex-direction: column; gap: 0; padding-bottom: var(--space-5); position: relative; }
+
+.header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--verdict), var(--mint) 60%, transparent);
+  border-radius: 2px;
+  opacity: 0.85;
+}
 
 .eyebrow {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 0;
+  color: var(--verdict);
+  margin: 0 0 0.85rem;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: var(--verdict);
+  display: block;
+  border-radius: 2px;
 }
 
 .title {
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.5vw, 2.6rem);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
   margin: 0;
 }
 
 .lead {
-  font-size: 15px;
+  font-size: 0.95rem;
   color: var(--ink-2);
-  line-height: 1.55;
-  margin: 0;
-  max-width: 62ch;
+  line-height: 1.6;
+  margin: 1rem 0 0;
+  max-width: 64ch;
 }
 
-/* ── Section label (heading + caption) ──────────────────────────── */
+.lead b { color: var(--ink); font-weight: 700; }
 
-.sectionLabel {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-4);
-}
+/* ── Section bar spacing override ───────────────────────────────────
+   The shared <SectionBar> primitive (section-bar.module.css) carries the
+   workbench icon-tile + mono-eyebrow + note treatment; this class only tunes
+   the margin below it on this surface. */
+.sectionBar { margin: 0 0 1rem; }
 
-.sectionHead {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-
-.sectionCaption {
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
+/* ── Repeat-customer heads-up (folded under YOUR CUSTOMERS bar) ──── */
 
 .repeatBanner {
-  margin: 0;
-  padding: 12px 16px;
-  font-size: 13.5px;
-  color: var(--ink);
-  background: var(--verdict-tint);
-  border: 1px solid var(--mint);
-  border-radius: var(--radius-input);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: 0.85rem 1.1rem;
+  color: var(--ink-2);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elev-1);
+  line-height: 1.45;
 }
 
-.repeatBanner strong { color: var(--verdict-deep); }
+.repeatCount {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--ink);
+  font-variant-numeric: lining-nums;
+  flex: 0 0 auto;
+}
+
+.repeatText { font-size: 0.86rem; }
+.repeatText svg { width: 0.95rem; height: 0.95rem; color: var(--ink-3); vertical-align: -2px; margin-right: 0.35rem; }
 
 /* ── List + customer cards ──────────────────────────────────────── */
 
 .list { display: flex; flex-direction: column; gap: var(--space-4); }
 
 .card {
+  position: relative;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   background: var(--panel);
   box-shadow: var(--shadow-elev-1);
   padding: var(--space-5);
+  transition:
+    transform var(--d-normal) var(--ease),
+    box-shadow var(--d-normal) var(--ease),
+    border-color var(--d-normal) var(--ease);
 }
 
-.cardRepeat { border-left: 4px solid var(--verdict); }
+.card:hover { box-shadow: var(--shadow-elev-2); border-color: var(--edge-green); }
+
+/* repeat customers earn elevation + a tinted radial wash + verdict edge */
+.cardRepeat {
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 55%),
+    var(--panel);
+  border-color: var(--edge-green);
+  box-shadow: var(--shadow-elev-2);
+}
+
+.cardRepeat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--verdict), var(--verdict-press));
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
 
 .custHead {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 
-.cardIdent { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.cardName { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
-.cardEmail { font-size: 13px; color: var(--ink-2); }
+.cardIdent { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.repeatEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verdict);
+}
+
+.repeatEyebrow svg { width: 0.85rem; height: 0.85rem; }
+
+.cardName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.cardEmail { font-size: 0.8rem; color: var(--ink-2); }
+
+/* display-figure block (count + total) — the scannable hero of the card */
+.cardFigures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.figCount {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--ink);
+  font-variant-numeric: lining-nums;
+}
+
+.figCountUnit {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-top: 0.2rem;
+}
+
+.figTotal {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.35rem;
+}
 
 .cardMeta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 
-/* Auto-linked tag (verdict = connected/verified) */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--verdict-deep);
-  background: var(--verdict-tint);
-  border: 1px solid var(--mint);
-  border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  white-space: nowrap;
+/* Auto-linked card chrome (a calmer "done" key) */
+.autoCard {
+  position: relative;
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--verdict) 3%, transparent), transparent 55%),
+    var(--panel);
+  box-shadow: var(--shadow-elev-1);
+  padding: var(--space-5);
 }
 
-.tag svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-.repeatPill {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--verdict-deep);
-  background: var(--verdict-tint);
-  border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  white-space: nowrap;
+.autoCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--verdict) 70%, var(--mint)), var(--verdict));
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+  opacity: 0.85;
 }
 
-.cardTotal {
-  font-size: 12.5px;
+.autoReason {
+  font-size: 0.84rem;
   color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-  margin: var(--space-2) 0 0;
+  line-height: 1.5;
+  margin: var(--space-3) 0 0;
 }
+
+.undoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.undoLead { font-size: 0.8rem; color: var(--ink-3); }
 
 /* ── Dispute rows inside a card ─────────────────────────────────── */
 
@@ -171,49 +296,37 @@
 .disputeRow:hover { background: var(--panel-wash); }
 
 .disputeWhy { min-width: 0; display: grid; gap: 3px; }
-.disputeReason { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.disputeMeta { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.disputeAmount { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
-
-/* status = icon-equivalent dot + text label, never color alone */
-.statusLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-
-.statusLabelGap { color: var(--gap-text); }
-.statusLabelWon { color: var(--verdict-press); }
-
-.statusDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.statusDotHealthy { background: var(--verdict); }
-.statusDotGap { background: var(--gap); }
-.statusDotNeutral { background: var(--ink-3); }
+.disputeReason { font-size: 0.875rem; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disputeMeta { font-size: 0.78rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disputeAmount { font-size: 0.95rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
 
 .guidanceFoot {
   margin: var(--space-5) 0 0;
-  font-size: 12.5px;
+  font-size: 0.8rem;
   color: var(--ink-2);
-  line-height: 1.5;
+  line-height: 1.55;
   max-width: 70ch;
 }
 
 /* ── Unlinked section ───────────────────────────────────────────── */
 
-.unlinkedSection { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4); }
-.unlinkedHead { font-size: 15px; font-weight: 700; color: var(--ink); margin: 0; }
-.unlinkedSub { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 60ch; }
+.unlinkedSection { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.unlinkedList {
+  border-radius: var(--radius-md);
+  background: var(--panel-wash);
+  padding: var(--space-3);
+}
 
 /* ── Empty ──────────────────────────────────────────────────────── */
 
 .empty {
   border: 1px dashed var(--rule-strong);
   border-radius: var(--radius-card);
-  background: var(--panel-wash);
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 60%),
+    var(--panel-wash);
+  box-shadow: var(--shadow-elev-1);
   padding: var(--space-10) var(--space-6);
   text-align: center;
 }
@@ -221,33 +334,64 @@
 .emptyIcon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 3rem;
+  height: 3rem;
   margin: 0 auto var(--space-4);
-  border-radius: 50%;
-  background: var(--panel);
-  color: var(--ink-3);
-  box-shadow: var(--ring);
+  border-radius: var(--radius-input);
+  background: var(--verdict-tint);
+  color: var(--verdict);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--verdict) 12%, transparent);
 }
 
-.emptyIcon svg { width: 22px; height: 22px; }
+.emptyIcon svg { width: 1.5rem; height: 1.5rem; }
 
-.emptyTitle { font-size: 15px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-.emptyText { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin: 0 auto; max-width: 52ch; }
+.emptyEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0 0 0.5rem;
+}
 
-/* ── "Needs your call" — doubtful merges (suggest-and-confirm) ──────
-   Neutral card: the decision is a merchant-closable gap, so the pill is
-   vermilion ("Your call"); the card body itself stays neutral. */
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.emptyText { font-size: 0.86rem; color: var(--ink-2); line-height: 1.55; margin: 0 auto; max-width: 54ch; }
+
+/* ── "Needs your call" — the hero decision surface ──────────────────
+   Promoted to elev-pop with a verdict edge + faint top-left wash. The
+   decision is calm and reversible, so its status chip is --watch (never
+   vermilion). One stage-active style, reused per card. */
 
 .suggestCard {
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-card);
-  background: var(--panel);
-  box-shadow: var(--shadow-elev-1);
-  padding: var(--space-5);
+  position: relative;
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 55%),
+    var(--panel);
+  box-shadow: var(--elev-pop);
+  padding: clamp(1.25rem, 3vw, 1.75rem);
 }
 
 .suggestCard + .suggestCard { margin-top: var(--space-4); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .suggestCard { animation: cuStepIn var(--duration-slow) var(--ease) both; }
+}
+
+@keyframes cuStepIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
 
 .suggestCardHead {
   display: flex;
@@ -258,25 +402,12 @@
   margin-bottom: var(--space-4);
 }
 
-.suggestTitle { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
-.suggestReason { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 6px 0 0; max-width: 56ch; }
+.suggestTitle { font-size: 1.05rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; line-height: 1.25; }
 
-/* vermilion "Your call" pill — a merchant-closable decision */
-.gapPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--gap-text);
-  background: var(--gap-tint);
-  border: 1px solid var(--gap);
-  border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  white-space: nowrap;
-}
-
-.gapPillDot { width: 7px; height: 7px; border-radius: 50%; background: var(--gap); flex-shrink: 0; }
+/* C3 reassurance band — the shared ReassureCard, sat directly under the title
+   and before the candidates (the promise the founder needs at the moment of
+   fear). This override only adds the spacing below it. */
+.assureBand { margin-bottom: var(--space-4); }
 
 /* the two candidate identities being compared */
 .mergeRows {
@@ -286,7 +417,7 @@
   border-radius: var(--radius-input);
   overflow: hidden;
   box-shadow: var(--ring);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .mergeRow {
@@ -331,10 +462,39 @@
 }
 
 .mergeWho { min-width: 0; display: grid; gap: 2px; }
-.mergeName { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mergeEmail { font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mergeName { font-size: 0.875rem; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mergeEmail { font-size: 0.78rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.suggestActions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: 2px; }
+/* C2 — per-candidate dispute evidence line (real, sr-readable text) */
+.mergeEvidence {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  margin-top: 1px;
+  white-space: normal;
+}
+
+/* the WHY of the suggestion, seated between the two identities */
+.mergeConnect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  margin: 0 0 var(--space-4);
+  padding: 0 var(--space-2);
+  line-height: 1.45;
+}
+
+.mergeConnect svg { width: 0.9rem; height: 0.9rem; color: var(--ink-3); flex: 0 0 auto; }
+
+.suggestActions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: 2px; }
+
+.actionsNote { font-size: 0.78rem; color: var(--ink-3); }
 
 /* ── Inline merge/split forms (pending + feedback) ──────────────────
    Each confirm/split form carries its own button and an inline status
@@ -348,20 +508,37 @@
   flex-wrap: wrap;
 }
 
+/* feedback line — reserved height so a confirmation never jumps the card */
 .formMsg {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.25rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--verdict);
+  line-height: 1.3;
+}
+
+.formMsg svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .formMsg { animation: cuFade var(--d-fast) var(--ease) both; }
+}
+
+@keyframes cuFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .formMsgError { color: var(--gap-text); }
 
-/* primary "Yes, merge" — verdict (a confirmed link) */
+/* primary "Yes, link them" — verdict (a confirmed link, forward motion) */
 .suggestConfirm {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 0.86rem;
   font-weight: 600;
   border-radius: var(--radius-input);
   padding: 9px 16px;
@@ -371,17 +548,21 @@
   background: var(--verdict);
   color: var(--on-verdict);
   border: 1px solid var(--verdict);
-  transition: background var(--d-fast) var(--ease);
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 45%, transparent);
+  transition:
+    background var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease-spring);
 }
 
 .suggestConfirm svg { width: 16px; height: 16px; flex-shrink: 0; }
-.suggestConfirm:hover { background: var(--verdict-press); }
+.suggestConfirm:hover { background: var(--verdict-press); transform: translateY(-1px); }
+.suggestConfirm:active { transform: translateY(0) scale(0.98); }
 
-/* secondary "Keep separate" / "Not the same" — neutral */
+/* secondary "Keep separate" — neutral, an equally-valid calm choice */
 .suggestReject {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 0.86rem;
   font-weight: 600;
   border-radius: var(--radius-input);
   padding: 9px 16px;
@@ -402,10 +583,10 @@
   cursor: progress;
 }
 
-/* "Not the same" undo on an auto-linked pair — uses the neutral linklike
-   style so the undo reads as reversible, not destructive. */
+/* "Undo" on an auto-linked pair — neutral linklike style so the undo reads
+   as reversible, not destructive. */
 .autoSplit {
-  font-size: 12.5px;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink-2);
   background: none;
@@ -426,13 +607,20 @@
 
 @media (max-width: 760px) {
   .disputeRow { grid-template-columns: minmax(0, 1fr) auto; }
-  .disputeRow .statusLabel { grid-column: 1 / -1; margin-top: 2px; }
+  .disputeRow .statusBadgeRow { grid-column: 1 / -1; margin-top: 2px; }
+}
+
+@media (max-width: 560px) {
+  .custHead { flex-direction: column; gap: var(--space-3); }
+  .cardFigures { flex-direction: row; align-items: baseline; gap: 0.6rem; text-align: left; }
+  .figCountUnit { margin-top: 0; }
+  .figTotal { margin-top: 0; }
 }
 
 @media (max-width: 640px) {
   .page { padding: var(--space-5) var(--space-4) var(--space-12); }
-  .card, .suggestCard { padding: var(--space-4); }
+  .card, .suggestCard, .autoCard { padding: var(--space-4); }
   .disputeRow { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
   .disputeRow .disputeAmount { text-align: left; }
-  .disputeRow .statusLabel { grid-column: auto; margin-top: 0; }
+  .disputeRow .statusBadgeRow { grid-column: auto; margin-top: 0; }
 }

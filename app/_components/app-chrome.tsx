@@ -1,6 +1,17 @@
 import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
+import type { ReactNode } from "react";
+// NavItem + ThemeToggleButton are client components co-located in theme-toggle
+// (an existing client module): keeping them there lets AppShell stay a SERVER
+// component (server/client boundary unchanged) while still owning the chrome.
+import { ThemeToggle, ThemeToggleButton, NavItem } from "./theme-toggle";
 import { VerdactLogo } from "./verdact-logo";
+import {
+  ListIcon,
+  DocIcon,
+  UserCheckIcon,
+  ShieldIcon,
+  PencilIcon,
+} from "@/app/dashboard/dash-icons";
 
 type ActiveKey = "dashboard" | "account-health" | "disputes" | "customers" | "settings";
 
@@ -11,12 +22,31 @@ type AppShellProps = {
   active?: ActiveKey;
 };
 
-const NAV_ITEMS: Array<{ key: ActiveKey; label: string; href: string }> = [
-  { key: "dashboard", label: "Dashboard", href: "/dashboard" },
-  { key: "disputes", label: "Disputes", href: "/dashboard/disputes" },
-  { key: "customers", label: "Customers", href: "/dashboard/customers" },
-  { key: "account-health", label: "Account health", href: "/account-health" },
-  { key: "settings", label: "Settings", href: "/settings" },
+type NavDef = {
+  key: ActiveKey;
+  /** Full label for the desktop rail. */
+  label: string;
+  /** Shorter label for the cramped mobile bottom nav (falls back to label). */
+  shortLabel?: string;
+  href: string;
+  /** Leading icon so active state is icon-weight + colour, never colour alone. */
+  icon: ReactNode;
+};
+
+// Each item carries a leading icon (icon + text law). Account health uses the
+// shield/seal so the "am I in trouble?" destination reads as the calm, safe one.
+const NAV_ITEMS: NavDef[] = [
+  { key: "dashboard", label: "Dashboard", href: "/dashboard", icon: <ListIcon /> },
+  { key: "disputes", label: "Disputes", href: "/dashboard/disputes", icon: <DocIcon /> },
+  { key: "customers", label: "Customers", href: "/dashboard/customers", icon: <UserCheckIcon /> },
+  {
+    key: "account-health",
+    label: "Account health",
+    shortLabel: "Health",
+    href: "/account-health",
+    icon: <ShieldIcon />,
+  },
+  { key: "settings", label: "Settings", href: "/settings", icon: <PencilIcon /> },
 ];
 
 export function AppShell({
@@ -25,7 +55,7 @@ export function AppShell({
   businessName,
   active,
 }: AppShellProps) {
-  const displayName = businessName?.trim() || "Verdact workspace";
+  const displayName = businessName?.trim() || "Your workspace";
 
   return (
     <div className="app-shell">
@@ -35,39 +65,50 @@ export function AppShell({
           <Link href="/dashboard" className="app-rail__logo">
             <VerdactLogo variant="mark" className="h-8 w-8 shrink-0" />
             <div className="app-rail__workspace">
-              <span className="app-rail__workspace-label">workspace</span>
-              <span className="app-rail__workspace-name">{displayName}</span>
+              <span className="app-rail__workspace-label">Workspace</span>
+              <span className="app-rail__workspace-name" title={displayName}>
+                {displayName}
+              </span>
             </div>
           </Link>
         </div>
 
         <nav className="app-rail__nav" aria-label="App navigation">
           {NAV_ITEMS.map((item) => (
-            <Link
+            <NavItem
               key={item.key}
               href={item.href}
-              className={`app-rail__link${active === item.key ? " is-active" : ""}`}
-              aria-current={active === item.key ? "page" : undefined}
+              className="app-rail__link"
+              icon={item.icon}
+              isActive={active === item.key}
             >
               {item.label}
-            </Link>
+            </NavItem>
           ))}
         </nav>
 
         <div className="app-rail__foot">
-          <div className="app-rail__user">
-            {email ? (
-              <span className="app-rail__email" title={email}>
-                {email}
-              </span>
-            ) : null}
-            <form action="/auth/signout" method="post">
-              <button type="submit" className="app-rail__signout">
-                Sign out
-              </button>
-            </form>
+          {/* The shell's single always-present safety anchor (X3). */}
+          <p className="app-rail__assure">
+            <ShieldIcon className="app-rail__assure-icon" />
+            <span>Nothing is filed without you.</span>
+          </p>
+
+          <div className="app-rail__account">
+            <div className="app-rail__user">
+              {email ? (
+                <span className="app-rail__email" title={email}>
+                  {email}
+                </span>
+              ) : null}
+              <form action="/auth/signout" method="post">
+                <button type="submit" className="app-rail__signout">
+                  Sign out
+                </button>
+              </form>
+            </div>
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
         </div>
       </aside>
 
@@ -76,7 +117,14 @@ export function AppShell({
         <Link href="/dashboard" className="app-topbar__logo" aria-label="Dashboard">
           <VerdactLogo variant="lockup" className="h-6 w-auto" />
         </Link>
-        <span className="app-topbar__workspace">{displayName}</span>
+        <div className="app-topbar__right">
+          <span className="app-topbar__workspace" title={displayName}>
+            {displayName}
+          </span>
+          {/* Mobile theme home (S5): the rail is hidden below 1023px, so the
+              compact cycling button is the phone user's only way to switch. */}
+          <ThemeToggleButton className="app-topbar__theme" />
+        </div>
       </header>
 
       {/* ── Main content ─────────────────────────────────────────────── */}
@@ -87,14 +135,16 @@ export function AppShell({
       {/* ── Mobile bottom nav ────────────────────────────────────────── */}
       <nav className="app-bottom-nav" aria-label="App navigation">
         {NAV_ITEMS.map((item) => (
-          <Link
+          <NavItem
             key={item.key}
             href={item.href}
-            className={`app-bottom-nav__item${active === item.key ? " is-active" : ""}`}
-            aria-current={active === item.key ? "page" : undefined}
+            className="app-bottom-nav__item"
+            icon={item.icon}
+            isActive={active === item.key}
+            stacked
           >
-            <span>{item.label}</span>
-          </Link>
+            {item.shortLabel ?? item.label}
+          </NavItem>
         ))}
       </nav>
     </div>
@@ -111,7 +161,7 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ email, businessName }: AppHeaderProps) {
-  const displayName = businessName?.trim() || "Verdact workspace";
+  const displayName = businessName?.trim() || "Your workspace";
 
   return (
     <header className="border-b border-[var(--rule)]">
@@ -121,13 +171,13 @@ export function AppHeader({ email, businessName }: AppHeaderProps) {
           className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
         >
           <VerdactLogo variant="mark" className="h-9 w-9" />
-          <span className="text-sm font-semibold text-[var(--ink)]">
+          <span className="text-sm font-semibold text-[var(--ink)]" title={displayName}>
             {displayName}
           </span>
         </a>
         <div className="flex items-center gap-3">
           {email ? (
-            <span className="hidden text-xs text-[var(--ink-3)] md:inline">
+            <span className="hidden text-xs text-[var(--ink-3)] md:inline" title={email}>
               {email}
             </span>
           ) : null}

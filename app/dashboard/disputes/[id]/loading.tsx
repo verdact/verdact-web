@@ -1,11 +1,13 @@
 import { AppShell } from '../../../_components/app-chrome';
+import { LoadingHeadline } from '../../../_components/ui/loading-headline';
 
 // Evidence record (workbench) loading fallback. This route awaits live Stripe
 // charge enrichment before it can render the readiness gauge and proof panels,
 // so a meaningful loading state matters here. We keep the app shell mounted and
 // mirror the workbench layout: a masthead band over a two-column grid (main +
-// sticky sidebar), with calm skeletons in place. Shimmer (.skel) is stilled
-// under reduced-motion by the global block in globals.css.
+// sticky sidebar), with calm skeletons in place. A visible LoadingHeadline (S4)
+// sits in the masthead so the wait reads as "opening", not "stuck". Shimmer
+// (.skel) is stilled under reduced-motion by the global block in globals.css.
 export default function WorkbenchLoading() {
   return (
     <AppShell email={null} active="disputes">
@@ -15,6 +17,7 @@ export default function WorkbenchLoading() {
         {/* Masthead band */}
         <div className="border-b border-rule-strong bg-surface-2 px-6 py-6 md:px-10">
           <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4">
+            <LoadingHeadline eyebrow="Loading" title="Opening this dispute…" />
             <span className="skel block h-3 w-28" />
             <span className="skel block h-4 w-56" />
             <span className="skel block h-9 w-2/3 max-w-md rounded-md" />

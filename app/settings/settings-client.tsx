@@ -8,6 +8,16 @@ import { disconnectStripeAction } from '@/lib/stripe/actions';
 import { disconnectSlackAction } from '@/lib/slack/actions';
 import { signOutAction } from '@/lib/auth/actions';
 import {
+  CheckIcon,
+  AlertIcon,
+  ShieldIcon,
+  PlugIcon,
+  DocIcon,
+  UserCheckIcon,
+  ChevronDownIcon,
+  ClockIcon,
+} from '@/app/dashboard/dash-icons';
+import {
   updateBusinessAction,
   updatePoliciesAction,
   updateSubmissionOptInAction,
@@ -19,12 +29,13 @@ import {
 } from './actions';
 import s from './settings.module.css';
 
-// ── Shared message line ──────────────────────────────────────────────────────
+// ── Shared message line (icon + text, so every save outcome is legible) ──────
 
 function FormMessage({ state }: { state: SettingsState }) {
   if (state?.error) {
     return (
       <p className={`${s.formMsg} ${s.formMsgError}`} role="alert">
+        <AlertIcon />
         {state.error}
       </p>
     );
@@ -32,6 +43,7 @@ function FormMessage({ state }: { state: SettingsState }) {
   if (state?.ok) {
     return (
       <p className={`${s.formMsg} ${s.formMsgOk}`} role="status">
+        <CheckIcon />
         {state.message}
       </p>
     );
@@ -42,6 +54,8 @@ function FormMessage({ state }: { state: SettingsState }) {
 // Submit button for the disconnect dialogs that reflects the in-flight server
 // action. Without it the click looked dead for 1-2s before the modal closed,
 // which read as a glitch. useFormStatus reports the parent form's pending state.
+// Styled neutral-but-firm (the SECONDARY action): disconnecting is a reversible
+// pause, never the vermilion delete-red reserved for the danger zone.
 function DisconnectSubmit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
@@ -51,6 +65,7 @@ function DisconnectSubmit({ label }: { label: string }) {
       disabled={pending}
       aria-busy={pending}
     >
+      <PlugIcon />
       {pending ? 'Disconnecting…' : label}
     </button>
   );
@@ -63,6 +78,14 @@ function DisconnectSubmit({ label }: { label: string }) {
 // the active tab is in the tab order), and Arrow/Home/End to move between tabs.
 
 type SettingsTab = { key: 'integrations' | 'business' | 'account'; label: string };
+
+// A leading icon per tab so the active section reads by icon + label, never by
+// colour alone. Keyed off the tab key so the server view layer stays icon-free.
+const TAB_ICONS: Record<SettingsTab['key'], React.ReactNode> = {
+  integrations: <PlugIcon className={s.tabIcon} />,
+  business: <DocIcon className={s.tabIcon} />,
+  account: <UserCheckIcon className={s.tabIcon} />,
+};
 
 export function SettingsTabs({
   tabs,
@@ -126,6 +149,7 @@ export function SettingsTabs({
             className={`${s.tab} ${selected ? s.tabActive : ''}`}
             onKeyDown={(event) => onKeyDown(event, index)}
           >
+            <span aria-hidden="true">{TAB_ICONS[tab.key]}</span>
             {tab.label}
           </a>
         );
@@ -255,119 +279,137 @@ export function PoliciesForm({ initial }: { initial: PoliciesInitial }) {
 
   return (
     <form action={formAction} className={s.form}>
-      <div className={s.field}>
-        <label className={s.label} htmlFor="refundPolicyText">
-          Refund policy
-        </label>
-        <textarea
-          id="refundPolicyText"
-          name="refundPolicyText"
-          className={s.textarea}
-          defaultValue={initial.refundPolicyText}
-          placeholder="Paste your refund policy text, or link it below."
-        />
-      </div>
-      <div className={s.field}>
-        <label className={s.label} htmlFor="refundPolicyUrl">
-          Refund policy URL
-        </label>
-        <input
-          id="refundPolicyUrl"
-          name="refundPolicyUrl"
-          className={s.input}
-          defaultValue={initial.refundPolicyUrl}
-          placeholder="https://…"
-        />
-      </div>
-
-      <div className={s.field}>
-        <label className={s.label} htmlFor="cancellationPolicyText">
-          Cancellation policy
-        </label>
-        <textarea
-          id="cancellationPolicyText"
-          name="cancellationPolicyText"
-          className={s.textarea}
-          defaultValue={initial.cancellationPolicyText}
-          placeholder="Paste your cancellation policy text, or link it below."
-        />
-      </div>
-      <div className={s.field}>
-        <label className={s.label} htmlFor="cancellationPolicyUrl">
-          Cancellation policy URL
-        </label>
-        <input
-          id="cancellationPolicyUrl"
-          name="cancellationPolicyUrl"
-          className={s.input}
-          defaultValue={initial.cancellationPolicyUrl}
-          placeholder="https://…"
-        />
-      </div>
-
-      <div className={s.fieldRow}>
+      {/* The two highest-value policies show by default, each as one scannable
+          unit. The rest collapse below so the form is not an 8-field wall on
+          first view. Every input still POSTs in this one form. */}
+      <div className={s.policyGroup}>
+        <span className={s.policyGroupLabel}>Refund policy</span>
         <div className={s.field}>
-          <label className={s.label} htmlFor="tosUrl">
-            Terms of service URL
+          <label className={s.label} htmlFor="refundPolicyText">
+            What your refund policy says
+          </label>
+          <textarea
+            id="refundPolicyText"
+            name="refundPolicyText"
+            className={s.textarea}
+            defaultValue={initial.refundPolicyText}
+            placeholder="Paste your refund policy text, or link it below."
+          />
+        </div>
+        <div className={s.field}>
+          <label className={s.label} htmlFor="refundPolicyUrl">
+            Link to your refund policy
           </label>
           <input
-            id="tosUrl"
-            name="tosUrl"
+            id="refundPolicyUrl"
+            name="refundPolicyUrl"
             className={s.input}
-            defaultValue={initial.tosUrl}
+            defaultValue={initial.refundPolicyUrl}
             placeholder="https://…"
           />
         </div>
-        <div className={s.field}>
-          <label className={s.label} htmlFor="policyDisclosureLocation">
-            Where customers see your policies
-          </label>
-          <select
-            id="policyDisclosureLocation"
-            name="policyDisclosureLocation"
-            className={s.select}
-            defaultValue={initial.policyDisclosureLocation}
-          >
-            <option value="">Select…</option>
-            <option value="checkout">At checkout</option>
-            <option value="email">In email</option>
-            <option value="in_app">In the app</option>
-            <option value="all">All of the above</option>
-          </select>
-        </div>
       </div>
 
-      <div className={s.fieldRow}>
+      <div className={s.policyGroup}>
+        <span className={s.policyGroupLabel}>Cancellation policy</span>
         <div className={s.field}>
-          <label className={s.label} htmlFor="transactionDescriptionTemplate">
-            Statement descriptor
+          <label className={s.label} htmlFor="cancellationPolicyText">
+            What your cancellation policy says
           </label>
-          <input
-            id="transactionDescriptionTemplate"
-            name="transactionDescriptionTemplate"
-            className={s.input}
-            defaultValue={initial.transactionDescriptionTemplate}
-            placeholder="What customers see on their card statement"
+          <textarea
+            id="cancellationPolicyText"
+            name="cancellationPolicyText"
+            className={s.textarea}
+            defaultValue={initial.cancellationPolicyText}
+            placeholder="Paste your cancellation policy text, or link it below."
           />
         </div>
         <div className={s.field}>
-          <label className={s.label} htmlFor="logsUserActivity">
-            Do you log customer activity?
+          <label className={s.label} htmlFor="cancellationPolicyUrl">
+            Link to your cancellation policy
           </label>
-          <select
-            id="logsUserActivity"
-            name="logsUserActivity"
-            className={s.select}
-            defaultValue={initial.logsUserActivity}
-          >
-            <option value="">Select…</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-            <option value="sometimes">Sometimes</option>
-          </select>
-          <span className={s.hint}>Usage logs are strong evidence for service-delivery disputes.</span>
+          <input
+            id="cancellationPolicyUrl"
+            name="cancellationPolicyUrl"
+            className={s.input}
+            defaultValue={initial.cancellationPolicyUrl}
+            placeholder="https://…"
+          />
         </div>
       </div>
+
+      <details className={s.moreDetails}>
+        <summary className={s.moreSummary}>
+          <ChevronDownIcon className={s.moreChev} />
+          More policy details (terms, descriptor, activity logging)
+        </summary>
+        <div className={s.moreBody}>
+          <div className={s.fieldRow}>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="tosUrl">
+                Terms of service URL
+              </label>
+              <input
+                id="tosUrl"
+                name="tosUrl"
+                className={s.input}
+                defaultValue={initial.tosUrl}
+                placeholder="https://…"
+              />
+            </div>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="policyDisclosureLocation">
+                Where customers see your policies
+              </label>
+              <select
+                id="policyDisclosureLocation"
+                name="policyDisclosureLocation"
+                className={s.select}
+                defaultValue={initial.policyDisclosureLocation}
+              >
+                <option value="">Select…</option>
+                <option value="checkout">At checkout</option>
+                <option value="email">In email</option>
+                <option value="in_app">In the app</option>
+                <option value="all">All of the above</option>
+              </select>
+            </div>
+          </div>
+
+          <div className={s.fieldRow}>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="transactionDescriptionTemplate">
+                Statement descriptor
+              </label>
+              <input
+                id="transactionDescriptionTemplate"
+                name="transactionDescriptionTemplate"
+                className={s.input}
+                defaultValue={initial.transactionDescriptionTemplate}
+                placeholder="What customers see on their card statement"
+              />
+              <span className={s.hint}>What customers see on their card statement.</span>
+            </div>
+            <div className={s.field}>
+              <label className={s.label} htmlFor="logsUserActivity">
+                Do you log customer activity?
+              </label>
+              <select
+                id="logsUserActivity"
+                name="logsUserActivity"
+                className={s.select}
+                defaultValue={initial.logsUserActivity}
+              >
+                <option value="">Select…</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="sometimes">Sometimes</option>
+              </select>
+              <span className={s.hint}>Usage logs are strong evidence for service-delivery disputes.</span>
+            </div>
+          </div>
+        </div>
+      </details>
 
       <div className={s.actions}>
         <button type="submit" className={s.saveBtn} disabled={pending}>
@@ -396,12 +438,21 @@ export function FilingForm({ optedIn, canManage }: { optedIn: boolean; canManage
           defaultChecked={optedIn}
           disabled={!canManage}
           className={s.toggleCheckbox}
+          aria-describedby="filing-effect filing-beta"
         />
         <span className={s.toggleLabel}>Let Verdact file approved evidence to Stripe on my behalf</span>
+        {!optedIn ? <span className={s.offChip}>Off</span> : null}
       </label>
-      <p className={s.hint}>
-        Off by default. Even when on, nothing is ever filed without your explicit review and sign-off.
-        Filing to Stripe is not active during the beta, so this only takes effect once live filing opens.
+      {/* Two separated lines so "what the toggle does" never blurs with "what is
+          true during the beta". */}
+      <p id="filing-effect" className={s.hint}>
+        When this is on, Verdact can send evidence you have already approved to Stripe for you. You
+        still review and sign off on every filing before anything is sent.
+      </p>
+      <p id="filing-beta" className={s.filingNote}>
+        <ClockIcon />
+        Not active during the beta. Turning this on now just saves your preference for when live
+        filing opens.
       </p>
       {canManage ? (
         <div className={s.actions}>
@@ -533,10 +584,21 @@ export function SignOutButton() {
 
 export function DisconnectStripe({ accountLabel }: { accountLabel: string | null }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
+
+  // SE3: open the modal, then deterministically land focus on the SAFE default
+  // ("Keep connected") so a stressed founder is never one Enter away from
+  // disconnecting. ESC-to-close and focus-return-to-trigger are native <dialog>
+  // behaviours; do not re-implement them.
+  function openDialog() {
+    ref.current?.showModal();
+    keepRef.current?.focus();
+  }
 
   return (
     <>
-      <button type="button" className={s.linkBtn} onClick={() => ref.current?.showModal()}>
+      <button type="button" className={s.linkBtn} onClick={openDialog}>
+        <PlugIcon />
         Disconnect
       </button>
 
@@ -551,12 +613,18 @@ export function DisconnectStripe({ accountLabel }: { accountLabel: string | null
             existing dispute history stays in Verdact. You can reconnect any time.
           </p>
           <div className={s.dialogActions}>
-            <button type="button" className={s.dialogCancel} onClick={() => ref.current?.close()}>
-              Keep connected
-            </button>
             <form action={disconnectStripeAction}>
               <DisconnectSubmit label="Disconnect Stripe" />
             </form>
+            <button
+              ref={keepRef}
+              type="button"
+              className={s.dialogKeep}
+              onClick={() => ref.current?.close()}
+            >
+              <ShieldIcon />
+              Keep connected
+            </button>
           </div>
         </div>
       </dialog>
@@ -568,10 +636,19 @@ export function DisconnectStripe({ accountLabel }: { accountLabel: string | null
 
 export function DisconnectSlack({ workspaceLabel }: { workspaceLabel: string | null }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const keepRef = useRef<HTMLButtonElement>(null);
+
+  // SE3: same deterministic safe-focus as DisconnectStripe. ESC-to-close and
+  // focus-return-to-trigger are native <dialog> behaviours.
+  function openDialog() {
+    ref.current?.showModal();
+    keepRef.current?.focus();
+  }
 
   return (
     <>
-      <button type="button" className={s.linkBtn} onClick={() => ref.current?.showModal()}>
+      <button type="button" className={s.linkBtn} onClick={openDialog}>
+        <PlugIcon />
         Disconnect
       </button>
 
@@ -586,12 +663,18 @@ export function DisconnectSlack({ workspaceLabel }: { workspaceLabel: string | n
             reconnect any time.
           </p>
           <div className={s.dialogActions}>
-            <button type="button" className={s.dialogCancel} onClick={() => ref.current?.close()}>
-              Keep connected
-            </button>
             <form action={disconnectSlackAction}>
               <DisconnectSubmit label="Disconnect Slack" />
             </form>
+            <button
+              ref={keepRef}
+              type="button"
+              className={s.dialogKeep}
+              onClick={() => ref.current?.close()}
+            >
+              <ShieldIcon />
+              Keep connected
+            </button>
           </div>
         </div>
       </dialog>

@@ -1,5 +1,18 @@
 import { AppShell } from '../../_components/app-chrome';
 import { ConnectStripePanel } from '../../_components/connect-stripe-panel';
+import { SectionBar } from '../../_components/ui/section-bar';
+import { StatusBadge } from '../../_components/ui/status-badge';
+import { ReassureCard } from '../../_components/ui/reassure-card';
+import {
+  CheckIcon,
+  ClockIcon,
+  EyeIcon,
+  InfoCircleIcon,
+  ListIcon,
+  RouteIcon,
+  ShieldIcon,
+  UserCheckIcon,
+} from '../dash-icons';
 import type { CustomerGroup } from '@/lib/dal';
 import type { MergeSuggestion } from '@/lib/customers/types';
 import { AutoSplitForm, ConfirmMergeForm, RejectMergeForm } from './merge-forms';
@@ -10,7 +23,11 @@ import s from './customers.module.css';
 // surface together, surfaces "needs your call" prompts for doubtful pairs
 // (never auto-merged), and shows confident auto-links transparently with a
 // one-click undo. Data wrapper lives in page.tsx; a dev-only route renders this
-// directly. Restyled to the 2026-06 redesign comp; all merge/split wiring kept.
+// directly. Restyled to the 2026-06 workbench gold standard; all merge/split
+// wiring kept (server actions, MergeSuggestion shape, customer_identity_links
+// write semantics untouched). The only added reads are presentational: a
+// candidate's dispute count + latest reason, resolved from the groups the page
+// already loads (no new query, no write path).
 
 export type CustomersViewProps = {
   email: string | null | undefined;
@@ -41,12 +58,12 @@ export function CustomersView({
         <header className={s.header}>
           <p className={s.eyebrow}>Grouped by customer</p>
           <h1 className={s.title}>Customers</h1>
+          <p className={s.lead}>
+            <b>Same customer, same record.</b> When the same customer disputes again, you reuse one
+            evidence record instead of rebuilding it. Grouping is for your view only.{' '}
+            <b>Verdact never links two customers on a guess, and you can undo any link.</b>
+          </p>
         </header>
-        <p className={s.lead}>
-          Disputes from the same customer, grouped so you can see repeat patterns. When the same
-          customer disputes again, reuse one record instead of rebuilding it. Verdact never merges on
-          a guess.
-        </p>
 
         {!stripeConnected ? (
           <ConnectStripePanel context="disputes" />
@@ -54,36 +71,56 @@ export function CustomersView({
           <EmptyState />
         ) : (
           <>
-            {suggestions.length > 0 && <MergeSuggestions suggestions={suggestions} />}
+            {suggestions.length > 0 && (
+              <MergeSuggestions suggestions={suggestions} groups={groups} />
+            )}
             {autoMerged.length > 0 && <AutoLinked autoMerged={autoMerged} />}
 
-            {repeatGroups.length > 0 && (
-              <p className={s.repeatBanner}>
-                <strong>{repeatGroups.length}</strong> customer{repeatGroups.length === 1 ? ' has' : 's have'}{' '}
-                disputed more than once. Those are first below.
-              </p>
-            )}
+            <section aria-labelledby="your-customers-h">
+              <SectionBar
+                icon={<ListIcon />}
+                title="Your customers"
+                note="Everyone with a dispute on file, repeat customers first."
+                className={s.sectionBar}
+              />
+              <h2 id="your-customers-h" className="sr-only">
+                Your customers
+              </h2>
 
-            <section aria-label="Customers">
+              {repeatGroups.length > 0 && (
+                <p className={s.repeatBanner}>
+                  <span className={s.repeatCount}>{repeatGroups.length}</span>
+                  <span className={s.repeatText}>
+                    <InfoCircleIcon />
+                    {repeatGroups.length === 1 ? 'customer has' : 'customers have'} disputed more
+                    than once. They are sorted to the top so the repeat patterns are easy to see.
+                  </span>
+                </p>
+              )}
+
               <div className={s.list}>
                 {linked.map((group) => (
                   <CustomerCard key={group.customerKey} group={group} />
                 ))}
               </div>
               <p className={s.guidanceFoot}>
-                Grouping is for your view only. Each dispute is still filed on its own. Nothing is
-                filed without you, and we never take a cut.
+                Each dispute is still filed on its own. Grouping changes nothing about how a case is
+                handled, and Verdact never takes a cut.
               </p>
             </section>
 
             {unlinked && unlinked.disputes.length > 0 && (
-              <section className={s.unlinkedSection}>
-                <h2 className={s.unlinkedHead}>Not yet linked to a customer</h2>
-                <p className={s.unlinkedSub}>
-                  These disputes do not carry a customer email yet, so we cannot group them. Email-based
-                  linkage covers subscription and repeat clients. One-off and guest charges may land here.
-                </p>
-                <div className={s.list}>
+              <section className={s.unlinkedSection} aria-labelledby="not-linked-h">
+                <SectionBar
+                  icon={<RouteIcon />}
+                  title="Not yet linked"
+                  note="These disputes did not come with a customer email, so we could not group them. That is normal for one-off or guest checkouts."
+                  className={s.sectionBar}
+                />
+                <h2 id="not-linked-h" className="sr-only">
+                  Not yet linked
+                </h2>
+                <div className={s.unlinkedList}>
                   <CustomerCard group={unlinked} />
                 </div>
               </section>
@@ -98,41 +135,69 @@ export function CustomersView({
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 // "Needs your call" — doubtful pairs surfaced as suggest-and-confirm. Each card
-// holds the two candidate identities and the confirm / keep-separate actions.
-function MergeSuggestions({ suggestions }: { suggestions: MergeSuggestion[] }) {
+// holds the two candidate identities (with their dispute context), the
+// reassurance band, and the confirm / keep-separate actions. `groups` is read
+// only to resolve a candidate key to its dispute summary (presentational).
+function MergeSuggestions({
+  suggestions,
+  groups,
+}: {
+  suggestions: MergeSuggestion[];
+  groups: CustomerGroup[];
+}) {
+  const groupByKey = new Map(groups.map((g) => [g.customerKey, g] as const));
+
   return (
     <section aria-labelledby="needs-call-h">
-      <div className={s.sectionLabel}>
-        <h2 className={s.sectionHead} id="needs-call-h">
-          Needs your call
-        </h2>
-      </div>
+      <SectionBar
+        icon={<UserCheckIcon />}
+        title="Needs your call"
+        note="We are not sure these are the same customer. Your call, and it is reversible."
+        className={s.sectionBar}
+      />
+      <h2 id="needs-call-h" className="sr-only">
+        Needs your call
+      </h2>
+
       {suggestions.map((sg) => (
         <div key={sg.id} className={s.suggestCard}>
           <div className={s.suggestCardHead}>
-            <div>
-              <h3 className={s.suggestTitle}>Are these the same customer?</h3>
-              <p className={s.suggestReason}>{sg.reason}</p>
-            </div>
-            <span className={s.gapPill}>
-              <span className={s.gapPillDot} aria-hidden="true" />
+            <h3 className={s.suggestTitle}>Are these the same customer?</h3>
+            <StatusBadge tone="watch" icon={<EyeIcon />}>
               Your call
-            </span>
+            </StatusBadge>
           </div>
+
+          <ReassureCard
+            icon={<ShieldIcon />}
+            title="Linking only groups their disputes together in your view."
+            className={s.assureBand}
+          >
+            It never edits, combines, or files anything, and one click undoes it.
+          </ReassureCard>
 
           <div className={s.mergeRows}>
-            <MergeCandidate label={sg.primaryLabel} pairIndex="A" />
-            <MergeCandidate label={sg.linkedLabel} pairIndex="B" />
+            <MergeCandidate
+              label={sg.primaryLabel}
+              pairIndex="A"
+              summary={candidateSummary(sg.primaryKey, groupByKey)}
+            />
+            <MergeCandidate
+              label={sg.linkedLabel}
+              pairIndex="B"
+              summary={candidateSummary(sg.linkedKey, groupByKey)}
+            />
           </div>
 
-          <p className={s.suggestReason}>
-            Linking groups their disputes together for your view. It never changes or files anything,
-            and you can undo it.
+          <p className={s.mergeConnect}>
+            <RouteIcon />
+            {sg.reason}
           </p>
 
           <div className={s.suggestActions}>
             <ConfirmMergeForm suggestion={sg} />
             <RejectMergeForm suggestion={sg} />
+            <span className={s.actionsNote}>You can change this anytime.</span>
           </div>
         </div>
       ))}
@@ -141,8 +206,17 @@ function MergeSuggestions({ suggestions }: { suggestions: MergeSuggestion[] }) {
 }
 
 // One candidate identity row inside a "needs your call" card. Label is a name
-// and/or email string from the suggestion; we split it for display only.
-function MergeCandidate({ label, pairIndex }: { label: string; pairIndex: string }) {
+// and/or email string from the suggestion; we split it for display only. The
+// summary line gives the founder the dispute context to decide (C2).
+function MergeCandidate({
+  label,
+  pairIndex,
+  summary,
+}: {
+  label: string;
+  pairIndex: string;
+  summary: string;
+}) {
   const { name, sub } = splitLabel(label);
   return (
     <div className={s.mergeRow}>
@@ -153,42 +227,46 @@ function MergeCandidate({ label, pairIndex }: { label: string; pairIndex: string
       <span className={s.mergeWho}>
         <span className={s.mergeName}>{name}</span>
         {sub && <span className={s.mergeEmail}>{sub}</span>}
+        <span className={s.mergeEvidence}>{summary}</span>
       </span>
     </div>
   );
 }
 
-// Confident auto-links, shown transparently with a one-click "Not the same" undo
-// that Verdact learns from. Always reversible — neutral framing, never alarming.
+// Confident auto-links, shown transparently with a one-click undo that Verdact
+// learns from. Always reversible — calm "done" framing, never alarming.
 function AutoLinked({ autoMerged }: { autoMerged: MergeSuggestion[] }) {
   return (
     <section aria-labelledby="auto-h">
-      <div className={s.sectionLabel}>
-        <h2 className={s.sectionHead} id="auto-h">
-          Auto-linked
-        </h2>
-        <span className={s.sectionCaption}>Matched on exact email. Always reversible.</span>
-      </div>
+      <SectionBar
+        icon={<CheckIcon />}
+        title="Already linked for you"
+        note="Same email, so we grouped these automatically. Nothing was filed. Undo any that look wrong."
+        className={s.sectionBar}
+      />
+      <h2 id="auto-h" className="sr-only">
+        Already linked for you
+      </h2>
+
       <div className={s.list}>
         {autoMerged.map((sg) => (
-          <div key={sg.id} className={s.card}>
+          <div key={sg.id} className={s.autoCard}>
             <div className={s.custHead}>
               <div className={s.cardIdent}>
                 <span className={s.cardName}>{sg.primaryLabel}</span>
                 <span className={s.cardEmail}>{sg.linkedLabel}</span>
               </div>
               <div className={s.cardMeta}>
-                <span className={s.tag}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                  </svg>
+                <StatusBadge tone="done" icon={<CheckIcon />}>
                   Auto-linked
-                </span>
-                <AutoSplitForm suggestion={sg} />
+                </StatusBadge>
               </div>
             </div>
-            <p className={s.cardTotal}>{sg.reason}</p>
+            <p className={s.autoReason}>{sg.reason}</p>
+            <div className={s.undoRow}>
+              <span className={s.undoLead}>Not the same person?</span>
+              <AutoSplitForm suggestion={sg} />
+            </div>
           </div>
         ))}
       </div>
@@ -198,6 +276,7 @@ function AutoLinked({ autoMerged }: { autoMerged: MergeSuggestion[] }) {
 
 function CustomerCard({ group }: { group: CustomerGroup }) {
   const isRepeat = group.disputes.length > 1;
+  const count = group.disputes.length;
   const title = group.customerName || group.customerEmail || 'Unlinked disputes';
   const currency = currencyOf(group);
 
@@ -205,25 +284,23 @@ function CustomerCard({ group }: { group: CustomerGroup }) {
     <article className={`${s.card} ${isRepeat ? s.cardRepeat : ''}`} aria-label={title}>
       <header className={s.custHead}>
         <div className={s.cardIdent}>
+          {isRepeat && (
+            <span className={s.repeatEyebrow}>
+              <UserCheckIcon />
+              Repeat customer
+            </span>
+          )}
           <span className={s.cardName}>{title}</span>
           {group.customerEmail && group.customerName && (
             <span className={s.cardEmail}>{group.customerEmail}</span>
           )}
         </div>
-        <div className={s.cardMeta}>
-          {isRepeat && (
-            <span className={s.repeatPill}>
-              {group.disputes.length} disputes
-            </span>
-          )}
+        <div className={s.cardFigures}>
+          <span className={s.figCount}>{count}</span>
+          <span className={s.figCountUnit}>{count === 1 ? 'dispute' : 'disputes'}</span>
+          <span className={s.figTotal}>{formatAmount(group.totalAmount, currency)} total</span>
         </div>
       </header>
-
-      <p className={s.cardTotal}>
-        {group.disputes.length} dispute{group.disputes.length === 1 ? '' : 's'}
-        {' · '}
-        {formatAmount(group.totalAmount, currency)} total
-      </p>
 
       <ul className={s.disputeList}>
         {group.disputes.map((d) => {
@@ -238,10 +315,13 @@ function CustomerCard({ group }: { group: CustomerGroup }) {
                 <span className={s.disputeAmount}>
                   {d.amount != null ? formatAmount(d.amount, d.currency) : 'No amount'}
                 </span>
-                <span className={`${s.statusLabel} ${toneLabelClass(tone)}`}>
-                  <span className={`${s.statusDot} ${toneDotClass(tone)}`} aria-hidden="true" />
+                <StatusBadge
+                  tone={badgeTone(tone)}
+                  icon={statusIcon(tone)}
+                  className={s.statusBadgeRow}
+                >
                   {statusLabel(d.status, d.outcome)}
-                </span>
+                </StatusBadge>
               </a>
             </li>
           );
@@ -255,16 +335,13 @@ function EmptyState() {
   return (
     <div className={s.empty}>
       <span className={s.emptyIcon} aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="9" cy="8" r="3" />
-          <path d="M3 20c0-3 3-5 6-5s6 2 6 5" />
-          <path d="M16 6a3 3 0 010 6" />
-        </svg>
+        <UserCheckIcon />
       </span>
-      <p className={s.emptyTitle}>No customers with disputes yet.</p>
+      <p className={s.emptyEyebrow}>Nothing to group yet</p>
+      <p className={s.emptyTitle}>No repeat customers so far.</p>
       <p className={s.emptyText}>
-        When a dispute arrives, Verdact will group it here by the customer it came from, so repeat
-        disputes from the same customer share one evidence record.
+        When a customer disputes more than once, Verdact groups their cases here so you reuse one
+        evidence record instead of starting over. A quiet page here is a good sign.
       </p>
     </div>
   );
@@ -278,24 +355,53 @@ function currencyOf(group: CustomerGroup): string | null {
   return group.disputes.find((d) => d.currency)?.currency ?? null;
 }
 
-// Tone for a dispute row's status. needs_response is a merchant-closable gap
-// (vermilion); won is verdict green; everything else (incl. lost) is neutral.
+// Resolve a candidate identity key to a short, sr-readable dispute summary (C2).
+// Reads only data the page already loaded (the groups). Falls back gracefully
+// when the candidate is not yet a grouped customer.
+function candidateSummary(
+  key: string,
+  groupByKey: Map<string | null, CustomerGroup>,
+): string {
+  const group = groupByKey.get(key);
+  if (!group || group.disputes.length === 0) {
+    return 'No disputes on file yet';
+  }
+  const count = group.disputes.length;
+  const latest = group.disputes.reduce((a, b) =>
+    new Date(b.created_at).getTime() > new Date(a.created_at).getTime() ? b : a,
+  );
+  const reason = (latest.reason ?? '').trim();
+  if (count === 1) {
+    return reason ? `1 dispute · ${reason}` : `1 dispute · opened ${formatDate(latest.created_at)}`;
+  }
+  return reason
+    ? `${count} disputes · latest: ${reason}`
+    : `${count} disputes · latest opened ${formatDate(latest.created_at)}`;
+}
+
+// Tone for a dispute row's status (de-alarm law, X1). On this grouped overview
+// we have no per-row deadline data, so needs_response stays neutral --watch
+// rather than vermilion to avoid a false alarm; won is verdict green;
+// everything else (incl. lost) is neutral.
 function statusTone(status: string, outcome: string | null): StatusTone {
   if (status === 'needs_response') return 'gap';
   if (outcome === 'won' || status === 'won') return 'won';
   return 'neutral';
 }
 
-function toneDotClass(tone: StatusTone): string {
-  if (tone === 'gap') return s.statusDotGap;
-  if (tone === 'won') return s.statusDotHealthy;
-  return s.statusDotNeutral;
+// Map the local tone to the StatusBadge tone vocabulary. needs_response is a
+// real merchant-closable action, but on this overview (no deadline data) we keep
+// it calm as "watch"; "won" is "done"; everything else neutral.
+function badgeTone(tone: StatusTone): 'done' | 'watch' | 'neutral' {
+  if (tone === 'gap') return 'watch';
+  if (tone === 'won') return 'done';
+  return 'neutral';
 }
 
-function toneLabelClass(tone: StatusTone): string {
-  if (tone === 'gap') return s.statusLabelGap;
-  if (tone === 'won') return s.statusLabelWon;
-  return '';
+function statusIcon(tone: StatusTone) {
+  if (tone === 'won') return <CheckIcon />;
+  if (tone === 'gap') return <EyeIcon />;
+  return <ClockIcon />;
 }
 
 function statusLabel(status: string, outcome: string | null): string {

@@ -1,7 +1,15 @@
-/* ─── Settings page — VERDICT v2 app dialect ────────────────────────────────
+/* ─── Settings page — VERDICT v2 app dialect (workbench-grade redesign) ──────
    Tabbed merchant settings. Lives at /settings (the /settings/connections route
    is the separate Gmail-reviewer page and is untouched). Tokens are v2 custom
    properties so dark mode is automatic.
+
+   Redesign 2026-06-27: brought up to the evidence-workbench gold standard.
+   Layered porcelain depth (elev-1/2/pop), Schibsted Grotesk display title at
+   real scale contrast vs small mono eyebrows, section bars, real connection
+   cards with a display count numeral, progressive disclosure on the policy
+   form, and a de-alarmed status palette (verdict green = done/safe; --gap
+   vermilion reserved ONLY for the danger zone; --watch for monitoring/your-call;
+   --warning amber for retryable errors). No em dashes. Two-color law enforced.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
@@ -16,18 +24,72 @@
   min-width: 0;
 }
 
-.headerText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* ── Header (eyebrow + display title + reassurance anchor) ──────────── */
+
+.headerText { display: flex; flex-direction: column; min-width: 0; }
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0 0 0.85rem;
+}
+
+.kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--verdict);
+  display: block;
+  border-radius: 2px;
+}
 
 .pageTitle {
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
   margin: 0;
 }
 
-.sub { font-size: 13px; color: var(--ink-3); margin: 0; overflow-wrap: anywhere; }
+.sub {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0.55rem 0 0;
+  max-width: 60ch;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* One quiet reassurance line (the surface's single anchor; never repeated). */
+.headerAssure {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  max-width: 70ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.headerAssure svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--verdict);
+  flex: 0 0 auto;
+  margin-top: 0.18rem;
+}
+
+.headerAssure b { color: var(--ink); font-weight: 600; }
 
 /* ── Tabs ───────────────────────────────────────────────────────── */
 
@@ -47,44 +109,93 @@
 .tab {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   min-height: 44px;
   padding: 11px 14px;
   margin-bottom: -1px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--ink-2);
   text-decoration: none;
   border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   white-space: nowrap;
-  transition: color 120ms;
+  transition: color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
-.tab:hover { color: var(--ink); }
+.tabIcon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--verdict-tint) 50%, transparent);
+}
+
+.tab:hover .tabIcon { color: var(--ink-2); }
 
 .tabActive {
-  color: var(--verdict-press);
+  color: var(--ink);
+  font-weight: 700;
   border-bottom-color: var(--verdict);
 }
 
-/* ── Banners ────────────────────────────────────────────────────── */
+.tabActive .tabIcon { color: var(--verdict); }
+.tabActive:hover { color: var(--ink); }
+.tabActive:hover .tabIcon { color: var(--verdict); }
+
+/* ── Banners (intent variants, each icon + text) ────────────────── */
 
 .banner {
-  padding: var(--space-3) var(--space-5);
-  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
   font-size: 13px;
   line-height: 1.5;
-  border: 1px solid var(--verdict-deep);
+  border: 1px solid transparent;
+  box-shadow: var(--elev-1);
+  animation: settingsRise var(--duration-normal) var(--ease-out) both;
+}
+
+.bannerIcon { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 1px; }
+
+/* Success / informational: these ARE good-news or calm states, so green. */
+.bannerInfo {
   background: var(--verdict-tint);
-  color: var(--ink);
+  border-color: var(--action-rule);
+  color: var(--action-deep);
+}
+.bannerInfo .bannerIcon { color: var(--verdict); }
+
+/* Retryable error: amber caution, never vermilion (which is danger-only here). */
+.bannerError {
+  background: var(--warning-soft);
+  border-color: var(--warning-rule);
+  color: var(--warning-deep);
+}
+.bannerError .bannerIcon { color: var(--warning-deep); }
+
+@keyframes settingsRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* ── Panels ─────────────────────────────────────────────────────── */
 
 .panel {
   box-sizing: border-box;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--hairline);
   background: var(--panel);
+  box-shadow: var(--elev-1);
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
@@ -92,16 +203,92 @@
   min-width: 0;
 }
 
-.panelHead { display: flex; flex-direction: column; gap: 4px; }
+/* Hero panel (Integrations): more depth + a faint verdict wash, the one panel
+   that wants attention. */
+.panelHero {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 55%),
+    var(--panel);
+  border-color: var(--edge-green);
+  box-shadow: var(--elev-2);
+}
 
-.panelTitle { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
-
-/* Group subhead inside a panel (e.g. the merged "Policies" group on Business). */
-.subhead { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
-
-.panelDesc { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 62ch; overflow-wrap: anywhere; }
+/* Secondary / forward-looking panel (Filing): quieter, reads as optional. */
+.panelMuted { background: var(--panel-wash); }
 
 .stack { display: flex; flex-direction: column; gap: var(--space-5); }
+
+/* A SectionBar that opens a panel/group: the shared component ships a 1.75rem
+   top margin (it is a mid-content divider in the workbench); zero it when the
+   bar is the first child so panel padding + flex gap own the rhythm instead. */
+.firstBar { margin-top: 0; }
+
+/* ── Connection-count summary (display numeral + meter) ─────────── */
+
+.connSummary {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  background: linear-gradient(120deg, var(--verdict-tint) 0%, var(--paper-2) 100%);
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.4rem;
+}
+
+.connSummaryGap { background: var(--panel-wash); border-color: var(--rule-strong); }
+
+.connCount {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--verdict);
+  flex: 0 0 auto;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.connSummaryGap .connCount { color: var(--ink); }
+
+.connCount small { font-size: 1.05rem; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
+
+.connSummaryMid { flex: 1; min-width: 0; }
+
+.connSummaryLabel {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.55rem;
+}
+
+.meter {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  border: 1px solid var(--edge-green);
+  overflow: hidden;
+  display: flex;
+}
+
+.connSummaryGap .meter { border-color: var(--rule-strong); }
+
+.meterFill {
+  background: linear-gradient(90deg, var(--verdict), color-mix(in srgb, var(--verdict) 70%, var(--mint)));
+  height: 100%;
+}
+
+.meterGap {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--watch-tint),
+    var(--watch-tint) 4px,
+    var(--panel) 4px,
+    var(--panel) 8px
+  );
+  height: 100%;
+  border-left: 1.5px solid var(--watch-edge);
+}
 
 /* ── Forms ──────────────────────────────────────────────────────── */
 
@@ -111,20 +298,22 @@
 
 .fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
 
-.label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.label { font-size: 13px; font-weight: 600; color: var(--ink); }
 
 .input,
 .textarea,
 .select {
   width: 100%;
-  font-size: 13.5px;
+  font-size: 16px;
   color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--hairline);
-  border-radius: 7px;
-  padding: 9px 11px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-input);
+  padding: 10px 12px;
+  min-height: 44px;
   font-family: inherit;
-  transition: border-color 120ms;
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .input:focus,
@@ -135,47 +324,83 @@
   box-shadow: 0 0 0 3px var(--verdict-tint);
 }
 
-.textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+.textarea { min-height: 92px; resize: vertical; line-height: 1.5; }
 
-.hint { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
+.hint { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
 
 .actions { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 
 .saveBtn {
   display: inline-flex;
   align-items: center;
-  padding: 9px 18px;
-  border-radius: 7px;
+  padding: 10px 18px;
+  border-radius: var(--radius-input);
   font-size: 13.5px;
   font-weight: 700;
   background: var(--verdict);
-  color: var(--paper);
+  color: var(--on-verdict);
   border: none;
   cursor: pointer;
-  transition: background 120ms;
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 50%, transparent);
+  transition: background var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
 }
 
-.saveBtn:hover { background: var(--verdict-press); }
-.saveBtn:disabled { opacity: 0.6; cursor: default; }
+.saveBtn:hover { background: var(--verdict-press); transform: translateY(-1px); }
+.saveBtn:active { transform: scale(0.98); }
+.saveBtn:disabled { opacity: 0.6; cursor: default; transform: none; }
 
-.formMsg { font-size: 12.5px; font-weight: 500; }
+.formMsg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.formMsg svg { width: 14px; height: 14px; flex: 0 0 auto; }
 .formMsgOk { color: var(--verdict); }
 .formMsgError { color: var(--gap-text); }
 
 /* ── Filing opt-in (real, functional checkbox) ──────────────────── */
-.toggleRow { display: flex; align-items: flex-start; gap: var(--space-3); cursor: pointer; }
+.toggleRow { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; flex-wrap: wrap; }
 .toggleCheckbox {
   width: 18px;
   height: 18px;
-  margin-top: 1px;
   accent-color: var(--verdict);
   flex-shrink: 0;
   cursor: pointer;
 }
 .toggleCheckbox:disabled { cursor: default; }
-.toggleLabel { font-size: 13.5px; color: var(--ink); line-height: 1.45; cursor: pointer; }
+.toggleLabel { font-size: 13.5px; color: var(--ink); line-height: 1.45; cursor: pointer; flex: 1; min-width: 0; }
 
-/* ── Connections ────────────────────────────────────────────────── */
+/* "OFF" default-state chip beside the toggle (calm neutral, never an alarm). */
+.offChip {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--watch);
+  background: var(--watch-tint);
+  border: 1px solid var(--watch-edge);
+  border-radius: var(--radius-chip);
+  padding: 0.2rem 0.5rem;
+}
+
+/* Quiet beta-truth note under the toggle (clock + text). */
+.filingNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.filingNote svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 1px; color: var(--watch); }
+
+/* ── Connections (real cards) ───────────────────────────────────── */
+
+.connList { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .connRow {
   display: flex;
@@ -183,6 +408,26 @@
   justify-content: space-between;
   gap: var(--space-5);
   flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-1);
+  transition: transform var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+.connRow:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+  border-color: var(--edge-green);
+}
+
+/* Connected rows read as done/safe at a glance. */
+.connRowConnected {
+  background: linear-gradient(120deg, var(--verdict-tint), var(--panel) 80%);
+  border-color: var(--edge-green);
 }
 
 .connLeft { display: flex; gap: var(--space-3); align-items: flex-start; min-width: 0; }
@@ -190,59 +435,96 @@
 .connIcon {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-input);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 15px;
   font-weight: 700;
-  background: var(--panel-wash);
+  background: var(--paper-neutral);
   color: var(--ink-2);
+  border: 1px solid var(--hairline);
   flex-shrink: 0;
 }
 
-.connIconStripe { background: var(--verdict-tint); color: var(--verdict); }
+.connIcon svg { width: 20px; height: 20px; }
 
-.connName { font-size: 14.5px; font-weight: 600; color: var(--ink); margin: 0; }
+.connIconOn {
+  background: var(--verdict-tint);
+  color: var(--verdict);
+  border-color: var(--edge-green);
+}
+
+.connName { font-size: 14.5px; font-weight: 700; color: var(--ink); margin: 0; }
 .connDesc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 2px 0 0; max-width: 46ch; overflow-wrap: anywhere; }
 
 .connRight { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
 
-.statusPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
+.connMeta { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; margin: 6px 0 0; }
+
+/* Inline note for the email-evidence explainer (not a dead integration). */
+.connNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  padding: 0 var(--space-1);
+  max-width: 64ch;
 }
-
-.statusPillConnected { background: var(--verdict-tint); color: var(--verdict); border: 1px solid var(--verdict-deep); }
-.statusPillIdle { background: var(--panel-wash); color: var(--ink-3); border: 1px solid var(--hairline); }
-
-.statusDot { width: 7px; height: 7px; border-radius: 50%; }
-.statusDotOn { background: var(--verdict); }
-.statusDotOff { background: var(--ink-3); }
+.connNote svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; color: var(--ink-3); }
+.connNote b { color: var(--ink); font-weight: 600; }
 
 .connectBtn {
   display: inline-flex;
   align-items: center;
-  padding: 8px 16px;
-  border-radius: 7px;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
   font-size: 13px;
   font-weight: 700;
   background: var(--verdict);
-  color: var(--paper);
+  color: var(--on-verdict);
   text-decoration: none;
   border: none;
   cursor: pointer;
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 50%, transparent);
+  transition: background var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
 }
 
-.connectBtn:hover { background: var(--verdict-press); }
+.connectBtn:hover { background: var(--verdict-press); transform: translateY(-1px); }
+.connectBtn:active { transform: scale(0.98); }
+
+/* Neutral navigation button (no-workspace "Go to Account", btnBack register). */
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  align-self: flex-start;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink-2);
+  text-decoration: none;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  transition: border-color var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out),
+    background var(--duration-normal) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+.navBtn:hover { border-color: var(--edge-green); color: var(--verdict); background: var(--verdict-tint); }
+.navBtn:active { transform: scale(0.98); }
+.navBtn svg { width: 15px; height: 15px; }
 
 .linkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-3);
@@ -252,32 +534,91 @@
   padding: 0;
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
-.linkBtn:hover { color: var(--gap-text); }
+.linkBtn svg { width: 13px; height: 13px; }
+.linkBtn:hover { color: var(--ink); }
 
-.disabledTag {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+/* Single trust line on the Integrations panel (stated once per surface). */
+.trustLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 12.5px;
   color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 64ch;
+}
+.trustLine svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 1px; color: var(--verdict); }
+
+/* ── Progressive disclosure (policy "more details") ─────────────── */
+
+.moreDetails {
   border: 1px solid var(--hairline);
-  border-radius: 4px;
-  padding: 2px 7px;
+  border-radius: var(--radius-md);
+  background: var(--panel-wash);
+  overflow: hidden;
 }
 
-.connMeta { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.moreSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  list-style: none;
+  user-select: none;
+}
 
-.divider { height: 1px; background: var(--hairline); border: none; margin: 0; }
+.moreSummary::-webkit-details-marker { display: none; }
+.moreSummary:hover { color: var(--verdict); }
 
-/* Single trust line on the Integrations tab (stated once per surface). */
-.trustLine { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin: 0; max-width: 62ch; }
+.moreChev {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--ink-3);
+  transition: transform var(--duration-normal) var(--ease-spring),
+    color var(--duration-normal) var(--ease-out);
+}
 
-/* Quiet "coming soon" notifications note on the Account tab. */
-.quietNote { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin: 0; }
+.moreDetails[open] .moreChev { transform: rotate(180deg); color: var(--verdict); }
+.moreSummary:hover .moreChev { color: var(--verdict); }
 
-/* ── Plan row ───────────────────────────────────────────────────── */
+.moreBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 1rem 1rem;
+}
+
+/* Sub-card grouping a policy text + url pair as one scannable unit. */
+.policyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--panel-wash);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+.policyGroupLabel {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── Plan row (elevated card) ───────────────────────────────────── */
 
 .planRow {
   display: flex;
@@ -285,110 +626,130 @@
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--verdict) 5%, transparent), transparent 60%),
+    var(--panel-wash);
+  border: 1px solid var(--edge-green);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-1);
+  padding: var(--space-4) var(--space-5);
 }
 
-.planText { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; }
+.planText { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin: 0; max-width: 48ch; }
 .planTag {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--verdict);
-  border: 1px solid var(--verdict-deep);
+  border: 1px solid var(--edge-green);
   background: var(--verdict-tint);
-  border-radius: 4px;
-  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  padding: 0.32rem 0.7rem;
+  white-space: nowrap;
 }
+.planTag svg { width: 13px; height: 13px; flex: 0 0 auto; }
 
-/* ── Disabled preview (Notifications) ───────────────────────────── */
+/* Quiet "coming soon" notifications note on the Account tab. */
+.quietEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 0.3rem;
+}
+.quietNote { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin: 0; }
 
-.previewList { display: flex; flex-direction: column; gap: var(--space-3); }
+.signOutForm { margin-top: var(--space-1); }
 
-.previewItem {
-  display: flex;
+.signOutBtn {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
-  opacity: 0.7;
+  gap: 0.42rem;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  transition: border-color var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out),
+    background var(--duration-normal) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
 }
 
-.previewItem:last-child { border-bottom: none; }
+.signOutBtn:hover { border-color: var(--edge-green); color: var(--verdict); background: var(--verdict-tint); }
+.signOutBtn:active { transform: scale(0.98); }
+.signOutBtn svg { width: 15px; height: 15px; }
 
-.previewLabel { font-size: 13px; color: var(--ink); }
-.previewDesc { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* Group spacing inside the Account panel (between barred groups). */
+.acctGroup { display: flex; flex-direction: column; gap: var(--space-4); }
 
-.toggleGhost {
-  width: 36px;
-  height: 20px;
-  border-radius: 999px;
-  background: var(--hairline);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.toggleGhost::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--paper);
-}
-
-/* ── Danger zone ────────────────────────────────────────────────── */
+/* ── Danger zone (the SOLE vermilion surface) ───────────────────── */
 
 .danger {
-  border-radius: 10px;
+  position: relative;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--gap);
   background: var(--gap-tint);
+  box-shadow: var(--elev-1);
   padding: var(--space-6);
+  padding-left: calc(var(--space-6) + 3px);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  overflow: hidden;
 }
 
-.dangerTitle { font-size: 14px; font-weight: 700; color: var(--gap-text); margin: 0; }
+.danger::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--gap);
+}
+
+.dangerTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gap-text);
+  margin: 0;
+}
+.dangerTitle svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .dangerText { font-size: 12.5px; color: var(--ink-2); line-height: 1.55; margin: 0; max-width: 62ch; }
 
 .dangerBtn {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  padding: 8px 16px;
-  border-radius: 7px;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
   font-size: 13px;
   font-weight: 600;
   background: var(--paper);
   color: var(--gap-text);
   border: 1px solid var(--gap);
   cursor: pointer;
+  transition: background var(--duration-normal) var(--ease-out);
 }
 
 .dangerBtn:hover { background: var(--gap-tint); }
 .dangerBtn:disabled { opacity: 0.6; cursor: default; }
 
-.signOutForm { margin-top: var(--space-2); }
-
-.signOutBtn {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 16px;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  background: var(--panel-wash);
-  color: var(--ink);
-  border: 1px solid var(--hairline);
-  cursor: pointer;
-}
-
-.signOutBtn:hover { border-color: var(--edge-green); }
-
-/* ── Confirm dialog (disconnect / delete) ───────────────────────── */
+/* ── Confirm dialog (disconnect) ────────────────────────────────── */
 
 .dialog {
   /* Native <dialog> modals center via the UA margin:auto; a global reset zeroes
@@ -396,11 +757,23 @@
   margin: auto;
   width: min(440px, calc(100vw - 32px));
   border: 1px solid var(--hairline);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   background: var(--panel);
   color: var(--ink);
   padding: 0;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--elev-pop);
+  overflow: hidden;
+}
+
+/* Top accent rule so the dialog reads as part of the calm system. */
+.dialog::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--verdict);
 }
 
 .dialog::backdrop { background: rgba(10, 14, 12, 0.42); }
@@ -412,9 +785,54 @@
 
 .dialogActions { display: flex; justify-content: flex-end; gap: var(--space-3); }
 
+/* "Keep connected" is now the PRIMARY (safe) action: verdict-filled. */
+.dialogKeep {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--verdict);
+  color: var(--on-verdict);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 50%, transparent);
+  transition: background var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
+}
+.dialogKeep:hover { background: var(--verdict-press); transform: translateY(-1px); }
+.dialogKeep:active { transform: scale(0.98); }
+.dialogKeep svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* "Disconnect" is the SECONDARY action: neutral-but-firm outline, never red.
+   Disconnecting is a reversible pause, not destruction. */
+.dialogConfirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  cursor: pointer;
+  transition: border-color var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out),
+    background var(--duration-normal) var(--ease-out);
+}
+
+.dialogConfirm:hover { color: var(--ink); border-color: var(--ink-3); background: var(--panel-wash); }
+.dialogConfirm:disabled { opacity: 0.6; cursor: default; }
+.dialogConfirm svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* Cancel button reused inside the delete-account confirm (neutral). */
 .dialogCancel {
-  padding: 8px 16px;
-  border-radius: 7px;
+  padding: 9px 16px;
+  border-radius: var(--radius-input);
   font-size: 13px;
   font-weight: 600;
   background: var(--panel-wash);
@@ -423,24 +841,11 @@
   cursor: pointer;
 }
 
-.dialogConfirm {
-  padding: 8px 16px;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 700;
-  background: var(--gap);
-  color: var(--paper);
-  border: none;
-  cursor: pointer;
-}
-
-.dialogConfirm:hover { filter: brightness(0.95); }
-.dialogConfirm:disabled { opacity: 0.6; cursor: default; }
-
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
   .page { padding: var(--space-5) var(--space-4) var(--space-12); gap: var(--space-5); }
+  .kicker::before { width: 18px; }
   .tabs { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); }
   .tab { min-height: 44px; padding: 12px 12px 10px; }
   .panel { padding: var(--space-5); }
@@ -448,4 +853,11 @@
   .connRow { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
   .connLeft { width: 100%; }
   .connRight { align-items: flex-start; width: 100%; }
+  .connSummary { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
+  .connSummaryMid { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner { animation: none !important; }
+  .moreChev { transition: none !important; }
 }

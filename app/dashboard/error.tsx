@@ -3,7 +3,13 @@
 // Dashboard segment error boundary. Sits below the dashboard layout (which only
 // guards the session), so it replaces the page output. Keeps the merchant calm,
 // never blames them, and offers a retry that re-fetches the dashboard data.
+//
+// Redesign 2026-06-27: renders the shared AppErrorCard for the calm
+// workbench-grade reassurance surface, theme-aware via data-app-surface so a
+// dark-mode user stays dark. id="main" dropped (S3) — the skip target is the
+// shell's main, and a full-screen error has nothing to skip.
 import { useEffect } from 'react';
+import { AppErrorCard } from '../_components/ui/app-error-card';
 
 export default function DashboardError({
   error,
@@ -18,39 +24,35 @@ export default function DashboardError({
 
   return (
     <main
-      id="main"
-      className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 py-16 text-ink"
+      data-app-surface
+      className="flex min-h-screen flex-col items-center justify-center bg-[var(--paper)] px-6 py-12 text-[var(--ink)]"
     >
-      <div className="w-full max-w-md text-center">
-        <p className="label-mono mb-4">Dashboard interrupted</p>
-        <h1 className="font-display text-[clamp(1.6rem,4vw,2.25rem)] font-semibold leading-tight tracking-[-0.02em] text-ink">
-          We could not load your workspace
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-ink-soft">
-          A temporary problem stopped your disputes and account health from loading.
-          Nothing was lost. Try again, and if it persists, reach us at{' '}
-          <a
-            href="mailto:support@verdact.io"
-            className="text-action underline underline-offset-4 hover:text-action-deep"
-          >
-            support@verdact.io
-          </a>
-          .
-        </p>
-
-        {error.digest ? (
-          <p className="label-mono mt-5 text-ink-mute">Reference {error.digest}</p>
-        ) : null}
-
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <button type="button" onClick={() => unstable_retry()} className="btn btn--primary">
-            Try again
-          </button>
-          <a href="/dashboard" className="btn btn--ghost">
-            Reload dashboard
-          </a>
-        </div>
-      </div>
+      <AppErrorCard
+        eyebrow="Dashboard interrupted"
+        title="We could not load your workspace"
+        onPrimary={() => unstable_retry()}
+        primaryLabel="Try again"
+        secondaryHref="/dashboard"
+        secondaryLabel="Reload dashboard"
+        body={
+          <>
+            A temporary problem stopped your disputes and account health from
+            loading. Nothing was lost. Try again, and if it persists, reach us at{' '}
+            <a
+              href="mailto:support@verdact.io"
+              className="text-action underline underline-offset-4 hover:text-action-deep"
+            >
+              support@verdact.io
+            </a>
+            .
+            {error.digest ? (
+              <span className="label-mono mt-4 block text-ink-mute">
+                Reference {error.digest}
+              </span>
+            ) : null}
+          </>
+        }
+      />
     </main>
   );
 }

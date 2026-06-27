@@ -1,7 +1,15 @@
-/* ─── Account Health page — VERDICT v2 app dialect ──────────────────────────
-   Counts-first standing read scored against Stripe's 0.75% line. Honest states
-   when the snapshot is missing or too thin to score. Tokens are v2 custom
-   properties so dark mode is automatic.
+/* ─── Account Health page — VERDICT v2 app dialect (redesign 2026-06-27) ──────
+   Re-skinned to the Evidence Workbench gold standard: layered porcelain ground,
+   real elevation, mono eyebrows vs display numerals (scale contrast), section
+   bars with a one-line purpose, the two-color + neutral-watch law applied
+   strictly, and one clear next action per state. The VAMP math, the `scored`
+   gate, the snapshot writer and the print/export behaviour are untouched; this
+   module changes presentation, hierarchy and colour-assignment only.
+
+   Two-color law: verdict green = safe / done / forward; vermilion (--gap) is
+   reserved on this surface for the single genuine merchant-actionable problem
+   (over the line, an actionable EFW). Everything monitoring / your-call / close
+   reads as calm neutral via the --watch token set. Status is always icon + text.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
@@ -10,36 +18,68 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
+  /* Atmospheric top wash so the surface is never flat porcelain. */
+  background:
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--verdict) 3%, transparent), transparent 60%);
 }
 
-/* ── Header ─────────────────────────────────────────────────────── */
+/* ── Header (Zone A) ────────────────────────────────────────────── */
 
 .headerRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--space-5);
+  margin-bottom: var(--space-1);
 }
 
 .headerText {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
+/* mono kicker with a leading hairline rule, mirroring the workbench caseKicker */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0 0 0.4rem;
+}
+
+.kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--verdict);
+  display: block;
+  border-radius: 2px;
+}
+
+/* the emotional headline a frightened founder reads first; honest in every branch */
 .pageTitle {
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
   margin: 0;
+  max-width: 20ch;
 }
 
 .freshness {
-  font-size: 12.5px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
   color: var(--ink-3);
   margin: 0;
 }
@@ -49,6 +89,7 @@
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+  margin-top: var(--space-2);
 }
 
 .refreshForm {
@@ -61,17 +102,20 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-input);
   font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--hairline);
   background: var(--panel);
   color: var(--ink);
   cursor: pointer;
-  transition: border-color 120ms;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
 }
 
 .refreshBtn:hover { border-color: var(--edge-green); }
+.refreshBtn:active { transform: scale(0.98); }
 .refreshBtn:disabled { opacity: 0.6; cursor: default; }
 
 .refreshMsg {
@@ -81,141 +125,240 @@
 
 .refreshMsgError { color: var(--gap-text); }
 
-.statusChip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 600;
-  border: 1px solid var(--hairline);
-  background: var(--panel);
-  color: var(--ink-2);
-  white-space: nowrap;
+/* ── Header signal tile (promoted status, mirrors workbench deadlineTile) ── */
+
+.signalTile {
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.25rem 1rem;
+  min-width: 11.5rem;
+  text-align: right;
+  box-shadow: var(--elev-2);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--verdict) 6%, transparent), transparent 70%),
+    var(--panel);
+  border: 1px solid var(--edge-green);
 }
 
-.statusChipHealthy { border-color: var(--verdict-deep); background: var(--verdict-tint); color: var(--ink); }
-.statusChipHealthy .statusIcon { color: var(--verdict); }
-.statusChipClose   { border-color: var(--gap); color: var(--ink); }
-.statusChipClose .statusIcon { color: var(--gap-text); }
-.statusChipAtRisk  { border-color: var(--gap); background: var(--gap-tint); color: var(--gap-text); }
+.signalTileDone { border-color: var(--edge-green); }
+.signalTileWatch {
+  border-color: var(--watch-edge);
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--watch) 7%, transparent), transparent 70%),
+    var(--panel);
+}
+.signalTileGap {
+  border-color: var(--accent-rule);
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--gap) 7%, transparent), transparent 70%),
+    var(--panel);
+}
+.signalTileNeutral {
+  border-color: var(--hairline);
+  background: var(--panel);
+}
 
-/* Neutral dot for the not-connected / not-yet-scored chips. The scored chips
-   carry an icon instead (icon + text status, never color alone). */
-.statusDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.statusDotNeutral { background: var(--ink-3); }
+.signalLead {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0;
+}
 
-/* Status icon for scored chips: meaning is carried by icon + text, never color
-   alone. Inherits chip color so healthy reads verdict-green, at-risk reads
-   gap-text. */
-.statusIcon { width: 14px; height: 14px; flex-shrink: 0; }
+/* bump the badge up a notch inside the tile so the status reads at real weight */
+.signalBadge {
+  font-size: 0.78rem;
+  padding: 0.42rem 0.78rem;
+}
+
+.signalBadge svg {
+  width: 1rem;
+  height: 1rem;
+}
 
 /* ── Panels ─────────────────────────────────────────────────────── */
 
 .panel {
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--hairline);
   background: var(--panel);
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  box-shadow: var(--elev-1);
 }
 
-.panelLabel {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 0;
+/* the standing read is the page's one top-tier surface: more radius + elevation */
+.panelStanding {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-2);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--verdict) 4%, transparent), transparent 55%),
+    var(--panel);
 }
 
-.panelHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+/* trend is the lowest-priority block until data exists: lighter, recedes */
+.panelQuiet {
+  background: var(--paper-neutral);
+  box-shadow: none;
+  border-color: var(--hairline);
+}
+
+/* the reassurance panel: a warm, slightly-special "we have got this" ground */
+.panelWatch {
+  background:
+    linear-gradient(160deg, var(--verdict-tint) 0%, var(--panel) 70%);
+  border-color: var(--edge-green);
+}
+
+/* pull the first section bar up so it does not double the panel's top padding */
+.sectionBarFirst {
+  margin-top: 0;
+  margin-bottom: var(--space-2);
 }
 
 /* ── Zone B: standing read ──────────────────────────────────────── */
 
 .standingTop {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
 .readNumber {
-  /* Lead with one number: the readout dominates the standing read (comp hero
-     clamp 48-80px). */
+  /* the display hero: counts dominate the read (comp hero clamp 48-80px) */
+  font-family: var(--font-display);
   font-size: clamp(48px, 8vw, 80px);
   font-weight: 700;
   color: var(--ink);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.04em;
   margin: 0;
 }
 
-.readBand {
+.readBadge {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0;
+  align-self: center;
+  margin-top: 0.2rem;
 }
 
-.readBandIcon { width: 16px; height: 16px; flex-shrink: 0; }
-
-.readBandHealthy { color: var(--verdict); }
-.readBandClose   { color: var(--ink); }
-.readBandAtRisk  { color: var(--gap-text); }
-
+/* Headroom: a bold plain-English status + a muted concrete sub-line */
 .headroom {
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: var(--space-1);
+}
+
+.headroomLead {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
-/* Gauge */
+.headroomSub {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
 
-.gauge { display: flex; flex-direction: column; gap: 6px; margin-top: var(--space-1); }
+/* ── Gauge as a true threshold ──────────────────────────────────── */
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.6rem; /* room above for the pinned 0.75% caption */
+}
 
 .gaugeTrack {
   position: relative;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--hairline);
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-wash);
+  border: 1px solid var(--hairline);
   overflow: visible;
 }
 
 .gaugeFill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   background: var(--verdict);
-  transition: width 320ms var(--ease-out);
+  transition: width var(--duration-narrative) var(--ease-out);
 }
 
-.gaugeFillClose  { background: var(--warning); }
+/* close = monitoring, by the brand law neutral (NOT amber). at-risk = vermilion. */
+.gaugeFillClose  { background: var(--watch); }
 .gaugeFillAtRisk { background: var(--gap); }
 
+/* the danger zone to the right of the line: "above here is the problem" */
+.gaugeDanger {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--gap-tint) 70%, transparent),
+    color-mix(in srgb, var(--gap-tint) 70%, transparent) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  pointer-events: none;
+}
+
+/* the 0.75% line itself: a full-height boundary marker, neutral until crossed */
 .gaugeMarker {
   position: absolute;
-  top: -3px;
+  top: -4px;
+  bottom: -4px;
   width: 2px;
-  height: 14px;
-  background: var(--ink);
-  opacity: 0.55;
+  background: var(--watch);
+  border-radius: 1px;
+}
+
+.gaugeMarkerAtRisk {
+  background: var(--gap);
+}
+
+.gaugeMarkerCap {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--watch);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.gaugeMarkerAtRisk .gaugeMarkerCap {
+  color: var(--gap-text);
 }
 
 /* "One more dispute" ghost marker: a quiet hollow dot showing where the rate
    would land if one more dispute landed, so the headroom reads as concrete.
-   Neutral, never colored. Hidden when already over the line. */
+   Neutral projection, never colored. Hidden when already over the line. */
 .gaugeGhost {
   position: absolute;
   top: 50%;
@@ -223,208 +366,85 @@
   height: 9px;
   border-radius: 50%;
   background: var(--panel);
-  border: 1.5px dashed var(--rule-strong);
+  border: 1.5px dashed var(--watch-edge);
   transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
 .gaugeScale {
   display: flex;
   justify-content: space-between;
-  font-size: 10.5px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 
-/* Counts row */
+/* ── Counts with hierarchy ──────────────────────────────────────── */
 
 .counts {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-  border-top: 1px solid var(--hairline);
-  padding-top: var(--space-4);
-}
-
-.countItem { display: flex; flex-direction: column; gap: 2px; }
-
-.countNum {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-
-.countLabel { font-size: 11.5px; color: var(--ink-3); }
-
-.windowNote { font-size: 11.5px; color: var(--ink-3); margin: 0; }
-
-.measuredBtn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  border: 1px solid var(--hairline);
-  background: var(--panel-wash);
-  color: var(--verdict);
-  cursor: pointer;
-}
-
-.measuredBtn:hover { border-color: var(--edge-green); }
-
-/* ── Honest states (not scored / connect) ───────────────────────── */
-
-.notScored {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
+  gap: 0.6rem;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
 }
 
-.notScoredTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-}
-
-.notScoredText {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  line-height: 1.55;
-  margin: 0;
-  max-width: 60ch;
-}
-
-.connectCta {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  padding: 9px 18px;
-  border-radius: 6px;
-  font-size: 13.5px;
-  font-weight: 700;
-  background: var(--verdict);
-  color: var(--paper);
-  text-decoration: none;
-  margin-top: var(--space-1);
-}
-
-.connectCta:hover { background: var(--verdict-press); }
-
-/* ── Zone C: trend ──────────────────────────────────────────────── */
-
-.trendEmpty {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  line-height: 1.55;
-  margin: 0;
-  max-width: 62ch;
-}
-
-/* ── Zone D: drivers ────────────────────────────────────────────── */
-
-.driverList { display: flex; flex-direction: column; }
-
-.driverRow {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.driverRow:last-child { border-bottom: none; }
-
-.driverMark {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-  background: var(--ink-3);
-}
-
-.driverMarkGap { background: var(--gap); }
-.driverMarkVerdict { background: var(--verdict); }
-
-.driverText { font-size: 13.5px; color: var(--ink); line-height: 1.5; margin: 0; }
-.driverSub { font-size: 12px; color: var(--ink-3); margin: 2px 0 0; }
-
-.driverEmpty { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; margin: 0; }
-
-/* ── Zone E: monitoring reassurance ─────────────────────────────── */
-
-/* Promote "What Verdact is watching" into a real surface: green eyebrow + a
-   live count, so the tips read as a deliberate panel, not a buried footnote. */
-.watchHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+.countPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
-  flex-wrap: wrap;
 }
 
-.watchTitle { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
 
-.eyebrow {
-  font-size: 11px;
+.figureNum {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
   font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.figureLabel {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--verdict);
+  color: var(--ink-2);
+}
+
+.countContext {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
   margin: 0;
 }
 
-.watchCount {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
+/* ── Footer affordance row (measured help + export) ─────────────── */
 
-.watchCountNum { color: var(--verdict-press); font-weight: 700; }
-
-.watchEmpty {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  line-height: 1.55;
-  margin: 0;
-  max-width: 62ch;
-}
-
-.monitorList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
-
-.monitorItem {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.5;
-}
-
-.monitorTick {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  margin-top: 1px;
-  color: var(--verdict);
-}
-
-/* ── Export affordance ──────────────────────────────────────────── */
-
-.exportRow {
+.footerRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.exportGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .exportBtn {
@@ -432,46 +452,474 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-input);
   font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--hairline);
   background: var(--panel);
   color: var(--ink);
   cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
 }
 
 .exportBtn:hover { border-color: var(--edge-green); }
+.exportBtn:active { transform: scale(0.98); }
 
 .betaTag {
-  font-size: 10.5px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--verdict);
-  border: 1px solid var(--verdict-deep);
+  border: 1px solid var(--edge-green);
   background: var(--verdict-tint);
-  border-radius: 4px;
+  border-radius: var(--radius-chip);
   padding: 2px 6px;
 }
 
-.foot {
-  font-size: 11.5px;
-  color: var(--ink-3);
+/* ── Honest states (not scored) ─────────────────────────────────── */
+
+.notScored {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.notScoredTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.notScoredText {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* ── The one next action (not-connected): deep-field card, dark both themes ── */
+
+.nextAction {
+  background:
+    radial-gradient(150% 120% at 0% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, rgba(183, 224, 203, 0.1), transparent 50%),
+    linear-gradient(155deg, var(--verdict-deep) 0%, var(--verdict-abyss) 100%);
+  border: 1px solid color-mix(in srgb, var(--verdict) 35%, transparent);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.4rem, 3vw, 1.9rem);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.4rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 44px -20px rgba(6, 47, 36, 0.55);
+}
+
+.naSeal {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--mint) 22%, transparent), transparent 70%);
+  color: var(--mint);
+}
+
+.naSealIcon { width: 1.85rem; height: 1.85rem; }
+
+.naText { min-width: 0; }
+
+.naEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mint) 65%, #ffffff);
+  margin: 0 0 0.42rem;
+}
+
+.naHead {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.naSub {
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--mint) 65%, #ffffff);
+  margin: 0.55rem 0 0;
+  line-height: 1.5;
+  max-width: 48ch;
+  opacity: 0.94;
+}
+
+.naCta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #ffffff;
+  color: var(--verdict-deep);
+  border: none;
+  cursor: pointer;
+  font-size: 0.97rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 0.95rem 1.5rem;
+  border-radius: var(--radius-input);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 24px -8px rgba(0, 0, 0, 0.4);
+  transition:
+    transform var(--duration-normal) var(--ease-spring),
+    background var(--duration-normal) var(--ease-out);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.naCta:hover {
+  background: color-mix(in srgb, var(--mint) 65%, #ffffff);
+  transform: translateY(-2px);
+}
+
+.naCta:active { transform: translateY(0) scale(0.98); }
+.naCtaIcon { width: 1.15rem; height: 1.15rem; }
+
+@media (max-width: 700px) {
+  .nextAction {
+    grid-template-columns: 1fr;
+    text-align: left;
+    gap: 1.1rem;
+  }
+  .naCta { width: 100%; justify-content: center; }
+}
+
+/* ── Zone C: trend (reserved, building) ─────────────────────────── */
+
+.trendBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ghostSpark {
+  width: 100%;
+  height: 56px;
+  display: block;
+  opacity: 0.8;
+}
+
+.trendEmpty {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
+
+/* ── Zone D: drivers (elevated rows, two-color law) ─────────────── */
+
+.driverList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.driverRow {
+  display: grid;
+  grid-template-columns: 1.85rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.85rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-input);
+  box-shadow: var(--elev-1);
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+.driverRow:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+}
+
+/* the one true gap row (actionable EFW) gets the vermilion left-tint */
+.driverRowGap {
+  background: linear-gradient(120deg, var(--gap-tint), var(--panel) 86%);
+  border-color: var(--accent-rule);
+}
+
+.driverIcon {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hairline);
+}
+
+.driverIcon svg { width: 0.95rem; height: 0.95rem; }
+
+.driverIconWatch {
+  background: var(--watch-tint);
+  color: var(--watch);
+  border-color: var(--watch-edge);
+}
+
+.driverIconGap {
+  background: var(--gap-tint);
+  color: var(--gap-text);
+  border-color: var(--accent-rule);
+}
+
+.driverMain { min-width: 0; }
+
+.driverText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.driverRowGap .driverText { color: var(--gap-text); }
+
+.driverSub {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  margin: 0.2rem 0 0;
+  line-height: 1.45;
+}
+
+.driverRoute {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.driverRoute:hover { color: var(--verdict); }
+.driverRouteIcon { width: 0.9rem; height: 0.9rem; }
+.driverRowGap .driverRoute { color: var(--gap-text); }
+
+.driverEmpty {
+  font-size: 0.875rem;
+  color: var(--ink-2);
   line-height: 1.5;
   margin: 0;
 }
 
+/* all-clear: a small verdict check so "nothing wrong" reads as positive */
+.driverEmptyCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.driverEmptyIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  color: var(--verdict);
+}
+
+/* ── Zone E: monitoring reassurance ─────────────────────────────── */
+
+.watchHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.watchTitle { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0;
+}
+
+.eyebrowIcon { width: 0.9rem; height: 0.9rem; }
+
+.watchHeadline {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  line-height: 1.2;
+  margin: 0;
+  max-width: 28ch;
+}
+
+.watchCount {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.watchCountNum {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--verdict);
+  font-weight: 700;
+}
+
+.watchEmpty {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+.watchEmpty p { margin: 0; }
+
+.watchEmptyIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  color: var(--verdict);
+}
+
+.monitorList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.monitorItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.monitorIcon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: var(--radius-input);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--verdict-tint);
+  color: var(--verdict);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--verdict) 12%, transparent);
+}
+
+.monitorIcon svg { width: 1.1rem; height: 1.1rem; }
+
+.monitorText { display: flex; flex-direction: column; gap: 0.12rem; min-width: 0; }
+
+.monitorWhat {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.monitorWhy {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* the one trust line that stays on this surface; centered youDecide treatment */
+.youDecide {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--edge-green);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+  text-align: center;
+  max-width: 64ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.youDecideIcon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: var(--verdict);
+}
+
+.youDecide b { color: var(--ink); font-weight: 700; }
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
-  .page { padding: var(--space-5) var(--space-4) var(--space-12); gap: var(--space-6); }
-  .readNumber { font-size: 36px; }
-  .counts { grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .page { padding: var(--space-5) var(--space-4) var(--space-12); gap: var(--space-5); }
+  .headerRow { grid-template-columns: 1fr; gap: var(--space-4); }
+  .signalTile {
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .readNumber { font-size: 44px; }
 }
 
 @media (max-width: 420px) {
-  .counts { grid-template-columns: 1fr; }
+  .countPair { grid-template-columns: 1fr; gap: var(--space-3); }
+  .driverRow { grid-template-columns: 1.7rem 1fr; }
+  .driverRoute { grid-column: 2; justify-self: start; margin-top: 0.25rem; }
 }
 
 /* ── Print: report only ─────────────────────────────────────────────
@@ -503,19 +951,37 @@
     max-width: none;
     padding: 0;
     gap: var(--space-6);
+    background: none;
   }
 
   /* Interactive affordances are not part of the printed artifact. */
   .refreshForm,
-  .exportRow .betaTag,
+  .betaTag,
   .exportBtn,
-  .connectCta {
+  .naCta,
+  .driverRoute {
     display: none !important;
   }
 
   /* Keep panels from breaking awkwardly across printed pages. */
-  .panel {
+  .panel,
+  .panelStanding,
+  .nextAction,
+  .driverRow {
     break-inside: avoid;
     box-shadow: none;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .gaugeFill {
+    transition: none !important;
+  }
+  .refreshBtn,
+  .exportBtn,
+  .driverRow,
+  .naCta {
+    transition: none !important;
   }
 }

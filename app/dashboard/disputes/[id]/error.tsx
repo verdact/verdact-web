@@ -3,8 +3,12 @@
 // Evidence record (workbench) error boundary. This route enriches the dispute
 // with live Stripe charge data, so a transient upstream hiccup is the most
 // likely cause: lead with a retry. Honest, no blame, no stack trace in prod.
+//
+// Redesign 2026-06-27: renders the shared AppErrorCard for the calm
+// workbench-grade reassurance surface, theme-aware via data-app-surface so a
+// dark-mode user stays dark. id="main" dropped (S3).
 import { useEffect } from 'react';
-import styles from './workbench.module.css';
+import { AppErrorCard } from '@/app/_components/ui/app-error-card';
 
 export default function WorkbenchError({
   error,
@@ -19,40 +23,36 @@ export default function WorkbenchError({
 
   return (
     <main
-      id="main"
-      className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 py-16 text-ink"
+      data-app-surface
+      className="flex min-h-screen flex-col items-center justify-center bg-[var(--paper)] px-6 py-12 text-[var(--ink)]"
     >
-      <div className="w-full max-w-md text-center">
-        <p className={`${styles.labelMono} mb-4`}>Evidence record interrupted</p>
-        <h1 className={`${styles.fontDisplay} text-[clamp(1.6rem,4vw,2.25rem)] font-semibold leading-tight tracking-[-0.02em] text-ink`}>
-          We could not open this record
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-ink-soft">
-          A temporary problem stopped this dispute from loading, often while pulling
-          the latest charge details. Your evidence is safe. Try again, and if it
-          persists, reach us at{' '}
-          <a
-            href="mailto:support@verdact.io"
-            className="text-action underline underline-offset-4 hover:text-action-deep"
-          >
-            support@verdact.io
-          </a>
-          .
-        </p>
-
-        {error.digest ? (
-          <p className={`${styles.labelMono} mt-5`}>Reference {error.digest}</p>
-        ) : null}
-
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <button type="button" onClick={() => unstable_retry()} className="btn btn--primary">
-            Try again
-          </button>
-          <a href="/dashboard/disputes" className="btn btn--ghost">
-            Back to disputes
-          </a>
-        </div>
-      </div>
+      <AppErrorCard
+        eyebrow="Evidence record interrupted"
+        title="We could not open this record"
+        onPrimary={() => unstable_retry()}
+        primaryLabel="Try again"
+        secondaryHref="/dashboard/disputes"
+        secondaryLabel="Back to disputes"
+        body={
+          <>
+            A temporary problem stopped this dispute from loading, often while
+            pulling the latest charge details. Your evidence is safe. Try again,
+            and if it persists, reach us at{' '}
+            <a
+              href="mailto:support@verdact.io"
+              className="text-action underline underline-offset-4 hover:text-action-deep"
+            >
+              support@verdact.io
+            </a>
+            .
+            {error.digest ? (
+              <span className="label-mono mt-4 block text-ink-mute">
+                Reference {error.digest}
+              </span>
+            ) : null}
+          </>
+        }
+      />
     </main>
   );
 }

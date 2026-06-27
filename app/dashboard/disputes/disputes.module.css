@@ -1,6 +1,15 @@
 /* ─── Disputes index/queue — VERDICT v2 app dialect ─────────────────────────
-   Reuses the dashboard row treatment. Filter tabs, deadline-first ordering,
-   proper empty states. v2 tokens only, so dark mode is automatic.
+   Redesign 2026-06-27 (Claude). Brought to the Evidence Workbench gold standard:
+   a mono eyebrow + display-scale title + plain-English triage line; a section
+   bar; layered cards (not table rows) with designed hover/focus/active states;
+   the disputed amount and days-left rendered as real display figures for
+   scale-contrast; de-alarmed status via the shared StatusBadge driven by
+   deadline runway, not status alone; warmth via ReassureCard empties.
+
+   Two-color law: verdict green = done / safe / forward; vermilion (--gap) is the
+   single accent, reserved for a genuinely urgent/over deadline or a real
+   merchant-closable gap. Everything else is the calm --watch / neutral set.
+   v2 tokens only — dark mode is automatic. No hardcoded hex.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .page {
@@ -12,23 +21,58 @@
   gap: var(--space-6);
 }
 
+/* ── Page header ────────────────────────────────────────────────── */
+
 .header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+}
+
+/* Mono eyebrow + leading verdict rule, matching the workbench caseKicker. */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--verdict);
+  margin: 0 0 0.85rem;
+}
+
+.kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--verdict);
+  display: block;
+  border-radius: 2px;
 }
 
 .title {
-  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 0 0 0.75rem;
+}
+
+/* The calm plain-English triage headline — the loudest sentence on the page. */
+.triage {
+  font-size: clamp(1.02rem, 1.4vw, 1.18rem);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  margin: 0 0 0.3rem;
+  max-width: 52ch;
 }
 
 .sub {
-  font-size: 13.5px;
+  font-size: 0.9rem;
   color: var(--ink-2);
   line-height: 1.5;
   margin: 0;
@@ -41,6 +85,10 @@
   display: flex;
   gap: var(--space-1);
   border-bottom: 1px solid var(--hairline);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--paper);
 }
 
 .tab {
@@ -48,20 +96,33 @@
   align-items: center;
   gap: 6px;
   padding: var(--space-3) var(--space-4);
-  font-size: 13px;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--ink-2);
+  color: var(--ink-3);
   text-decoration: none;
   border-bottom: 2px solid transparent;
+  border-top-left-radius: var(--radius-chip);
+  border-top-right-radius: var(--radius-chip);
   margin-bottom: -1px;
-  transition: color 120ms, border-color 120ms;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
-.tab:hover { color: var(--ink); }
+.tab:hover {
+  color: var(--ink);
+  background: var(--panel-wash);
+}
 
 .tabActive {
   color: var(--ink);
+  font-weight: 700;
   border-bottom-color: var(--verdict);
+}
+
+.tabActive:hover {
+  background: transparent;
 }
 
 .tabCount {
@@ -70,7 +131,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
   background: var(--paper-2);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 1px 7px;
 }
 
@@ -79,176 +140,290 @@
   background: var(--verdict-tint);
 }
 
-/* ── List ───────────────────────────────────────────────────────── */
+/* ── Section bar above the list ─────────────────────────────────── */
+
+.listBar {
+  margin: 0.25rem 0 0;
+}
+
+/* ── List of layered cards ──────────────────────────────────────── */
 
 .list {
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
 }
 
+/* A discrete, layered card — mirrors the workbench evRow. Lifts on hover with
+   compositor-friendly transform + shadow only; the grid never animates. */
 .row {
   display: grid;
   grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
+  padding: var(--space-4) var(--space-5);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-1);
   text-decoration: none;
   color: inherit;
-  transition: background 120ms;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
 }
 
-.row:hover { background: var(--panel-wash); }
-.row:last-child { border-bottom: none; }
+.row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+  border-color: var(--edge-green);
+}
+
+.row:active {
+  transform: translateY(0);
+}
+
+/* Left accent rail. A comfortable needs-response row gets a calm verdict rail
+   ("you have time"); a genuinely urgent/over deadline earns the single vermilion
+   rail ("act now") — the one place --gap appears on a row. */
+.row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.rowOpen::before {
+  background: linear-gradient(180deg, var(--verdict), transparent);
+  opacity: 0.8;
+}
+
+.rowUrgent::before {
+  background: linear-gradient(180deg, var(--gap), transparent);
+  opacity: 0.9;
+}
+
+.rowUrgent {
+  border-color: var(--accent-rule);
+}
+
+.rowUrgent:hover {
+  border-color: var(--accent-rule);
+}
 
 .rowStatus {
   display: flex;
   align-items: center;
-  gap: 6px;
   min-width: 0;
 }
 
-.statusDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.statusDotHealthy { background: var(--verdict); }
-.statusDotAtRisk  { background: var(--gap); }
-.statusDotNeutral { background: var(--ink-3); }
-
-.rowStatusLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
+/* ── Row info: reason (primary) + network (muted) + readiness chip ── */
 
 .rowInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   overflow: hidden;
 }
 
+/* The reason is what tells the founder which fight this is — make it primary. */
 .rowReason {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--ink);
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.rowId {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
+.rowNetwork {
+  font-size: 0.78rem;
+  color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* The readiness chip reuses StatusBadge; give it room to wrap rather than
+   truncate a gap message the merchant needs to read. The doubled class lifts
+   specificity above StatusBadge's own .badge { white-space: nowrap } so the
+   wrap holds regardless of CSS-module bundle order. */
+.readyChip.readyChip {
+  margin-top: 2px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+}
+
+/* ── Amount — promoted to a real display figure (the number the founder feels) ── */
 
 .rowAmount {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   color: var(--ink);
   white-space: nowrap;
+  text-align: right;
 }
+
+/* ── Deadline — days-left as a small display figure + muted caption ── */
 
 .rowDeadline {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
+  gap: 0.55rem;
   color: var(--ink-2);
   white-space: nowrap;
 }
 
-/* Neutral by default. The clock icon rides along but stays ink-2 until the
-   deadline nears, so the row reads calm when there is time. */
 .deadlineIcon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
+  color: currentColor;
 }
 
-/* Under 48h: the whole stamp (icon + text) turns vermilion. This is the only
-   place the deadline accent fires — a genuine, merchant-closable at-risk state. */
-.rowDeadlineUrgent { color: var(--gap-text); font-weight: 600; }
+.deadlineFig {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  min-width: 0;
+}
 
-/* ── "Worth responding" readiness chip ──────────────────────────────
-   Honest evidence-completeness, not a win prediction. Icon + text always
-   (status is never color alone). Green = required proof present; vermilion
-   "Gap" = a merchant-closable missing element. No percentages, ever. */
+.deadlineNum {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 4px;
-  font-size: 11.5px;
+.deadlineCap {
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+/* Three-step gradient (driven by the shared deadlineTier). Comfortable stays
+   neutral; "soon" is amber warning (a genuine "getting close" that is NOT alarm
+   red); urgent is the single vermilion on the row. */
+.deadlineSoon {
+  color: var(--warning-deep);
+}
+
+.deadlineSoon .deadlineNum {
+  color: var(--warning-deep);
+}
+
+.deadlineUrgent {
+  color: var(--gap-text);
+}
+
+.deadlineUrgent .deadlineNum {
+  color: var(--gap-text);
+}
+
+/* Settled cases: a quiet mono tag, no clock, so a closed row never competes with
+   a live countdown. */
+.rowSettled {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 600;
-  line-height: 1.3;
-  max-width: 100%;
-  min-width: 0;
-}
-
-/* The message label carries the truncation so the icon never collapses. */
-.chip span {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  justify-self: end;
 }
 
-.chipIcon {
-  width: 13px;
-  height: 13px;
-  flex: 0 0 auto;
-}
-
-.chipReady { color: var(--verdict-press); }
-.chipGap { color: var(--gap-text); }
+/* ── Row action — tiered by state (primary / secondary / quiet) ── */
 
 .rowAction {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  background: var(--verdict-tint);
-  color: var(--verdict);
-  border: 1px solid var(--verdict-deep);
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-input);
+  font-size: 0.83rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   white-space: nowrap;
+  transition:
+    background var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
 }
 
-/* ── Empty state ────────────────────────────────────────────────── */
+.rowActionIcon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+}
+
+/* Primary — the one row-level CTA that should pull the eye. */
+.actionPrimary {
+  background: var(--verdict);
+  color: var(--on-verdict);
+  border: 1px solid transparent;
+  box-shadow: 0 2px 10px -3px color-mix(in srgb, var(--verdict) 45%, transparent);
+}
+
+.row:hover .actionPrimary {
+  background: var(--verdict-press);
+  transform: translateY(-1px);
+}
+
+.row:active .actionPrimary {
+  transform: scale(0.98);
+}
+
+/* Secondary — outlined ghost for in-flight cases. */
+.actionSecondary {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--hairline);
+}
+
+.row:hover .actionSecondary {
+  border-color: var(--edge-green);
+  color: var(--verdict);
+}
+
+/* Quiet tertiary — a de-emphasized text link for closed cases. */
+.actionQuiet {
+  background: transparent;
+  color: var(--ink-3);
+  border: 1px solid transparent;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.row:hover .actionQuiet {
+  color: var(--ink-2);
+}
+
+/* ── Empty state (ReassureCard) ─────────────────────────────────── */
+
+.emptyWrap {
+  margin-top: var(--space-2);
+}
 
 .empty {
-  padding: var(--space-10) var(--space-4);
-  border-radius: 10px;
-  border: 1px solid var(--hairline);
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  align-items: flex-start;
-}
-
-.emptyTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-}
-
-.emptyText {
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.5;
-  margin: 0;
-  max-width: 60ch;
+  max-width: 72ch;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
@@ -260,19 +435,44 @@
 
   .row {
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    gap: var(--space-2) var(--space-3);
+    grid-template-rows: auto auto auto;
+    gap: var(--space-3);
+    padding: var(--space-4);
   }
 
   .rowStatus   { grid-column: 1; grid-row: 1; }
+  /* Deadline rides beside the status badge on the top line. */
+  .rowDeadline { grid-column: 2; grid-row: 1; justify-content: flex-end; }
+  .rowSettled  { grid-column: 2; grid-row: 1; }
   .rowInfo     { grid-column: 1; grid-row: 2; }
-  /* Amount stays visible on mobile (was hidden) — right-aligned beside the
-     reason/charge id, so the figure is never lost on small screens. */
-  .rowAmount   { grid-column: 2; grid-row: 2; text-align: right; }
-  .rowDeadline { grid-column: 2; grid-row: 1; font-size: 11.5px; justify-content: flex-end; }
-  /* The readiness chip can wrap on narrow screens — give it room rather than
-     truncating the gap message a merchant needs to read. */
-  .chip { align-items: flex-start; }
-  .chip span { white-space: normal; overflow: visible; }
-  .rowAction   { display: none; }
+  /* Amount stays visible — right-aligned beside the reason cluster. */
+  .rowAmount   { grid-column: 2; grid-row: 2; align-self: center; }
+  /* The action stays VISIBLE on mobile (DI2): a full-width primary so a panicked
+     user always sees where to press. */
+  .rowAction {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: center;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+  }
+  .actionQuiet {
+    justify-content: flex-start;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .row::before,
+  .rowAction {
+    transition: none !important;
+  }
+  .row:hover,
+  .row:active,
+  .row:hover .actionPrimary,
+  .row:active .actionPrimary {
+    transform: none !important;
+  }
 }

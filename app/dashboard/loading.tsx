@@ -1,10 +1,13 @@
 import { AppShell } from '../_components/app-chrome';
+import { LoadingHeadline } from '../_components/ui/loading-headline';
 
 // Dashboard loading fallback. Replaces the page output while the server fetches
 // disputes, account health, and guidance, so we keep the app shell (rail +
 // topbar) mounted and lay calm skeletons where the masthead, ledger line, and
-// docket will land. Skeleton shimmer (.skel) is stilled under reduced-motion by
-// the global block in globals.css. AppShell tolerates a null email.
+// docket will land. A visible LoadingHeadline (S4) reads as "loading", not
+// "broken", before the skeletons. Skeleton shimmer (.skel) is stilled under
+// reduced-motion by the global block in globals.css. AppShell tolerates a null
+// email.
 export default function DashboardLoading() {
   return (
     <AppShell email={null} active="dashboard">
@@ -14,6 +17,7 @@ export default function DashboardLoading() {
         aria-live="polite"
       >
         <span className="sr-only">Loading your workspace</span>
+        <LoadingHeadline eyebrow="Loading" title="Opening your workspace…" />
 
         {/* Masthead: title + connection chip */}
         <div className="flex flex-wrap items-center justify-between gap-4">
