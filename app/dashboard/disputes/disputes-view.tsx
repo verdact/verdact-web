@@ -490,7 +490,7 @@ function deadlineFigure(hours: number | null): {
   caption: (by: string) => string;
 } {
   if (hours === null) {
-    return { lead: '—', caption: (by) => `Respond by ${by}` };
+    return { lead: 'None', caption: (by) => `Respond by ${by}` };
   }
   if (hours < 0) {
     return { lead: 'Past', caption: (by) => `Respond by ${by}, deadline passed` };

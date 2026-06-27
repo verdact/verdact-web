@@ -1180,6 +1180,10 @@
 
 .cardMeterFillGap { background: var(--gap); }
 
+/* Calm "getting close"/Watching band: neutral watch fill, never the vermilion
+   gap, so the meter agrees with its own watch badge. Mirrors gaugeFillClose. */
+.cardMeterFillWatch { background: var(--watch); }
+
 /* The 0.75% threshold read as a labelled line, not decoration (Section 6). */
 .cardMeter { overflow: visible; }
 

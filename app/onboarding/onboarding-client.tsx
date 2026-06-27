@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useRef, useState } from 'react';
+import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { PERSONA_OPTIONS } from '@/lib/guidance';
 import {
   AlertIcon,
@@ -58,6 +58,15 @@ export function OnboardingClient({
 
   const countedIndex = COUNTED_STEPS.indexOf(step); // -1 on the welcome cover
 
+  // a11y (WCAG 2.4.3 Focus Order / 4.1.3 Status Messages): each step swap is a
+  // full content change with no focus move and nothing announced. Move focus to
+  // the step region on every step change so keyboard and screen-reader users
+  // land on the new content. Focus alone (no smooth-scroll) is reduced-motion-safe.
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    mainRef.current?.focus();
+  }, [step]);
+
   return (
     <div className={s.shell}>
       <header className={s.topbar}>
@@ -70,7 +79,7 @@ export function OnboardingClient({
         <SkipButton />
       </header>
 
-      <main className={s.main} id="main" tabIndex={-1}>
+      <main className={s.main} id="main" tabIndex={-1} ref={mainRef}>
         <div className={`${s.wiz} ${s.rise}`}>
           {initialError ? (
             <div className={s.pageError} role="alert">

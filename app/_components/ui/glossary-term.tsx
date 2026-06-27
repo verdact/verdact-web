@@ -37,6 +37,10 @@ export function GlossaryTerm({ term, children, className }: GlossaryTermProps) {
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        // Stop here so a single Escape closes only this inline definition, not an
+        // enclosing native <dialog> opened via showModal().
+        event.preventDefault();
+        event.stopPropagation();
         setOpen(false);
         triggerRef.current?.focus();
       }

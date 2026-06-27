@@ -19,10 +19,16 @@ export interface AppErrorCardProps {
   eyebrow?: string;
   title: string;
   body: ReactNode;
-  /** Label for the primary action button. Renders only when onPrimary is set. */
+  /** Label for the primary action button. Renders only when onPrimary or primaryHref is set. */
   primaryLabel?: string;
   /** Primary action (typically the Next.js error-boundary reset()). */
   onPrimary?: () => void;
+  /**
+   * Optional primary action as a link instead of an onClick. Lets a SERVER
+   * component (e.g. not-found.tsx) use this card without a client handler, so
+   * the page can keep exporting `metadata`. Ignored when onPrimary is set.
+   */
+  primaryHref?: string;
   /** Optional ghost secondary link (e.g. back to the dashboard). */
   secondaryHref?: string;
   secondaryLabel?: string;
@@ -35,11 +41,14 @@ export function AppErrorCard({
   body,
   primaryLabel = 'Try again',
   onPrimary,
+  primaryHref,
   secondaryHref,
   secondaryLabel,
   className,
 }: AppErrorCardProps) {
-  const hasPrimary = typeof onPrimary === 'function';
+  const hasPrimaryAction = typeof onPrimary === 'function';
+  const hasPrimaryLink = !hasPrimaryAction && Boolean(primaryHref);
+  const hasPrimary = hasPrimaryAction || hasPrimaryLink;
   const hasSecondary = Boolean(secondaryHref && secondaryLabel);
 
   return (
@@ -56,11 +65,17 @@ export function AppErrorCard({
 
       {(hasPrimary || hasSecondary) && (
         <div className={styles.actions}>
-          {hasPrimary && (
+          {hasPrimaryAction && (
             <button type="button" className={styles.primary} onClick={onPrimary}>
               <LoaderIcon aria-hidden="true" />
               {primaryLabel}
             </button>
+          )}
+          {hasPrimaryLink && (
+            <a href={primaryHref} className={styles.primary}>
+              <LoaderIcon aria-hidden="true" />
+              {primaryLabel}
+            </a>
           )}
           {hasSecondary && (
             <a href={secondaryHref} className={styles.secondary}>

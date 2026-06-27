@@ -590,16 +590,27 @@ function HealthMeter({
   hero?: boolean;
 }) {
   const d = healthCardData(band, vampRatio);
-  const fillClass = d.isHealthy ? s.cardMeterFill : `${s.cardMeterFill} ${s.cardMeterFillGap}`;
+  // Three-state fill, mirroring the account-health gauge (close = --watch,
+  // at-risk = --gap). Only the over-the-line at-risk band wears the vermilion
+  // gap fill; the calm "getting close"/Watching band uses the neutral --watch
+  // fill so the meter never contradicts its own watch badge.
+  const fillClass =
+    band === 'at-risk'
+      ? `${s.cardMeterFill} ${s.cardMeterFillGap}`
+      : band === 'close'
+        ? `${s.cardMeterFill} ${s.cardMeterFillWatch}`
+        : s.cardMeterFill;
   const readoutClass = hero ? `${s.cardReadout} ${s.cardReadoutHero}` : s.cardReadout;
+  // The reassurance "with headroom" clause is only true below the line. Over the
+  // line (at-risk), drop it so the label never falsely claims headroom.
+  const ariaLabel =
+    band === 'at-risk'
+      ? `Dispute rate ${d.pctLabel}, ${d.label.toLowerCase()}, over Stripe's 0.75% line.`
+      : `Dispute rate ${d.pctLabel}, ${d.label.toLowerCase()}, with headroom to Stripe's 0.75% line.`;
   return (
     <div className={s.cardMeterWrap}>
       <div className={`${readoutClass} ${s.num}`}>{d.pctLabel}</div>
-      <div
-        className={s.cardMeter}
-        role="img"
-        aria-label={`Dispute rate ${d.pctLabel}, ${d.label.toLowerCase()}, with headroom to Stripe's 0.75% line.`}
-      >
+      <div className={s.cardMeter} role="img" aria-label={ariaLabel}>
         <div className={fillClass} style={{ width: `${meterPct}%` }} />
         {/* The 0.75% threshold, read as a labelled line not decoration. */}
         <div className={s.cardMeterLine} style={{ left: `${d.linePct}%` }}>
@@ -660,7 +671,7 @@ function HealthCard({
         </div>
         <HealthMeter s={s} band={band} vampRatio={vampRatio} meterPct={meterPct} />
         <p className={s.healthCardFoot}>
-          {d.isHealthy ? 'Room to Stripe’s guidance line.' : 'Approaching Stripe’s guidance line.'}{' '}
+          {d.isHealthy ? 'Room before Stripe’s guidance line.' : 'Approaching Stripe’s guidance line.'}{' '}
           Each new dispute moves this. <span className={s.guideLink}>See the detail</span>
         </p>
       </section>
@@ -703,7 +714,7 @@ function HeroHealthCard({
           </div>
           <HealthMeter s={s} band={band} vampRatio={vampRatio} meterPct={meterPct} hero />
           <p className={s.healthCardFoot}>
-            {d.isHealthy ? 'You have room to Stripe’s guidance line.' : 'You are approaching Stripe’s guidance line.'}{' '}
+            {d.isHealthy ? 'You have room before Stripe’s guidance line.' : 'You are approaching Stripe’s guidance line.'}{' '}
             We recalculate this the moment a new dispute or fraud report lands.{' '}
             <span className={s.guideLink}>See the detail</span>
           </p>
