@@ -1,0 +1,66 @@
+/*
+ * StatusBadge — the SINGLE place the two-color de-alarm law is enforced.
+ *
+ * A mono uppercase chip that is ALWAYS icon + text (state is never colour
+ * alone). Tones map to the token sets:
+ *   done    → verdict / verdict-tint / mint        (done / safe / forward)
+ *   watch   → --watch / --watch-tint / --watch-edge (calm monitoring / your call)
+ *   gap     → --gap-text / --gap-tint / accent-rule (genuinely-missing blocker)
+ *   warning → warning-deep / warning-soft / warning-rule (amber caution)
+ *   neutral → ink-2 / panel-wash / hairline         (everything else)
+ *
+ * vermilion (gap) is reserved for a real, merchant-closable missing item or a
+ * truly urgent state — never for monitoring or "waiting on the issuer".
+ * Theme-aware via tokens; reduced-motion-safe (no motion).
+ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.32rem 0.62rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  line-height: 1;
+}
+
+.badge svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.done {
+  color: var(--verdict);
+  background: var(--verdict-tint);
+  border-color: var(--mint);
+}
+
+.watch {
+  color: var(--watch);
+  background: var(--watch-tint);
+  border-color: var(--watch-edge);
+}
+
+.gap {
+  color: var(--gap-text);
+  background: var(--gap-tint);
+  border-color: var(--accent-rule);
+}
+
+.warning {
+  color: var(--warning-deep);
+  background: var(--warning-soft);
+  border-color: var(--warning-rule);
+}
+
+.neutral {
+  color: var(--ink-2);
+  background: var(--panel-wash);
+  border-color: var(--hairline);
+}

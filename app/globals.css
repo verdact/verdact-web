@@ -43,6 +43,22 @@
   --rule-strong: #C5D1C9;
   --mark: #F5F0AA;
 
+  /* ─── Calm "watch" status set (redesign 2026-06-27) ───
+     Neutral monitoring / your-call / under-review states. NEVER vermilion
+     (--gap), NEVER dead (--ink-3): a calm slate-green that reads as "we're on
+     it, no action needed" without alarm. Consumed by StatusBadge tone="watch"
+     + ReassureCard tone="watch". Dark values are redeclared in both .app-shell
+     dark scopes below. */
+  --watch: #5B6B64;
+  --watch-tint: #ECF1EE;
+  --watch-edge: #CDD8D2;
+
+  /* ─── Global radii (redesign 2026-06-27 shared primitives) ───
+     Medium + extra-large card radii used by the new UI primitives so they match
+     the workbench's --wb-r-3 (14px) / --wb-r-4 (18px) without re-deriving. */
+  --radius-md: 14px;
+  --radius-xl: 18px;
+
   /* ─── Legacy compat aliases ───
      Maps v1 token names → v2 equivalents. App routes still render
      while they are rebuilt screen-by-screen. Remove when last legacy
@@ -248,6 +264,12 @@
     --gap-2: var(--gap-tint);
     --mark: #3A3A1E;
 
+    /* Calm "watch" set — dark. Lighter slate-green ink on a deep green-tinted
+       fill so monitoring chips read as calm, not dead, in dark mode. */
+    --watch: #8FA29A;
+    --watch-tint: #18211D;
+    --watch-edge: #2C3833;
+
     /* Derived aliases must be re-declared in this scope. A var() reference is
        resolved where its OWNING declaration is cascaded, not where it is read.
        These aliases are declared in :root, so without re-declaring them here
@@ -350,6 +372,12 @@ html[data-theme="dark"] body:has(.app-shell) [data-feedback-root] {
   --gap-2: var(--gap-tint);
   --mark: #3A3A1E;
 
+  /* Calm "watch" set — dark (manual toggle). Mirrors the prefers-color-scheme
+     block above. */
+  --watch: #8FA29A;
+  --watch-tint: #18211D;
+  --watch-edge: #2C3833;
+
   /* Re-declare derived aliases in this scope so they resolve against the dark
      base above, not :root's light values. See the matching note in the
      prefers-color-scheme block. */
@@ -434,6 +462,11 @@ html[data-theme="dark"] body:has(.app-shell) [data-feedback-root] {
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
   --color-mark: var(--mark);
+
+  /* Calm "watch" status set → text-watch / bg-watch-tint / border-watch-edge */
+  --color-watch: var(--watch);
+  --color-watch-tint: var(--watch-tint);
+  --color-watch-edge: var(--watch-edge);
 
   /* Legacy compat names (existing Tailwind utilities keep working) */
   --color-surface: var(--surface);

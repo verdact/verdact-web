@@ -1,0 +1,155 @@
+/*
+ * AppErrorCard — a calm, layered error surface for app route error.tsx files.
+ *
+ * Mirrors the workbench's reassurance language (panel-wash gradient, layered
+ * elevation, an icon tile, a display headline) so an error never reads as a
+ * red wall of alarm. The icon tile is NEUTRAL by default: an error here is a
+ * "we hit a snag, try again" moment, not a merchant-closable gap, so it does
+ * not earn vermilion. Theme-aware; reduced-motion-safe (hover lift is removed
+ * under prefers-reduced-motion).
+ */
+.card {
+  max-width: 32rem;
+  margin: clamp(2rem, 8vh, 5rem) auto;
+  background: linear-gradient(160deg, var(--panel-wash), var(--panel) 90%);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-2);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  text-align: left;
+}
+
+.iconTile {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-neutral);
+  color: var(--ink-2);
+  border: 1px solid var(--hairline);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent);
+  margin-bottom: 1.1rem;
+}
+
+.iconTile svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 0.55rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: var(--ink);
+  margin: 0;
+}
+
+.body {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0.7rem 0 0;
+  max-width: 52ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--verdict);
+  color: var(--on-verdict);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--radius-input);
+  box-shadow: 0 2px 12px -3px color-mix(in srgb, var(--verdict) 50%, transparent);
+  transition:
+    transform var(--duration-normal) var(--ease-spring),
+    background var(--duration-normal) var(--ease-out);
+  text-decoration: none;
+}
+
+.primary:hover {
+  background: var(--verdict-press);
+  transform: translateY(-2px);
+}
+
+.primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.primary svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-input);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out),
+    background var(--duration-normal) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring);
+  text-decoration: none;
+}
+
+.secondary:hover {
+  border-color: var(--edge-green);
+  color: var(--verdict);
+  background: var(--verdict-tint);
+}
+
+.secondary:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .secondary {
+    transition: none;
+  }
+  .primary:hover,
+  .secondary:active,
+  .primary:active {
+    transform: none;
+  }
+}

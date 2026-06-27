@@ -36,6 +36,21 @@ export function daysUntil(dueBy: string): number {
   return Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// Deadline pressure tiers (redesign 2026-06-27). Drives the calm de-alarm law:
+// only an urgent/over-deadline deadline earns vermilion (--gap); everything
+// comfortable or merely "soon" stays neutral/watch. Surfaces map the tier to a
+// StatusBadge tone — they never re-derive these thresholds.
+export const SOON_DAYS = 7;
+
+export type DeadlineTier = 'none' | 'comfortable' | 'soon' | 'urgent';
+
+export function deadlineTier(daysLeft: number | null): DeadlineTier {
+  if (daysLeft === null) return 'none';
+  if (daysLeft <= 2) return 'urgent';
+  if (daysLeft <= SOON_DAYS) return 'soon';
+  return 'comfortable';
+}
+
 export function byDeadlineThenCreated(a: Dispute, b: Dispute): number {
   if (a.due_by && b.due_by) return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
   if (a.due_by) return -1;

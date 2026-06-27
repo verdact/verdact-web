@@ -1,0 +1,46 @@
+/*
+ * LoadingHeadline — the workbench voice for skeleton loaders: a small mono
+ * uppercase eyebrow over a Schibsted Grotesk display title, so a loading state
+ * still reads as the product, not a spinner in a void. Server-safe, theme-aware.
+ *
+ * Motion lives on the skeleton bars that follow this headline (the existing
+ * .skel utility in globals.css already honours reduced-motion); this block is
+ * static type only.
+ */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: var(--verdict);
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--ink);
+  margin: 0;
+}
