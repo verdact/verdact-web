@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AlertIcon, LoaderIcon } from '@/app/dashboard/dash-icons';
+import { ShieldIcon, LoaderIcon } from '@/app/dashboard/dash-icons';
 import styles from './app-error-card.module.css';
 
 /**
@@ -9,10 +9,10 @@ import styles from './app-error-card.module.css';
  *
  * 'use client' because Next.js error boundaries hand down a `reset()` callback
  * that the page wires to `onPrimary` (e.g. "Try again"). The card stays calm by
- * design: a neutral icon tile (an error is a snag, not a vermilion gap), a
- * display headline, a plain-English body, an optional verdict primary button,
- * and an optional ghost secondary link. Status is icon + text; theme-aware;
- * reduced-motion-safe.
+ * design: a verdict-tint reassurance seal (an error is a snag, not a vermilion
+ * gap, so the eye lands on a calm green mark), a display headline, a
+ * plain-English body, an optional verdict primary button, and an optional ghost
+ * secondary link. Status is icon + text; theme-aware; reduced-motion-safe.
  */
 export interface AppErrorCardProps {
   /** Optional mono eyebrow above the title. Defaults to "SOMETHING WENT WRONG". */
@@ -57,7 +57,7 @@ export function AppErrorCard({
       role="alert"
     >
       <span className={styles.iconTile} aria-hidden="true">
-        <AlertIcon />
+        <ShieldIcon />
       </span>
       <p className={styles.eyebrow}>{eyebrow}</p>
       <h1 className={styles.title}>{title}</h1>

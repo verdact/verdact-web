@@ -1,8 +1,11 @@
 // Root loading fallback. Route-agnostic (no app shell, so no theme scope), so it
-// stays minimal: a calm centered spinner with a quiet visible word beneath it so
-// a sighted, anxious user reads "loading", not "frozen" (S4). The spin animation
-// (v-spin, defined in globals.css) is automatically stilled under
-// prefers-reduced-motion via the global reduced-motion block.
+// stays minimal: a calm workbench-voice headline over a centered spinner, with a
+// quiet visible word beneath it so a sighted, anxious user reads "loading", not
+// "frozen" (S4). The spin animation (v-spin, defined in globals.css) is
+// automatically stilled under prefers-reduced-motion via the global
+// reduced-motion block.
+import { LoadingHeadline } from '@/app/_components/ui/loading-headline';
+
 export default function Loading() {
   return (
     <div
@@ -10,6 +13,7 @@ export default function Loading() {
       role="status"
       aria-live="polite"
     >
+      <LoadingHeadline eyebrow="Loading" title="Getting things ready" />
       <span
         aria-hidden="true"
         className="block h-7 w-7 rounded-full border-2 border-rule border-t-action"
