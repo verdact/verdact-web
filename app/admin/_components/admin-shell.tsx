@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ThemeToggle } from '@/app/_components/theme-toggle';
 import { VerdactLogo } from '@/app/_components/verdact-logo';
 
@@ -32,7 +33,8 @@ export function AdminShell({
   /** A NEW-items count rendered on the Feedback tab (vermilion needs-attention). */
   feedbackNewCount,
 }: {
-  email: string;
+  /** Null during the loading fallback (renders a skeleton in place of the email). */
+  email: string | null;
   active: AdminTab;
   children: React.ReactNode;
   /** Override tab link targets (e.g. the dev preview points them at ?view=). */
@@ -45,19 +47,19 @@ export function AdminShell({
     <div className="app-shell">
       <aside className="app-rail">
         <div className="app-rail__head">
-          <a href={tabHref('overview')} className="app-rail__logo">
+          <Link href={tabHref('overview')} className="app-rail__logo">
             <VerdactLogo variant="mark" className="h-8 w-8 shrink-0" />
             <div className="app-rail__workspace">
               <span className="app-rail__workspace-label">admin</span>
               <span className="app-rail__workspace-name">Verdact platform</span>
             </div>
-          </a>
+          </Link>
         </div>
         <nav className="app-rail__nav" aria-label="Admin navigation">
           {NAV.map((item) => {
             const showCount = item.tab === 'feedback' && (feedbackNewCount ?? 0) > 0;
             return (
-              <a
+              <Link
                 key={item.tab}
                 className={`app-rail__link${active === item.tab ? ' is-active' : ''}`}
                 href={tabHref(item.tab)}
@@ -83,18 +85,26 @@ export function AdminShell({
                     {feedbackNewCount}
                   </span>
                 ) : null}
-              </a>
+              </Link>
             );
           })}
-          <a className="app-rail__link" href="/dashboard">
+          <Link className="app-rail__link" href="/dashboard">
             App dashboard
-          </a>
+          </Link>
         </nav>
         <div className="app-rail__foot">
           <div className="app-rail__user">
-            <span className="app-rail__email" title={email}>
-              {email}
-            </span>
+            {email ? (
+              <span className="app-rail__email" title={email}>
+                {email}
+              </span>
+            ) : (
+              <span
+                className="skel"
+                aria-hidden="true"
+                style={{ display: 'block', height: 14, width: 120, borderRadius: 4 }}
+              />
+            )}
             <form action="/auth/signout" method="post">
               <button type="submit" className="app-rail__signout">
                 Sign out
@@ -106,9 +116,9 @@ export function AdminShell({
       </aside>
 
       <header className="app-topbar">
-        <a href={tabHref('overview')} className="app-topbar__logo" aria-label="Admin">
+        <Link href={tabHref('overview')} className="app-topbar__logo" aria-label="Admin">
           <VerdactLogo variant="lockup" className="h-6 w-auto" />
-        </a>
+        </Link>
         <span className="app-topbar__workspace">Founder admin</span>
       </header>
 
@@ -118,13 +128,13 @@ export function AdminShell({
 
       <nav className="app-bottom-nav" aria-label="Admin navigation">
         {NAV.map((item) => (
-          <a
+          <Link
             key={item.tab}
             className={`app-bottom-nav__item${active === item.tab ? ' is-active' : ''}`}
             href={tabHref(item.tab)}
           >
             <span>{item.label}</span>
-          </a>
+          </Link>
         ))}
       </nav>
     </div>

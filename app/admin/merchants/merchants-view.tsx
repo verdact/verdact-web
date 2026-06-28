@@ -136,7 +136,20 @@ export function MerchantsView({
 
       {/* Top KPIs */}
       <section className={s.cardGrid} aria-label="Merchant base">
-        <KpiTile label="Merchants" value={formatNumber(totals.merchants)} sub="Total accounts" />
+        <KpiTile
+          label="Merchants"
+          value={formatNumber(totals.merchants)}
+          sub="Total accounts"
+          hint="View all merchants"
+          onClick={() => {
+            setCategoryFilter('all');
+            setActivationFilter('all');
+            setQuery('');
+            document
+              .getElementById('all-merchants')
+              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
         <KpiTile
           label="Activated"
           value={formatNumber(totals.activated)}
@@ -277,7 +290,7 @@ export function MerchantsView({
       </section>
 
       {/* Merchant table */}
-      <section className={s.panel}>
+      <section className={s.panel} id="all-merchants">
         <div className={s.panelHead}>
           <div>
             <p className={s.panelKicker}>Accounts</p>
@@ -600,7 +613,44 @@ function MerchantDrawer({
 
 // ── Small presentational pieces ──────────────────────────────────────────────
 
-function KpiTile({ label, value, sub }: { label: string; value: string; sub: string }) {
+function KpiTile({
+  label,
+  value,
+  sub,
+  onClick,
+  hint,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  /** When provided, the tile becomes an interactive button (e.g. jump to the list). */
+  onClick?: () => void;
+  /** Accessible label / tooltip for the interactive variant. */
+  hint?: string;
+}) {
+  if (onClick) {
+    return (
+      <div
+        className={s.statCard}
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        style={{ cursor: 'pointer' }}
+        title={hint}
+        aria-label={hint ?? `${label}: ${value}`}
+      >
+        <span className={s.metricLabel}>{label}</span>
+        <strong className={s.statValue}>{value}</strong>
+        <span className={s.statSub}>{sub}</span>
+      </div>
+    );
+  }
   return (
     <div className={s.statCard}>
       <span className={s.metricLabel}>{label}</span>
