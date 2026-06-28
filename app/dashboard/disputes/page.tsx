@@ -1,6 +1,12 @@
 import { getDisputes, getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
-import { DisputesView, isDisputeFilter, type DisputeFilter } from './disputes-view';
+import {
+  DisputesView,
+  isDisputeFilter,
+  isDisputeSort,
+  type DisputeFilter,
+  type DisputeSort,
+} from './disputes-view';
 
 // Statuses that can still take a response — the only rows where a "Worth
 // responding" readiness chip is meaningful. Closed/resolved cases never get one.
@@ -46,6 +52,8 @@ export default async function DisputesPage({
   const params = await searchParams;
   const filterParam = typeof params.filter === 'string' ? params.filter : undefined;
   const explicitFilter: DisputeFilter | null = isDisputeFilter(filterParam) ? filterParam : null;
+  const sortParam = typeof params.sort === 'string' ? params.sort : undefined;
+  const sort: DisputeSort = isDisputeSort(sortParam) ? sortParam : 'deadline';
 
   const user = await verifySession();
   const membership = await getMerchant();
@@ -107,6 +115,7 @@ export default async function DisputesPage({
       disputes={disputes}
       stripeConnected={stripeConnected}
       filter={filter}
+      sort={sort}
       proofByDispute={proofByDispute}
     />
   );

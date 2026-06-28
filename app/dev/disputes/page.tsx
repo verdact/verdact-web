@@ -1,5 +1,11 @@
 import { notFound } from 'next/navigation';
-import { DisputesView, isDisputeFilter, type DisputeFilter } from '../../dashboard/disputes/disputes-view';
+import {
+  DisputesView,
+  isDisputeFilter,
+  isDisputeSort,
+  type DisputeFilter,
+  type DisputeSort,
+} from '../../dashboard/disputes/disputes-view';
 import { type Dispute } from '@/lib/dal';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,7 +90,7 @@ const MOCK_DISPUTES: Dispute[] = [
 export default async function DisputesPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; stripe?: string }>;
+  searchParams: Promise<{ filter?: string; sort?: string; stripe?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
@@ -92,6 +98,7 @@ export default async function DisputesPreviewPage({
 
   const params = await searchParams;
   const filter: DisputeFilter = isDisputeFilter(params.filter) ? params.filter : 'needs-action';
+  const sort: DisputeSort = isDisputeSort(params.sort) ? params.sort : 'deadline';
   const stripeConnected = params.stripe !== 'off';
 
   return (
@@ -101,6 +108,7 @@ export default async function DisputesPreviewPage({
       disputes={stripeConnected ? MOCK_DISPUTES : []}
       stripeConnected={stripeConnected}
       filter={filter}
+      sort={sort}
     />
   );
 }

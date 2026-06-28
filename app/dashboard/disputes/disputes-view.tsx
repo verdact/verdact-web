@@ -31,6 +31,16 @@ import s from './disputes.module.css';
 // type, token, copy, layout, status-tone reassignment, or presentation only.
 
 export type DisputeFilter = 'needs-action' | 'open' | 'all';
+export type DisputeSort = 'deadline' | 'newest' | 'amount';
+
+// Secondary ordering within a filter bucket. URL-driven (?sort=) to match how
+// the filter tabs already work — no client-component conversion needed. The
+// note re-uses the SectionBar so the active sort is described in plain words.
+const SORTS: ReadonlyArray<{ key: DisputeSort; label: string; note: string }> = [
+  { key: 'deadline', label: 'Deadline', note: 'Nearest deadline first. Take them one at a time.' },
+  { key: 'newest', label: 'Newest', note: 'Most recently opened first.' },
+  { key: 'amount', label: 'Amount', note: 'Largest amount at risk first.' },
+];
 
 export type DisputesViewProps = {
   email: string | null | undefined;
@@ -38,6 +48,7 @@ export type DisputesViewProps = {
   disputes: Dispute[];
   stripeConnected: boolean;
   filter: DisputeFilter;
+  sort: DisputeSort;
   /**
    * Present proof pillars per dispute, keyed by dispute id (respondable cases).
    * Optional so the dev preview route can render without a DB read; the chip
@@ -89,12 +100,17 @@ export function isDisputeFilter(value: string | undefined): value is DisputeFilt
   return value === 'needs-action' || value === 'open' || value === 'all';
 }
 
+export function isDisputeSort(value: string | undefined): value is DisputeSort {
+  return value === 'deadline' || value === 'newest' || value === 'amount';
+}
+
 export function DisputesView({
   email,
   businessName,
   disputes,
   stripeConnected,
   filter,
+  sort,
   proofByDispute = {},
 }: DisputesViewProps) {
   const counts = {
@@ -105,7 +121,8 @@ export function DisputesView({
 
   const needsAction = counts['needs-action'];
   const triage = triageHeadline(needsAction);
-  const visible = sortByDeadline(filterDisputes(disputes, filter));
+  const visible = sortDisputesBy(filterDisputes(disputes, filter), sort);
+  const activeSort = SORTS.find((o) => o.key === sort) ?? SORTS[0];
 
   return (
     <AppShell email={email} businessName={businessName} active="disputes">
@@ -144,9 +161,24 @@ export function DisputesView({
                 <SectionBar
                   icon={<ListIcon />}
                   title={listSectionTitle(filter)}
-                  note="Nearest deadline first. Take them one at a time."
+                  note={activeSort.note}
                   className={s.listBar}
                 />
+                {disputes.length > 1 ? (
+                  <nav className={s.sortRow} aria-label="Sort disputes">
+                    <span className={s.sortLabel}>Sort</span>
+                    {SORTS.map((opt) => (
+                      <a
+                        key={opt.key}
+                        href={`/dashboard/disputes?filter=${filter}&sort=${opt.key}`}
+                        className={`${s.sortBtn} ${sort === opt.key ? s.sortBtnActive : ''}`}
+                        aria-current={sort === opt.key ? 'true' : undefined}
+                      >
+                        {opt.label}
+                      </a>
+                    ))}
+                  </nav>
+                ) : null}
                 <div className={s.list}>
                   {visible.map((d) => (
                     <DisputeRow key={d.id} dispute={d} proof={proofByDispute[d.id] ?? []} />
@@ -424,6 +456,29 @@ function sortByDeadline(disputes: Dispute[]): Dispute[] {
     if (!b.due_by) return -1;
     return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
   });
+}
+
+// Apply the chosen sort. Deadline is the default (nearest first, nulls last);
+// newest is created_at descending; amount is largest-at-risk first (nulls last).
+// Every branch returns a NEW array (never mutates the prop).
+function sortDisputesBy(disputes: Dispute[], sort: DisputeSort): Dispute[] {
+  if (sort === 'newest') {
+    return [...disputes].sort((a, b) => tsOf(b.created_at) - tsOf(a.created_at));
+  }
+  if (sort === 'amount') {
+    return [...disputes].sort((a, b) => {
+      if (a.amount == null && b.amount == null) return 0;
+      if (a.amount == null) return 1;
+      if (b.amount == null) return -1;
+      return b.amount - a.amount;
+    });
+  }
+  return sortByDeadline(disputes);
+}
+
+function tsOf(value: string): number {
+  const t = Date.parse(value);
+  return Number.isNaN(t) ? 0 : t;
 }
 
 function emptyCopy(
