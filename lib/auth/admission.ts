@@ -5,9 +5,43 @@ import { createServiceClient } from '@/lib/supabase/server';
 export const BETA_ACCESS_MESSAGE =
   'Verdact beta access is invite-only right now. Join the waitlist and we will open your workspace when your account is approved.';
 
+export type AdmissionMode = 'invite_only' | 'open_beta';
+
 type AdmissionPolicyRow = {
-  mode: 'invite_only' | 'open_beta';
+  mode: AdmissionMode;
 };
+
+/**
+ * Read the platform admission mode. Drives whether `/signup` renders the real
+ * account-creation form as the public default (open_beta) or the launching-soon
+ * waitlist (invite_only). Fail-closed: any read error returns 'invite_only' so a
+ * transient failure never accidentally opens public signup. This is a UI/render
+ * signal only — account creation is still independently enforced server-side by
+ * `emailHasBetaAccess()` (and the auth.users DB trigger).
+ */
+export async function getAdmissionMode(): Promise<AdmissionMode> {
+  try {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from('platform_admission_policy')
+      .select('mode')
+      .eq('id', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[auth/admission] mode read failed:', error.message);
+      return 'invite_only';
+    }
+
+    return (data as AdmissionPolicyRow | null)?.mode === 'open_beta'
+      ? 'open_beta'
+      : 'invite_only';
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown error';
+    console.error('[auth/admission] mode read threw:', message);
+    return 'invite_only';
+  }
+}
 
 type InviteRow = {
   id: string;

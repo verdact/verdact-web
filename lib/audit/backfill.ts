@@ -129,6 +129,41 @@ export async function consumeAuditBackfill(
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolve the email captured on a single audit lead, by its row id. Used ONLY to
+ * prefill the signup email field when a prospect arrives via the /audit handoff
+ * (/signup?from=audit&lead=<uuid>) — this keeps the email OUT of the URL/query
+ * string (no PII in links, logs, or analytics) while preserving the prefill UX.
+ *
+ * Safe by construction: the lead id is an unguessable UUID handed only to the
+ * person who ran that audit, and the sole effect is prefilling a form field they
+ * are about to fill themselves. Validates the UUID shape before querying and
+ * returns null on any miss/error so it can never block the signup render.
+ */
+export async function getAuditLeadEmailById(leadId: string | null | undefined): Promise<string | null> {
+  if (!leadId || !UUID_RE.test(leadId)) return null;
+  try {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from('audit_leads')
+      .select('email')
+      .eq('id', leadId)
+      .maybeSingle();
+    if (error || !data) {
+      if (error) console.error('[audit/backfill] lead email read failed:', error.message);
+      return null;
+    }
+    const email = (data as { email: string | null }).email;
+    return email && email.trim().length > 0 ? email.trim() : null;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown error';
+    console.error('[audit/backfill] lead email read threw:', message);
+    return null;
+  }
+}
+
 /**
  * Read the audit backfill rows attached to a merchant, newest first. Used by
  * account-health and the workbench to seed real context for a just-signed-up

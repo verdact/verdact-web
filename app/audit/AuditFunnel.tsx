@@ -34,6 +34,10 @@ export function AuditFunnel() {
   // fallback never reaches the server, so it stays false and the result page
   // softens its copy rather than claiming an email was sent.
   const [emailed, setEmailed] = useState(false);
+  // The captured audit_leads row id, returned by the scoring endpoint. The result
+  // page hands it to /signup?from=audit&lead=<id> so the email never travels in
+  // the URL. Null on the client-side fallback (no server round-trip / no row).
+  const [leadId, setLeadId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const settledNum = useMemo(() => {
@@ -106,7 +110,12 @@ export function AuditFunnel() {
     // Reveal the result and capture a PII-free funnel event — aggregate score
     // signals only. The email and the raw dispute rows are never sent to PostHog;
     // they live only in Supabase `audit_leads` (the system of record).
-    const reveal = (s: AuditScore, scoredBy: 'server' | 'client', didEmail: boolean) => {
+    const reveal = (
+      s: AuditScore,
+      scoredBy: 'server' | 'client',
+      didEmail: boolean,
+      capturedLeadId: string | null,
+    ) => {
       track('audit_result_viewed', {
         scored_by: scoredBy,
         entry_mode: mode,
@@ -122,6 +131,7 @@ export function AuditFunnel() {
       });
       setScore(s);
       setEmailed(didEmail);
+      setLeadId(capturedLeadId);
       setPhase('result');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -149,12 +159,17 @@ export function AuditFunnel() {
           }),
           'client',
           false,
+          null,
         );
         return;
       }
 
-      const data = (await res.json()) as { score: AuditScore; emailed?: boolean };
-      reveal(data.score, 'server', Boolean(data.emailed));
+      const data = (await res.json()) as {
+        score: AuditScore;
+        emailed?: boolean;
+        leadId?: string | null;
+      };
+      reveal(data.score, 'server', Boolean(data.emailed), data.leadId ?? null);
     } catch {
       reveal(
         computeAuditScore(activeDisputes, {
@@ -163,6 +178,7 @@ export function AuditFunnel() {
         }),
         'client',
         false,
+        null,
       );
     } finally {
       setSubmitting(false);
@@ -171,7 +187,7 @@ export function AuditFunnel() {
 
   return (
     <>
-      <MarketingHeader ctaLabel="Join the waitlist" ctaHref="/signup" />
+      <MarketingHeader ctaLabel="Create your workspace" ctaHref="/signup" />
       <main id="main" className={styles.page}>
         {phase === 'landing' && (
           <Landing
@@ -215,6 +231,7 @@ export function AuditFunnel() {
             score={score}
             email={email}
             emailed={emailed}
+            leadId={leadId}
             onRestart={() => {
               setPhase('entry');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -235,7 +252,7 @@ function Landing({ onStart }: { onStart: () => void }) {
       <section className={styles.hero}>
         <div className="wrap">
           <div className={styles.heroInner}>
-            <p className="eyebrow">Launching soon &middot; free dispute audit, no signup</p>
+            <p className="eyebrow">Free dispute audit &middot; no login needed</p>
             <h1 className={styles.heroHeadline}>
               Find the Stripe disputes you <span className={styles.key}>should have won</span>.
             </h1>
