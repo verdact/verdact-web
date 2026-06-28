@@ -1,4 +1,9 @@
 import { updateSession } from './lib/supabase/middleware';
+import {
+  applySessionCookies,
+  checkSessionTimeout,
+  clearAuthAndSessionCookies,
+} from './lib/auth/session';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Optimistic auth gates. The real authorization checks live in the Data Access
@@ -34,6 +39,23 @@ function isReviewerProtectedPath(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
+
+  // Idle / absolute session timeout — only for an authenticated user on a
+  // protected path. The reviewer-cookie branch below fires when `!user`, so it
+  // never intersects this. On timeout we clear the Supabase auth cookies too so
+  // re-login is genuinely required.
+  if (user && isProtectedPath(pathname)) {
+    const timeout = checkSessionTimeout(request);
+    if (timeout.expired) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      loginUrl.searchParams.set('reason', 'session_expired');
+      const logoutResponse = NextResponse.redirect(loginUrl);
+      clearAuthAndSessionCookies(request, logoutResponse);
+      return logoutResponse;
+    }
+    applySessionCookies(response, timeout.sessionStart);
+  }
 
   if (isProtectedPath(pathname) && !user) {
     if (

@@ -30,9 +30,51 @@ import {
   formatPercentFraction,
   relativeTime,
 } from '../_components/ui';
+import {
+  SortTh,
+  useSortState,
+  sortByString,
+  sortByNumber,
+  parseDateTs,
+  type SortState,
+} from '../_components/sort-control';
 import { setCategoryAction, markVampDraftedAction } from './actions';
 import s from '../admin.module.css';
 import m from './merchants.module.css';
+
+type MerchantSortKey =
+  | 'businessName'
+  | 'category'
+  | 'activation'
+  | 'vamp'
+  | 'disputes'
+  | 'profile'
+  | 'createdAt';
+
+function sortMerchants(
+  rows: MerchantRecord[],
+  sort: SortState<MerchantSortKey>,
+): MerchantRecord[] {
+  const { key, dir } = sort;
+  switch (key) {
+    case 'businessName':
+      return sortByString(rows, (r) => r.businessName, dir);
+    case 'category':
+      return sortByString(rows, (r) => r.category.category, dir);
+    case 'activation':
+      return sortByNumber(rows, (r) => (r.activation.stripeConnected ? 1 : 0), dir);
+    case 'vamp':
+      return sortByNumber(rows, (r) => r.vamp.ratio, dir);
+    case 'disputes':
+      return sortByNumber(rows, (r) => r.disputes.total, dir);
+    case 'profile':
+      return sortByNumber(rows, (r) => r.profile.completeness, dir);
+    case 'createdAt':
+      return sortByNumber(rows, (r) => parseDateTs(r.createdAt), dir);
+    default:
+      return rows;
+  }
+}
 
 const NOTICE_COPY = {
   notices: {
@@ -79,12 +121,16 @@ export function MerchantsView({
   const [activationFilter, setActivationFilter] = useState<ActivationFilter>('all');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sort, toggleSort] = useSortState<MerchantSortKey>({
+    key: 'createdAt',
+    dir: 'desc',
+  });
 
   const { merchants, categoryBreakdown, totals, activationRate, vampOverLine } = data;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return merchants.filter((rec) => {
+    const matched = merchants.filter((rec) => {
       if (categoryFilter !== 'all' && rec.category.category !== categoryFilter) return false;
       if (activationFilter === 'activated' && !rec.activation.stripeConnected) return false;
       if (activationFilter === 'unactivated' && rec.activation.stripeConnected) return false;
@@ -95,7 +141,8 @@ export function MerchantsView({
       }
       return true;
     });
-  }, [merchants, categoryFilter, activationFilter, query]);
+    return sortMerchants(matched, sort);
+  }, [merchants, categoryFilter, activationFilter, query, sort]);
 
   const unactivated = useMemo(
     () => merchants.filter((rec) => !rec.activation.stripeConnected),
@@ -349,13 +396,20 @@ export function MerchantsView({
           <table className={s.table}>
             <thead>
               <tr>
-                <th>Merchant</th>
-                <th>Category</th>
-                <th>Activation</th>
-                <th>VAMP</th>
-                <th className={s.numCell}>Disputes</th>
-                <th>Profile</th>
-                <th>Created</th>
+                <SortTh sortKey="businessName" label="Merchant" state={sort} onSort={toggleSort} />
+                <SortTh sortKey="category" label="Category" state={sort} onSort={toggleSort} />
+                <SortTh sortKey="activation" label="Activation" state={sort} onSort={toggleSort} />
+                <SortTh sortKey="vamp" label="VAMP" state={sort} onSort={toggleSort} />
+                <SortTh
+                  sortKey="disputes"
+                  label="Disputes"
+                  state={sort}
+                  onSort={toggleSort}
+                  className={s.numCell}
+                  align="right"
+                />
+                <SortTh sortKey="profile" label="Profile" state={sort} onSort={toggleSort} />
+                <SortTh sortKey="createdAt" label="Created" state={sort} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>

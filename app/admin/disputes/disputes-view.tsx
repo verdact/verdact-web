@@ -7,8 +7,56 @@ import { Drawer, DrawerSection, DetailRow, WhyNow } from '../_components/drawer'
 import { Badge, OutcomeBadge, SearchIcon, Chevron } from '../_components/console';
 import { Donut, type DonutSegment } from '../_components/charts';
 import { formatNumber, formatDateTime, relativeTime, shortId, EmptyRow } from '../_components/ui';
+import {
+  SortTh,
+  useSortState,
+  sortByString,
+  sortByNumber,
+  parseDateTs,
+  type SortState,
+} from '../_components/sort-control';
 import s from '../admin.module.css';
 import d from './disputes.module.css';
+
+type DisputeSortKey =
+  | 'merchantName'
+  | 'amountCents'
+  | 'network'
+  | 'reason'
+  | 'outcome'
+  | 'createdAt';
+
+// won → open → lost → warning_closed (action/recency priority order).
+const OUTCOME_RANK: Record<OutcomeFilter, number> = {
+  won: 0,
+  open: 1,
+  lost: 2,
+  warning_closed: 3,
+  all: 4,
+};
+
+function sortDisputes(
+  rows: DisputeRecord[],
+  sort: SortState<DisputeSortKey>,
+): DisputeRecord[] {
+  const { key, dir } = sort;
+  switch (key) {
+    case 'merchantName':
+      return sortByString(rows, (r) => r.merchantName, dir);
+    case 'amountCents':
+      return sortByNumber(rows, (r) => r.amountCents, dir);
+    case 'network':
+      return sortByString(rows, (r) => r.network, dir);
+    case 'reason':
+      return sortByString(rows, (r) => r.reason, dir);
+    case 'outcome':
+      return sortByNumber(rows, (r) => OUTCOME_RANK[framingOf(r)], dir);
+    case 'createdAt':
+      return sortByNumber(rows, (r) => parseDateTs(r.createdAt), dir);
+    default:
+      return rows;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DISPUTES — outcomes and the honest WHY behind wins and losses.
@@ -64,6 +112,10 @@ export function DisputesView({ data }: { data: DisputesData }) {
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
   const [networkFilter, setNetworkFilter] = useState<NetworkFilter>('all');
   const [query, setQuery] = useState('');
+  const [sort, toggleSort] = useSortState<DisputeSortKey>({
+    key: 'createdAt',
+    dir: 'desc',
+  });
 
   const hasDisputes = disputes.length > 0;
 
@@ -74,7 +126,7 @@ export function DisputesView({ data }: { data: DisputesData }) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return disputes.filter((rec) => {
+    const matched = disputes.filter((rec) => {
       if (outcomeFilter !== 'all' && framingOf(rec) !== outcomeFilter) return false;
       if (networkFilter !== 'all') {
         const net = (rec.network ?? 'unknown').toLowerCase();
@@ -86,7 +138,8 @@ export function DisputesView({ data }: { data: DisputesData }) {
       }
       return true;
     });
-  }, [disputes, outcomeFilter, networkFilter, query]);
+    return sortDisputes(matched, sort);
+  }, [disputes, outcomeFilter, networkFilter, query, sort]);
 
   const selected = selectedId ? disputes.find((rec) => rec.id === selectedId) ?? null : null;
 
@@ -271,12 +324,12 @@ export function DisputesView({ data }: { data: DisputesData }) {
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>Merchant</th>
-                    <th>Amount</th>
-                    <th>Network</th>
-                    <th>Reason</th>
-                    <th>Outcome</th>
-                    <th>Filed</th>
+                    <SortTh sortKey="merchantName" label="Merchant" state={sort} onSort={toggleSort} />
+                    <SortTh sortKey="amountCents" label="Amount" state={sort} onSort={toggleSort} />
+                    <SortTh sortKey="network" label="Network" state={sort} onSort={toggleSort} />
+                    <SortTh sortKey="reason" label="Reason" state={sort} onSort={toggleSort} />
+                    <SortTh sortKey="outcome" label="Outcome" state={sort} onSort={toggleSort} />
+                    <SortTh sortKey="createdAt" label="Filed" state={sort} onSort={toggleSort} />
                   </tr>
                 </thead>
                 <tbody>
