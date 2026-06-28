@@ -4,7 +4,7 @@ import { getIdentityLinks } from '@/lib/customers/links';
 import { applyConfirmedMerges } from '@/lib/customers/resolve';
 import { buildMergeSuggestions, partitionSuggestions } from '@/lib/customers/suggestions';
 import { pairId, type IdentityLink } from '@/lib/customers/types';
-import { CustomersView } from './customers-view';
+import { CustomersView, isCustomerSort, type CustomerSort } from './customers-view';
 
 export const metadata = {
   title: 'Customers · Verdact',
@@ -13,7 +13,15 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const sortParam = typeof params.sort === 'string' ? params.sort : undefined;
+  const sort: CustomerSort = isCustomerSort(sortParam) ? sortParam : 'repeat';
+
   const user = await verifySession();
   const membership = await getMerchant();
   const businessName = membership?.merchant?.business_name?.trim() || null;
@@ -61,6 +69,7 @@ export default async function CustomersPage() {
       groups={groups}
       suggestions={prompts}
       autoMerged={autoMerges}
+      sort={sort}
       stripeConnected={stripeConnected}
     />
   );

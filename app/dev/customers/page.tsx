@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { CustomersView } from '../../dashboard/customers/customers-view';
+import { CustomersView, isCustomerSort, type CustomerSort } from '../../dashboard/customers/customers-view';
 import type { CustomerGroup } from '@/lib/dal';
 import { buildMergeSuggestions, partitionSuggestions } from '@/lib/customers/suggestions';
 import { applyConfirmedMerges } from '@/lib/customers/resolve';
@@ -198,13 +198,14 @@ const SUGGEST_GROUPS: CustomerGroup[] = [
 export default async function CustomersPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; sort?: string }>;
 }) {
   if (process.env.NODE_ENV === 'production') {
     notFound();
   }
 
-  const { state } = await searchParams;
+  const { state, sort: sortParam } = await searchParams;
+  const sort: CustomerSort = isCustomerSort(sortParam) ? sortParam : 'repeat';
 
   const groups: CustomerGroup[] =
     state === 'empty'
@@ -228,6 +229,7 @@ export default async function CustomersPreviewPage({
       groups={mergedGroups}
       suggestions={prompts}
       autoMerged={autoMerges}
+      sort={sort}
       stripeConnected={state !== 'disconnected'}
     />
   );

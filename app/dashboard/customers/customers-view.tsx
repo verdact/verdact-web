@@ -29,6 +29,21 @@ import s from './customers.module.css';
 // candidate's dispute count + latest reason, resolved from the groups the page
 // already loads (no new query, no write path).
 
+export type CustomerSort = 'repeat' | 'amount' | 'open' | 'name';
+
+// Secondary ordering for the linked customer cards. URL-driven (?sort=) to match
+// the disputes index — no client-component conversion of this server component.
+const CUSTOMER_SORTS: ReadonlyArray<{ key: CustomerSort; label: string; note: string }> = [
+  { key: 'repeat', label: 'Repeat first', note: 'Everyone with a dispute on file, repeat customers first.' },
+  { key: 'amount', label: 'Total amount', note: 'Highest total amount at risk first.' },
+  { key: 'open', label: 'Open disputes', note: 'Most open disputes first.' },
+  { key: 'name', label: 'Name', note: 'Sorted alphabetically by customer.' },
+];
+
+export function isCustomerSort(value: string | undefined): value is CustomerSort {
+  return value === 'repeat' || value === 'amount' || value === 'open' || value === 'name';
+}
+
 export type CustomersViewProps = {
   email: string | null | undefined;
   businessName: string | null;
@@ -37,6 +52,8 @@ export type CustomersViewProps = {
   suggestions: MergeSuggestion[];
   // High-confidence pairs Verdact already merged automatically (shown with undo).
   autoMerged: MergeSuggestion[];
+  // Secondary ordering of the linked customer cards (URL-driven ?sort=).
+  sort: CustomerSort;
   stripeConnected: boolean;
 };
 
@@ -46,11 +63,16 @@ export function CustomersView({
   groups,
   suggestions,
   autoMerged,
+  sort,
   stripeConnected,
 }: CustomersViewProps) {
-  const linked = groups.filter((g) => g.customerKey !== null);
   const unlinked = groups.find((g) => g.customerKey === null) ?? null;
+  const linked = sortCustomers(
+    groups.filter((g) => g.customerKey !== null),
+    sort,
+  );
   const repeatGroups = linked.filter((g) => g.disputes.length > 1);
+  const activeSort = CUSTOMER_SORTS.find((o) => o.key === sort) ?? CUSTOMER_SORTS[0];
 
   return (
     <AppShell email={email} businessName={businessName} active="customers">
@@ -80,12 +102,28 @@ export function CustomersView({
               <SectionBar
                 icon={<ListIcon />}
                 title="Your customers"
-                note="Everyone with a dispute on file, repeat customers first."
+                note={activeSort.note}
                 className={s.sectionBar}
               />
               <h2 id="your-customers-h" className="sr-only">
                 Your customers
               </h2>
+
+              {linked.length > 1 ? (
+                <nav className={s.sortRow} aria-label="Sort customers">
+                  <span className={s.sortLabel}>Sort</span>
+                  {CUSTOMER_SORTS.map((opt) => (
+                    <a
+                      key={opt.key}
+                      href={`/dashboard/customers?sort=${opt.key}`}
+                      className={`${s.sortBtn} ${sort === opt.key ? s.sortBtnActive : ''}`}
+                      aria-current={sort === opt.key ? 'true' : undefined}
+                    >
+                      {opt.label}
+                    </a>
+                  ))}
+                </nav>
+              ) : null}
 
               {repeatGroups.length > 0 && (
                 <p className={s.repeatBanner}>
@@ -350,6 +388,30 @@ function EmptyState() {
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
 type StatusTone = 'gap' | 'won' | 'neutral';
+
+// Order the linked customer cards. 'repeat' (default) preserves the server's
+// repeat-first ordering (dispute count DESC, then total DESC). The rest are
+// presentation re-sorts over data already loaded; each returns a NEW array and
+// keeps null/empty names last.
+function sortCustomers(groups: CustomerGroup[], sort: CustomerSort): CustomerGroup[] {
+  if (sort === 'amount') {
+    return [...groups].sort((a, b) => b.totalAmount - a.totalAmount);
+  }
+  if (sort === 'open') {
+    return [...groups].sort((a, b) => b.openCount - a.openCount);
+  }
+  if (sort === 'name') {
+    return [...groups].sort((a, b) => {
+      const an = (a.customerName || a.customerEmail || '').toLowerCase();
+      const bn = (b.customerName || b.customerEmail || '').toLowerCase();
+      if (!an && !bn) return 0;
+      if (!an) return 1;
+      if (!bn) return -1;
+      return an.localeCompare(bn);
+    });
+  }
+  return groups;
+}
 
 function currencyOf(group: CustomerGroup): string | null {
   return group.disputes.find((d) => d.currency)?.currency ?? null;
