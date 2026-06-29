@@ -120,6 +120,8 @@ export interface WorkbenchData {
   acceptanceReason: string | null;
   chainNodes: ChainNode[];
   narrative: string;
+  /** Offer the AI-draft button (server gates on VERDACT_AI_NARRATIVE_ENABLED). */
+  aiEnabled?: boolean;
   evidenceAnalysis: EvidenceAnalysis;
   packetText: string;
   downloadFilename: string;
@@ -409,7 +411,11 @@ export function ReviewStage({ data }: { data: WorkbenchData }) {
         note="A short, plain account. Verdact restates it in bank language."
       />
       <div id="your-account" className="scroll-mt-24">
-        <NarrativeEditor disputeId={record.id} initialNarrative={data.narrative} />
+        <NarrativeEditor
+          disputeId={record.id}
+          initialNarrative={data.narrative}
+          aiEnabled={data.aiEnabled}
+        />
       </div>
 
       {/* Full packet preview + gated download */}

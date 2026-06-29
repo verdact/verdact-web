@@ -6,6 +6,7 @@ import { getMerchant, verifySession } from '@/lib/dal';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { parseEvidenceDraft } from '@/lib/evidence/draft';
 import { submitEvidenceToStripe, type SubmitReason } from '@/lib/evidence/stripe-submit';
+import { generateAiNarrative } from '@/lib/evidence/ai-narrative';
 
 /**
  * Workbench mutations (R2 sub-stage 1).
@@ -70,6 +71,79 @@ export async function saveNarrativeAction(input: {
 
   revalidatePath(`/dashboard/disputes/${disputeId}`);
   return { ok: true, savedAt };
+}
+
+export interface GenerateNarrativeResult {
+  ok: boolean;
+  text?: string;
+  error?: string;
+}
+
+/**
+ * Draft the merchant's "account of what happened" with AI (Anthropic). Returns
+ * the draft for the merchant to REVIEW and edit — it does NOT persist. The
+ * existing autosave writes it once the merchant edits/blurs. Gated behind the
+ * VERDACT_AI_NARRATIVE_ENABLED kill switch (off by default → friendly error,
+ * no API call). Reads are RLS-scoped to the merchant; no PII is sent beyond the
+ * merchant's own dispute facts + which proof pillars are on file.
+ */
+export async function generateNarrativeAction(input: {
+  disputeId: string;
+}): Promise<GenerateNarrativeResult> {
+  const disputeId = input.disputeId?.trim();
+  if (!disputeId) return { ok: false, error: 'Missing dispute reference.' };
+
+  await verifySession();
+  const membership = await getMerchant();
+  if (!membership) return { ok: false, error: 'No merchant account found.' };
+
+  const supabase = await createClient();
+
+  const { data: dispute } = await supabase
+    .from('disputes')
+    .select('id, reason, amount, currency')
+    .eq('id', disputeId)
+    .eq('merchant_id', membership.merchant.id)
+    .maybeSingle();
+  if (!dispute) return { ok: false, error: 'Dispute not found.' };
+
+  const [filesResult, profileResult] = await Promise.all([
+    supabase
+      .from('evidence_files')
+      .select('purpose')
+      .eq('dispute_id', disputeId)
+      .eq('merchant_id', membership.merchant.id),
+    supabase
+      .from('merchant_profiles')
+      .select('product_description')
+      .eq('merchant_id', membership.merchant.id)
+      .maybeSingle(),
+  ]);
+
+  const purposes = new Set(
+    (filesResult.data ?? []).map((f) => (f as { purpose: string }).purpose),
+  );
+  const d = dispute as { reason: string | null; amount: number | null; currency: string | null };
+  const productDescription =
+    (profileResult.data as { product_description: string | null } | null)?.product_description ?? null;
+
+  const result = await generateAiNarrative({
+    reasonLabel: d.reason ?? 'a customer dispute',
+    reasonCode: d.reason ?? '',
+    amount: d.amount,
+    currency: d.currency,
+    customerName: null,
+    productDescription,
+    proofSummary: {
+      delivery: purposes.has('service_documentation'),
+      usage: false,
+      comms: purposes.has('communication'),
+      policyAttached: purposes.has('refund_policy') || purposes.has('cancellation_policy'),
+    },
+  });
+
+  if (result.ok) return { ok: true, text: result.text };
+  return { ok: false, error: result.error };
 }
 
 export interface DeleteFileResult {

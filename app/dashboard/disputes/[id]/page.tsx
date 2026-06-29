@@ -8,6 +8,7 @@ import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
 import { prepareStripeEvidence } from '@/lib/evidence/submission';
 import { isSubmissionEnabled } from '@/lib/evidence/submission-flag';
+import { isAiNarrativeEnabled } from '@/lib/evidence/ai-narrative';
 import { buildResolutionPlan, strengthFromPercent } from '@/lib/evidence/resolution';
 import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
@@ -280,6 +281,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   const data: WorkbenchData = {
     record,
+    aiEnabled: isAiNarrativeEnabled(),
     files,
     customerName,
     customerEmail: pii?.customer_email?.trim() || null,
