@@ -146,6 +146,51 @@
   margin: 0.25rem 0 0;
 }
 
+/* ── Sort control (URL-driven; secondary to the filter tabs) ─────── */
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: var(--space-2) 0 0;
+}
+
+.sortLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sortBtn {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 3px var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.sortBtn:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.sortBtnActive,
+.sortBtnActive:hover {
+  color: var(--verdict);
+  border-color: var(--verdict);
+  background: var(--verdict-tint);
+}
+
 /* ── List of layered cards ──────────────────────────────────────── */
 
 .list {

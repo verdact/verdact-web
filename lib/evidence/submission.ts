@@ -1,4 +1,5 @@
 import type { EvidencePacket, PacketExhibit } from './packet';
+import { fitTextFields } from './text-autofit';
 
 export type StripeEvidencePayload = Record<string, string>;
 
@@ -23,12 +24,18 @@ export function prepareStripeEvidence(packet: EvidencePacket): PreparedStripeEvi
   const evidence: StripeEvidencePayload = {};
   const blockedReasons: string[] = [];
 
+  // Auto-fit: intelligently trim analyzer narratives → merchant narrative →
+  // policy disclosures → product description before hitting Stripe's hard 150k
+  // char limit. The hard reject below remains the final backstop for the rare
+  // case where the untrimmable short fields alone still exceed the limit.
+  const fittedFields = fitTextFields(packet.fields, TEXT_LIMIT);
+
   // Text evidence fields. Their lengths are the ONLY thing that counts toward
   // Stripe's evidence text limit. The file-upload fields added below carry Stripe
   // file ids (fil_...), which must NOT be counted as evidence text — counting them
   // both inflated the total and risked falsely blocking a valid packet.
   let textCharacterCount = 0;
-  for (const field of packet.fields) {
+  for (const field of fittedFields) {
     if (field.present && field.value.trim()) {
       const value = field.value.trim();
       evidence[field.key] = value;

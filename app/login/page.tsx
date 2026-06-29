@@ -8,6 +8,7 @@ type LoginPageProps = {
   searchParams: Promise<{
     error?: string;
     confirmed?: string;
+    reason?: string;
   }>;
 };
 
@@ -39,6 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const presetError = params.error ? decodeURIComponent(params.error) : undefined;
   const confirmed = params.confirmed === '1';
+  const sessionExpired = params.reason === 'session_expired';
 
   return (
     <AuthFrame>
@@ -61,6 +63,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           {confirmed ? (
             <div className="notice notice--info" style={{ marginBottom: 'var(--space-5)' }}>
               Email confirmed. Sign in below to continue.
+            </div>
+          ) : null}
+
+          {sessionExpired ? (
+            <div className="notice notice--info" style={{ marginBottom: 'var(--space-5)' }}>
+              Your session timed out for security. Sign in again to pick up where
+              you left off.
             </div>
           ) : null}
 

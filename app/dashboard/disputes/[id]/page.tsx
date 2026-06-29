@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import { AppShell } from '../../../_components/app-chrome';
 import { getLatestVampSnapshot, getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
@@ -8,7 +9,10 @@ import { enrichDisputeCharge } from '@/lib/evidence/charge-enrichment';
 import { buildEvidencePacket, serializePacketText } from '@/lib/evidence/packet';
 import { prepareStripeEvidence } from '@/lib/evidence/submission';
 import { isSubmissionEnabled } from '@/lib/evidence/submission-flag';
+import { isAiNarrativeEnabled } from '@/lib/evidence/ai-narrative';
 import { buildResolutionPlan, strengthFromPercent } from '@/lib/evidence/resolution';
+import { buildSignalLadder } from '@/lib/evidence/typed-strength';
+import { isCe3Gate, computeCe3Eligibility } from '@/lib/evidence/ce3';
 import { getReasonProfile } from '@/lib/audit/reason-codes';
 import { can } from '@/lib/entitlements';
 import { parseEvidenceDraft } from '@/lib/evidence/draft';
@@ -67,6 +71,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
             'status',
             'due_by',
             'ce3_eligible',
+            'ce3_checked_at',
             'evidence_draft',
             'evidence_approved_at',
             'submitted_at',
@@ -182,6 +187,55 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     sessions: [],
     proof,
   });
+  const signalLadder = buildSignalLadder(signals);
+
+  // ── CE 3.0 eligibility (Visa fraudulent only) ─────────────────────────────
+  // Advisory only — never drives submission logic. VAMP-numerator adjustment
+  // is deferred (separate carefully-reviewed step with backfill).
+  let ce3Eligible: boolean | undefined;
+  if (isCe3Gate(record.network, reasonCode)) {
+    const ce3Result = await computeCe3Eligibility({
+      network: record.network,
+      reasonCode,
+      customerStripeId: enrichment.customerStripeId,
+      cardFingerprint: enrichment.cardFingerprint,
+      stripeAccountId,
+      // Anchor on the disputed transaction's date, not the dispute-filed date.
+      disputedChargeAt: enrichment.purchaseAt ?? record.created_at,
+      cachedCheckedAt: record.ce3_checked_at,
+      cachedEligible: record.ce3_eligible,
+    });
+    ce3Eligible = ce3Result.eligible;
+    // Write through ONLY when a live recompute actually ran — a fresh-cache hit
+    // (recomputed:false) must not re-stamp ce3_checked_at, or the 24h window
+    // would slide forward forever and the value would never refresh.
+    if (ce3Result.recomputed) {
+      // after() runs post-response so Next keeps the invocation alive on Vercel
+      // serverless (a bare floating promise can be torn down before it lands).
+      after(async () => {
+        try {
+          await supabase
+            .from('disputes')
+            .update({
+              ce3_eligible: ce3Result.eligible,
+              ce3_checked_at: new Date().toISOString(),
+              // schema_version is REQUIRED on every disputes JSONB payload — the
+              // require_schema_version_on_jsonb_columns() trigger rejects the
+              // UPDATE without it (silently defeating the staleness cache).
+              ce3_check_payload: {
+                schema_version: 'v1',
+                priorTransactionCount: ce3Result.priorTransactionCount,
+              },
+            })
+            .eq('id', record.id)
+            .eq('merchant_id', membership.merchant.id);
+        } catch {
+          // intentionally silent — the advisory still rendered correctly
+        }
+      });
+    }
+  }
+
   const evidenceAnalysis = analyzeEvidence({
     reasonCode,
     signals,
@@ -280,6 +334,7 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
 
   const data: WorkbenchData = {
     record,
+    aiEnabled: isAiNarrativeEnabled(),
     files,
     customerName,
     customerEmail: pii?.customer_email?.trim() || null,
@@ -320,6 +375,8 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
     stripeFieldCount,
     stripeUploadReadyCount,
     stripeUploadMissingCount: preparedSubmission.missingStripeUploads.length,
+    signalLadder,
+    ce3Eligible,
   };
 
   return (

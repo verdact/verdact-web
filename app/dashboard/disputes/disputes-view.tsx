@@ -31,6 +31,16 @@ import s from './disputes.module.css';
 // type, token, copy, layout, status-tone reassignment, or presentation only.
 
 export type DisputeFilter = 'needs-action' | 'open' | 'all';
+export type DisputeSort = 'deadline' | 'newest' | 'amount';
+
+// Secondary ordering within a filter bucket. URL-driven (?sort=) to match how
+// the filter tabs already work — no client-component conversion needed. The
+// note re-uses the SectionBar so the active sort is described in plain words.
+const SORTS: ReadonlyArray<{ key: DisputeSort; label: string; note: string }> = [
+  { key: 'deadline', label: 'Deadline', note: 'Nearest deadline first. Take them one at a time.' },
+  { key: 'newest', label: 'Newest', note: 'Most recently opened first.' },
+  { key: 'amount', label: 'Amount', note: 'Largest amount at risk first.' },
+];
 
 export type DisputesViewProps = {
   email: string | null | undefined;
@@ -38,6 +48,7 @@ export type DisputesViewProps = {
   disputes: Dispute[];
   stripeConnected: boolean;
   filter: DisputeFilter;
+  sort: DisputeSort;
   /**
    * Present proof pillars per dispute, keyed by dispute id (respondable cases).
    * Optional so the dev preview route can render without a DB read; the chip
@@ -89,12 +100,17 @@ export function isDisputeFilter(value: string | undefined): value is DisputeFilt
   return value === 'needs-action' || value === 'open' || value === 'all';
 }
 
+export function isDisputeSort(value: string | undefined): value is DisputeSort {
+  return value === 'deadline' || value === 'newest' || value === 'amount';
+}
+
 export function DisputesView({
   email,
   businessName,
   disputes,
   stripeConnected,
   filter,
+  sort,
   proofByDispute = {},
 }: DisputesViewProps) {
   const counts = {
@@ -105,7 +121,8 @@ export function DisputesView({
 
   const needsAction = counts['needs-action'];
   const triage = triageHeadline(needsAction);
-  const visible = sortByDeadline(filterDisputes(disputes, filter));
+  const visible = sortDisputesBy(filterDisputes(disputes, filter), sort);
+  const activeSort = SORTS.find((o) => o.key === sort) ?? SORTS[0];
 
   return (
     <AppShell email={email} businessName={businessName} active="disputes">
@@ -144,9 +161,24 @@ export function DisputesView({
                 <SectionBar
                   icon={<ListIcon />}
                   title={listSectionTitle(filter)}
-                  note="Nearest deadline first. Take them one at a time."
+                  note={activeSort.note}
                   className={s.listBar}
                 />
+                {disputes.length > 1 ? (
+                  <nav className={s.sortRow} aria-label="Sort disputes">
+                    <span className={s.sortLabel}>Sort</span>
+                    {SORTS.map((opt) => (
+                      <a
+                        key={opt.key}
+                        href={`/dashboard/disputes?filter=${filter}&sort=${opt.key}`}
+                        className={`${s.sortBtn} ${sort === opt.key ? s.sortBtnActive : ''}`}
+                        aria-current={sort === opt.key ? 'page' : undefined}
+                      >
+                        {opt.label}
+                      </a>
+                    ))}
+                  </nav>
+                ) : null}
                 <div className={s.list}>
                   {visible.map((d) => (
                     <DisputeRow key={d.id} dispute={d} proof={proofByDispute[d.id] ?? []} />
@@ -417,13 +449,48 @@ function filterDisputes(disputes: Dispute[], filter: DisputeFilter): Dispute[] {
   return disputes;
 }
 
+// Mirrors the DB order (lib/dal getDisputes): due_by ASC, nulls last, then
+// created_at DESC as the tiebreaker so same-deadline rows keep a stable,
+// intentional order rather than relying on sort stability alone.
 function sortByDeadline(disputes: Dispute[]): Dispute[] {
   return [...disputes].sort((a, b) => {
-    if (!a.due_by && !b.due_by) return 0;
+    if (!a.due_by && !b.due_by) return byCreatedDesc(a, b);
     if (!a.due_by) return 1;
     if (!b.due_by) return -1;
-    return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
+    const byDeadline = new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
+    return byDeadline !== 0 ? byDeadline : byCreatedDesc(a, b);
   });
+}
+
+// Apply the chosen sort. Deadline is the default (nearest first, nulls last);
+// newest is created_at descending; amount is largest-at-risk first (nulls last).
+// Every branch returns a NEW array (never mutates the prop).
+function sortDisputesBy(disputes: Dispute[], sort: DisputeSort): Dispute[] {
+  if (sort === 'newest') {
+    return [...disputes].sort(byCreatedDesc);
+  }
+  if (sort === 'amount') {
+    return [...disputes].sort((a, b) => {
+      if (a.amount == null && b.amount == null) return 0;
+      if (a.amount == null) return 1;
+      if (b.amount == null) return -1;
+      return b.amount - a.amount;
+    });
+  }
+  return sortByDeadline(disputes);
+}
+
+// created_at descending (newest first). Unparseable/absent timestamps sort last
+// in this (and only) direction, consistent with the nulls-last comparators.
+function byCreatedDesc(a: Dispute, b: Dispute): number {
+  const at = Date.parse(a.created_at);
+  const bt = Date.parse(b.created_at);
+  const aBad = Number.isNaN(at);
+  const bBad = Number.isNaN(bt);
+  if (aBad && bBad) return 0;
+  if (aBad) return 1;
+  if (bBad) return -1;
+  return bt - at;
 }
 
 function emptyCopy(

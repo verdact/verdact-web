@@ -134,6 +134,7 @@ const MIME_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/jpg': 'jpg',
+  'image/webp': 'webp',
   'image/gif': 'gif',
   'text/plain': 'txt',
 };

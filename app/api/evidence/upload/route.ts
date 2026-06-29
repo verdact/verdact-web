@@ -8,6 +8,7 @@ import {
   isAllowedEvidenceMime,
   isEvidencePurpose,
 } from '@/lib/evidence/intake';
+import { compressEvidenceFile } from '@/lib/evidence/compress';
 
 // Node runtime: uses node:crypto for the content hash and reads the file bytes.
 export const runtime = 'nodejs';
@@ -109,7 +110,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  // Compress images and PDFs before hashing so the stored sha256 always
+  // matches the stored (potentially compressed) bytes. Falls back to original
+  // bytes on any failure — never breaks the upload.
+  const { bytes: finalBytes } = await compressEvidenceFile(bytes, file.type);
+
+  const sha256 = createHash('sha256').update(finalBytes).digest('hex');
 
   const { data: existing } = await supabase
     .from('evidence_files')
@@ -148,7 +154,7 @@ export async function POST(request: Request) {
   const path = `${merchantId}/${disputeId}/${sha256}.${ext}`;
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(path, bytes, { contentType: file.type, upsert: true });
+    .upload(path, finalBytes, { contentType: file.type, upsert: true });
   if (uploadError) {
     return NextResponse.json({ error: 'Upload failed. Please try again.' }, { status: 500 });
   }
@@ -161,7 +167,7 @@ export async function POST(request: Request) {
       purpose,
       supabase_path: path,
       content_sha256: sha256,
-      content_size_bytes: file.size,
+      content_size_bytes: finalBytes.length,
       mime_type: file.type,
       source_kind: 'upload',
       upload_status: 'uploaded_local',

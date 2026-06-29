@@ -20,12 +20,18 @@ export interface ChargeEnrichment {
   purchaseAt: string | null;
   billingCountry: string | null;
   issuingCountry: string | null;
+  /** Stripe customer ID attached to the charge — used for CE 3.0 prior-tx lookup. */
+  customerStripeId: string | null;
+  /** Card fingerprint — used to match prior settled transactions for CE 3.0. */
+  cardFingerprint: string | null;
 }
 
 const EMPTY: ChargeEnrichment = {
   purchaseAt: null,
   billingCountry: null,
   issuingCountry: null,
+  customerStripeId: null,
+  cardFingerprint: null,
 };
 
 export async function enrichDisputeCharge({
@@ -50,10 +56,17 @@ export async function enrichDisputeCharge({
         ? charge.payment_method_details.card
         : null;
 
+    const customerId =
+      typeof charge.customer === 'string'
+        ? charge.customer
+        : (charge.customer as { id?: string } | null)?.id ?? null;
+
     return {
       purchaseAt: charge.created ? new Date(charge.created * 1000).toISOString() : null,
       billingCountry: charge.billing_details?.address?.country ?? null,
       issuingCountry: card?.country ?? null,
+      customerStripeId: customerId,
+      cardFingerprint: card?.fingerprint ?? null,
     };
   } catch {
     // Charges disabled / access revoked / transient error — degrade honestly.

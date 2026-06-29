@@ -1,6 +1,7 @@
 import type { ChainNode, EvidenceAnalysis } from '@/lib/evidence';
 import type { EvidencePacket, PacketReadinessCheck, ReadinessKey } from '@/lib/evidence/packet';
 import type { EvidenceStrength, ResolutionPlan, ResolveRoute } from '@/lib/evidence/resolution';
+import type { SignalLadder } from '@/lib/evidence/typed-strength';
 import {
   AlertIcon,
   ArrowLeftIcon,
@@ -60,6 +61,7 @@ export type WorkbenchDispute = {
   status: string;
   due_by: string | null;
   ce3_eligible: boolean | null;
+  ce3_checked_at: string | null;
   evidence_draft: unknown;
   evidence_approved_at: string | null;
   submitted_at: string | null;
@@ -120,6 +122,8 @@ export interface WorkbenchData {
   acceptanceReason: string | null;
   chainNodes: ChainNode[];
   narrative: string;
+  /** Offer the AI-draft button (server gates on VERDACT_AI_NARRATIVE_ENABLED). */
+  aiEnabled?: boolean;
   evidenceAnalysis: EvidenceAnalysis;
   packetText: string;
   downloadFilename: string;
@@ -138,6 +142,10 @@ export interface WorkbenchData {
   stripeFieldCount: number;
   stripeUploadReadyCount: number;
   stripeUploadMissingCount: number;
+  /** Typed signal breakdown (typed-strength feature). */
+  signalLadder?: SignalLadder;
+  /** CE 3.0 eligibility (Visa 10.4 only). null/undefined = not applicable. */
+  ce3Eligible?: boolean;
 }
 
 // ── Case-home header (rendered at the top of the shell's centered column) ─────
@@ -328,6 +336,10 @@ export function BuildStage({ data }: { data: WorkbenchData }) {
         primaryGapKey={resolutionPlan?.key ?? null}
       />
 
+      {data.signalLadder && data.signalLadder.length > 0 && (
+        <SignalLadderDisclosure ladder={data.signalLadder} />
+      )}
+
       {/* Add evidence (deep-link + flag target) */}
       <SectionBar
         icon={<UploadIcon />}
@@ -409,7 +421,11 @@ export function ReviewStage({ data }: { data: WorkbenchData }) {
         note="A short, plain account. Verdact restates it in bank language."
       />
       <div id="your-account" className="scroll-mt-24">
-        <NarrativeEditor disputeId={record.id} initialNarrative={data.narrative} />
+        <NarrativeEditor
+          disputeId={record.id}
+          initialNarrative={data.narrative}
+          aiEnabled={data.aiEnabled}
+        />
       </div>
 
       {/* Full packet preview + gated download */}
@@ -453,7 +469,12 @@ export function ReviewStage({ data }: { data: WorkbenchData }) {
           Account health, separate from this case
         </summary>
         <div className="mt-4">
-          <AccountRiskPanel ratio={data.vampRatio} />
+          <AccountRiskPanel
+            ratio={data.vampRatio}
+            ce3Eligible={data.ce3Eligible}
+            network={data.record.network}
+            reason={data.record.reason}
+          />
         </div>
       </details>
 
@@ -1145,7 +1166,62 @@ function EvidenceItemRow({ item, disputeId }: { item: EvidenceItem; disputeId: s
   );
 }
 
-function AccountRiskPanel({ ratio }: { ratio: number | null }) {
+// ── Typed evidence-signal ladder disclosure ────────────────────────────────────
+function SignalLadderDisclosure({ ladder }: { ladder: SignalLadder }) {
+  const presentCount = ladder.filter((s) => s.presence === 'present').length;
+  return (
+    <details className={`${styles.card} mt-4 px-5 py-4`}>
+      <summary className={`${styles.labelMono} cursor-pointer text-action`}>
+        Evidence signals ({presentCount} of {ladder.length} present)
+      </summary>
+      <p className="mt-3 text-xs leading-5 text-ink-mute">
+        Stronger cases tend to have more of these. This is evidence completeness, not a prediction.
+      </p>
+      <ul className="mt-3 space-y-2" role="list">
+        {ladder.map((signal) => (
+          <li key={signal.key} className="flex items-start gap-3">
+            <span
+              className={`mt-0.5 grid h-4 w-4 flex-none place-items-center rounded-full text-[0.6rem] ${
+                signal.presence === 'present'
+                  ? 'bg-trust-soft text-trust'
+                  : 'bg-surface-raised text-ink-mute'
+              }`}
+              aria-hidden="true"
+            >
+              {signal.presence === 'present' ? '✓' : '·'}
+            </span>
+            <span>
+              <span className={`block text-xs font-medium ${signal.presence === 'present' ? 'text-ink' : 'text-ink-mute'}`}>
+                {signal.name}
+              </span>
+              <span className="block text-xs leading-5 text-ink-mute">{signal.why}</span>
+              {signal.note && (
+                <span className="block text-xs leading-5 text-watch">{signal.note}</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function AccountRiskPanel({
+  ratio,
+  ce3Eligible,
+  network,
+  reason,
+}: {
+  ratio: number | null;
+  ce3Eligible?: boolean;
+  network?: string | null;
+  reason?: string | null;
+}) {
+  // Independent render-side enforcement of the CE 3.0 gate (Visa + fraudulent
+  // 10.4 only) — defense-in-depth so the banner can never show for a dispute
+  // outside the gate, regardless of how ce3Eligible was sourced upstream.
+  const ce3GatePasses = network === 'visa' && reason === 'fraudulent';
+  const showCe3 = ce3Eligible === true && ce3GatePasses;
   return (
     <section className={`${styles.card} overflow-hidden`}>
       <header className="flex items-center justify-between gap-3 border-b border-rule px-5 py-4">
@@ -1182,6 +1258,21 @@ function AccountRiskPanel({ ratio }: { ratio: number | null }) {
             10.4, not to service disputes.
           </p>
         </details>
+        {showCe3 && (
+          <div className="mt-4 flex items-start gap-3 rounded-md border border-trust-rule bg-trust-soft px-3 py-3">
+            <span className="mt-0.5 grid h-4 w-4 flex-none place-items-center rounded-full bg-trust text-[0.55rem] font-bold text-white">
+              ✓
+            </span>
+            <div>
+              <p className="text-xs font-semibold text-trust">CE 3.0 may apply to this dispute</p>
+              <p className="mt-1 text-xs leading-5 text-ink-mute">
+                We found at least two prior settled charges on this card in your Stripe history,
+                which may make this dispute CE 3.0 eligible. Visa makes the final determination —
+                confirm with your acquirer.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
