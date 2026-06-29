@@ -172,7 +172,7 @@ export function DisputesView({
                         key={opt.key}
                         href={`/dashboard/disputes?filter=${filter}&sort=${opt.key}`}
                         className={`${s.sortBtn} ${sort === opt.key ? s.sortBtnActive : ''}`}
-                        aria-current={sort === opt.key ? 'true' : undefined}
+                        aria-current={sort === opt.key ? 'page' : undefined}
                       >
                         {opt.label}
                       </a>
@@ -449,12 +449,16 @@ function filterDisputes(disputes: Dispute[], filter: DisputeFilter): Dispute[] {
   return disputes;
 }
 
+// Mirrors the DB order (lib/dal getDisputes): due_by ASC, nulls last, then
+// created_at DESC as the tiebreaker so same-deadline rows keep a stable,
+// intentional order rather than relying on sort stability alone.
 function sortByDeadline(disputes: Dispute[]): Dispute[] {
   return [...disputes].sort((a, b) => {
-    if (!a.due_by && !b.due_by) return 0;
+    if (!a.due_by && !b.due_by) return byCreatedDesc(a, b);
     if (!a.due_by) return 1;
     if (!b.due_by) return -1;
-    return new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
+    const byDeadline = new Date(a.due_by).getTime() - new Date(b.due_by).getTime();
+    return byDeadline !== 0 ? byDeadline : byCreatedDesc(a, b);
   });
 }
 
@@ -463,7 +467,7 @@ function sortByDeadline(disputes: Dispute[]): Dispute[] {
 // Every branch returns a NEW array (never mutates the prop).
 function sortDisputesBy(disputes: Dispute[], sort: DisputeSort): Dispute[] {
   if (sort === 'newest') {
-    return [...disputes].sort((a, b) => tsOf(b.created_at) - tsOf(a.created_at));
+    return [...disputes].sort(byCreatedDesc);
   }
   if (sort === 'amount') {
     return [...disputes].sort((a, b) => {
@@ -476,9 +480,17 @@ function sortDisputesBy(disputes: Dispute[], sort: DisputeSort): Dispute[] {
   return sortByDeadline(disputes);
 }
 
-function tsOf(value: string): number {
-  const t = Date.parse(value);
-  return Number.isNaN(t) ? 0 : t;
+// created_at descending (newest first). Unparseable/absent timestamps sort last
+// in this (and only) direction, consistent with the nulls-last comparators.
+function byCreatedDesc(a: Dispute, b: Dispute): number {
+  const at = Date.parse(a.created_at);
+  const bt = Date.parse(b.created_at);
+  const aBad = Number.isNaN(at);
+  const bBad = Number.isNaN(bt);
+  if (aBad && bBad) return 0;
+  if (aBad) return 1;
+  if (bBad) return -1;
+  return bt - at;
 }
 
 function emptyCopy(

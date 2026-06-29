@@ -24,7 +24,8 @@ const supabaseWss = supabaseHttp.replace(/^https:/, "wss:");
 
 // PostHog US Cloud is reverse-proxied through /ingest (→ 'self'), but list the
 // real origins defensively in case the JS bootstrap reaches them directly.
-const POSTHOG_ORIGINS = "https://us.i.posthog.com https://us-assets.i.posthog.com";
+const POSTHOG_ORIGINS =
+  "https://us.i.posthog.com https://us-assets.i.posthog.com https://us.posthog.com";
 
 const cspDirectives = [
   "default-src 'self'",
@@ -34,7 +35,7 @@ const cspDirectives = [
   "form-action 'self'",
   // Next.js injects inline bootstrap scripts (no nonce in static mode) + PostHog.
   // 'unsafe-eval' is intentionally NOT included (not needed in production).
-  `script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com`,
+  `script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com https://us.posthog.com`,
   // React inline styles + framer-motion + Next inline <style> require 'unsafe-inline'.
   "style-src 'self' 'unsafe-inline'",
   // Self-hosted fonts (next/font); data: for any inline font.
@@ -67,7 +68,7 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   },
-  { key: "X-DNS-Prefetch-Control", value: "on" },
+  { key: "X-DNS-Prefetch-Control", value: "off" },
 ];
 
 const nextConfig: NextConfig = {

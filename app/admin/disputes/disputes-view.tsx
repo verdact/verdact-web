@@ -26,13 +26,14 @@ type DisputeSortKey =
   | 'outcome'
   | 'createdAt';
 
-// won → open → lost → warning_closed (action/recency priority order).
-const OUTCOME_RANK: Record<OutcomeFilter, number> = {
+// won → open → lost → warning_closed (action/recency priority order). Keyed on
+// the framing values only (framingOf never returns 'all'), so the table stays
+// type-safe if a framing value is ever added.
+const OUTCOME_RANK: Record<Exclude<OutcomeFilter, 'all'>, number> = {
   won: 0,
   open: 1,
   lost: 2,
   warning_closed: 3,
-  all: 4,
 };
 
 function sortDisputes(
@@ -90,7 +91,7 @@ const NETWORK_FILTERS: { key: NetworkFilter; label: string }[] = [
 
 const OPEN_STATUSES = new Set(['needs_response', 'under_review', 'submitted']);
 
-function framingOf(record: DisputeRecord): OutcomeFilter {
+function framingOf(record: DisputeRecord): Exclude<OutcomeFilter, 'all'> {
   if (record.outcome === 'won') return 'won';
   if (record.outcome === 'lost') return 'lost';
   if (record.outcome === 'warning_closed') return 'warning_closed';

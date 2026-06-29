@@ -117,7 +117,7 @@ export function CustomersView({
                       key={opt.key}
                       href={`/dashboard/customers?sort=${opt.key}`}
                       className={`${s.sortBtn} ${sort === opt.key ? s.sortBtnActive : ''}`}
-                      aria-current={sort === opt.key ? 'true' : undefined}
+                      aria-current={sort === opt.key ? 'page' : undefined}
                     >
                       {opt.label}
                     </a>
@@ -410,7 +410,9 @@ function sortCustomers(groups: CustomerGroup[], sort: CustomerSort): CustomerGro
       return an.localeCompare(bn);
     });
   }
-  return groups;
+  // 'repeat' (default): preserve the server's repeat-first ordering, but still
+  // hand back a fresh array so callers never share a reference with the prop.
+  return [...groups];
 }
 
 function currencyOf(group: CustomerGroup): string | null {
