@@ -106,6 +106,7 @@ export default async function WorkbenchPreview({
     status: submitted ? 'submitted' : 'needs_response',
     due_by: '2026-07-09',
     ce3_eligible: false,
+    ce3_checked_at: null,
     evidence_draft: null,
     evidence_approved_at: approved ? '2026-06-26T00:00:00Z' : null,
     submitted_at: submitted ? '2026-06-26T00:00:00Z' : null,
