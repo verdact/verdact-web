@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export const BETA_ACCESS_MESSAGE =
@@ -17,9 +18,10 @@ type AdmissionPolicyRow = {
  * waitlist (invite_only). Fail-closed: any read error returns 'invite_only' so a
  * transient failure never accidentally opens public signup. This is a UI/render
  * signal only — account creation is still independently enforced server-side by
- * `emailHasBetaAccess()` (and the auth.users DB trigger).
+ * `emailHasBetaAccess()` (and the auth.users DB trigger). Wrapped in React.cache
+ * so the per-request callers (generateMetadata + the page render) share one read.
  */
-export async function getAdmissionMode(): Promise<AdmissionMode> {
+export const getAdmissionMode = cache(async (): Promise<AdmissionMode> => {
   try {
     const supabase = createServiceClient();
     const { data, error } = await supabase
@@ -41,7 +43,7 @@ export async function getAdmissionMode(): Promise<AdmissionMode> {
     console.error('[auth/admission] mode read threw:', message);
     return 'invite_only';
   }
-}
+});
 
 type InviteRow = {
   id: string;

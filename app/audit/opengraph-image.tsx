@@ -1,6 +1,6 @@
 import { verdactOgCard } from '@/lib/og/card';
 
-export const alt = 'Free Stripe dispute audit — find the disputes you should have won';
+export const alt = 'Free Stripe dispute audit: find the disputes you should have won';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
