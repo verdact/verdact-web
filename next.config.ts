@@ -72,6 +72,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // sharp is a native binary; keep it out of Next.js's bundler so the Vercel
+  // linux-x64 runtime can resolve the correct prebuilt binary at deploy time.
+  // ⚠️ Verify after first deploy: do a real >4.5MB image upload to confirm
+  //    the linux-x64 sharp binary resolves correctly on Vercel's runtime.
+  serverExternalPackages: ['sharp'],
   // Reverse-proxy PostHog through our own origin (/ingest) so analytics and
   // session-replay assets are not blocked by ad-blockers. US Cloud endpoints.
   async rewrites() {
