@@ -73,8 +73,12 @@ export async function POST(request: Request) {
   });
 
   // ── Capture the lead (best-effort). A storage failure must NOT break the
-  // user's result — they still get their score. We log and move on. ──────────
-  void captureLead({
+  // user's result — they still get their score. We await it only to learn the
+  // row id, which the result page uses to hand off to /signup?from=audit&lead=
+  // WITHOUT putting the email in the URL. A null id (failure / unmigrated table)
+  // is fine: the handoff falls back to /signup?from=audit and the email-keyed
+  // backfill still links at signup. captureLead never throws. ────────────────
+  const leadId = await captureLead({
     submission,
     score,
     ipHash: clientKey,
@@ -85,7 +89,7 @@ export async function POST(request: Request) {
   // `emailed` reflects whether transactional email is configured, so the result
   // page can claim "we emailed a copy" only when that is true. It is not a
   // delivery receipt: the recap is dispatched fire-and-forget inside captureLead.
-  return NextResponse.json({ score, emailed: isEmailEnabled() });
+  return NextResponse.json({ score, emailed: isEmailEnabled(), leadId });
 }
 
 async function captureLead({
@@ -100,7 +104,7 @@ async function captureLead({
   ipHash: string;
   userAgent: string | null;
   headers: Headers;
-}): Promise<void> {
+}): Promise<string | null> {
   try {
     const supabase = createServiceClient();
     // Env-gated coarse geo (off until ADMIN_GEO_CAPTURE='on' + migration applied).
@@ -111,7 +115,9 @@ async function captureLead({
     const ratioFraction =
       score.rate.ratioPercent == null ? null : score.rate.ratioPercent / 100;
 
-    const { error } = await supabase.from('audit_leads').insert({
+    const { data, error } = await supabase
+      .from('audit_leads')
+      .insert({
       email: submission.email,
       business_name: submission.businessName ?? null,
       settled_transaction_count: submission.settledTransactionCount,
@@ -132,12 +138,14 @@ async function captureLead({
       ip_hash: ipHash,
       user_agent: userAgent?.slice(0, 400) ?? null,
       ...geo,
-    });
+      })
+      .select('id')
+      .maybeSingle();
 
     if (error) {
       // Table may be unmigrated in some environments — that is expected pre-apply.
       console.error('[audit/score] lead capture failed:', error.message);
-      return;
+      return null;
     }
 
     // Fire-and-forget the recap email. The lead is stored, so the result page's
@@ -148,8 +156,11 @@ async function captureLead({
       shouldHaveWonCount: score.summary.shouldHaveWonCount,
       commsHingedCount: score.summary.commsHingedCount,
     });
+
+    return (data as { id: string } | null)?.id ?? null;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
     console.error('[audit/score] lead capture threw:', message);
+    return null;
   }
 }

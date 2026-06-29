@@ -30,10 +30,14 @@ interface AuditResultProps {
   // recap was dispatched. Drives the honest "we emailed a copy" vs "we saved a
   // copy" claim so the page never promises an email that was not sent.
   emailed: boolean;
+  // The captured audit_leads row id (from the scoring endpoint). Carried into the
+  // signup handoff as ?lead=<id> so the email stays OUT of the URL; null when the
+  // score came from the client-side fallback (no stored lead).
+  leadId?: string | null;
   onRestart: () => void;
 }
 
-export function AuditResult({ score, email, emailed, onRestart }: AuditResultProps) {
+export function AuditResult({ score, email, emailed, leadId, onRestart }: AuditResultProps) {
   const { rate, summary, disputes } = score;
 
   const shouldHaveWon = useMemo(
@@ -226,25 +230,24 @@ export function AuditResult({ score, email, emailed, onRestart }: AuditResultPro
       <section className={styles.convert}>
         <div className="wrap">
           <div className={styles.convertCard}>
-            <p className={styles.convertKicker}>Verdact is launching soon</p>
+            <p className={styles.convertKicker}>Free during beta</p>
             <h2 className={styles.convertHead}>
-              Be first in line to fight the disputes you should win.
+              Fight the disputes you should have won.
             </h2>
             <p className={styles.convertSub}>
-              New workspaces are not open to the public yet. Join the waitlist and we&rsquo;ll tell you
-              the moment you can create yours &mdash; then pre-load{' '}
+              Create your free testing workspace and pre-load{' '}
               {summary.totalDisputes === 1
                 ? 'this dispute'
                 : `these ${summary.totalDisputes} disputes`}{' '}
-              as your starting history. You build and view the evidence packet for free, and
-              nothing is ever filed without your sign-off.
+              as your starting history. You build and view the evidence packet for free. Nothing is
+              filed without your sign-off, and we never take a cut.
             </p>
             <div className={styles.convertCtas}>
               <Link
-                href={`/signup?from=audit&email=${encodeURIComponent(email)}`}
+                href={`/signup?from=audit${leadId ? `&lead=${leadId}` : ''}`}
                 className={styles.ctaPrimary}
               >
-                Join the waitlist
+                Create your free testing workspace
               </Link>
               <button type="button" className={styles.linkGhost} onClick={onRestart}>
                 Edit my numbers
@@ -253,7 +256,7 @@ export function AuditResult({ score, email, emailed, onRestart }: AuditResultPro
             <p className={styles.convertNote}>
               {emailed
                 ? `We emailed a copy of this audit to ${email}.`
-                : `We saved this audit under ${email} so we can pre-load it when you join.`}
+                : `We saved this audit under ${email} so we can pre-load it when you create your workspace.`}
             </p>
           </div>
         </div>
