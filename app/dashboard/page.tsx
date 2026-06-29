@@ -55,7 +55,15 @@ export default async function DashboardPage({
   // funnel, their pre-signup audit data (keyed by email) is linked to the
   // workspace as historical context. Idempotent + absence-safe — already-linked
   // or missing leads are a no-op, and any failure never blocks the render.
-  if (membership) {
+  //
+  // Defense-in-depth: only consume for a CONFIRMED email. Backfill is keyed by
+  // email string, so consuming for an unconfirmed address would let someone
+  // claim another person's audit data by signing up as them. With Supabase
+  // "Confirm email" ON (current prod config) an unconfirmed user can't reach
+  // this page at all; this guard makes that dependency explicit. (If email
+  // confirmation is ever disabled, Supabase auto-stamps email_confirmed_at, so
+  // the robust long-term fix is to scope backfill to the lead UUID, not email.)
+  if (membership && user.email_confirmed_at) {
     await consumeAuditBackfill(membership.merchant.id, user.email);
   }
 

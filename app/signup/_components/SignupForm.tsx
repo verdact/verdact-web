@@ -18,7 +18,9 @@ function validatePassword(value: string): string | undefined {
 }
 
 interface SignupFormProps {
-  // Prefilled email when arriving from the public /audit funnel (?email=…).
+  // Prefilled email when arriving from the public /audit funnel. The email is
+  // resolved server-side from the ?lead=<uuid> param (getAuditLeadEmailById) so
+  // no PII rides in the URL; legacy ?email= is still honored for back-compat.
   initialEmail?: string;
 }
 
