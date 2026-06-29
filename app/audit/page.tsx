@@ -20,6 +20,59 @@ export const metadata: Metadata = {
   },
 };
 
+const SCHEMA = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'Stripe Dispute Audit',
+      url: 'https://www.verdact.io/audit',
+      applicationCategory: 'FinanceApplication',
+      operatingSystem: 'Web',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      description:
+        'Free, no-login audit of your recent Stripe disputes: which you likely should have won, where your dispute rate stands against the 0.75% line, and how many hinged on email and Slack evidence Stripe-native tools cannot reach.',
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Is the Stripe dispute audit free?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. The audit is free and needs no login or Stripe connection. You enter your last 90 days of disputes by CSV export or by hand and see your read instantly.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'What does the dispute audit check?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'For each dispute it reads the reason code and the proof you hold, flags the ones with a profile that typically wins on representment, and shows your overall dispute rate against the 0.75% line where Stripe can limit an account.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Which Stripe disputes are hardest to win?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Services-not-rendered and cancelled-subscription chargebacks, because the deciding proof lives in your email and delivery logs rather than in Stripe, so Stripe marks them unavailable. The audit flags how many of yours hinge on that communications evidence.',
+          },
+        },
+      ],
+    },
+  ],
+};
+
 export default function AuditPage() {
-  return <AuditFunnel />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SCHEMA) }}
+      />
+      <AuditFunnel />
+    </>
+  );
 }

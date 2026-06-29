@@ -13,12 +13,21 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.verdact.io"),
   title: {
     default: "Verdact",
     template: "%s | Verdact",
   },
   description:
-    "Dispute-ready evidence records for Stripe merchants. Build bulletproof chargebacks before they arrive.",
+    "Win the Stripe disputes everyone else marks unwinnable. Build submission-ready evidence for high-context SaaS and service disputes.",
+  openGraph: {
+    siteName: "Verdact",
+    type: "website",
+    url: "https://www.verdact.io",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
   icons: {
     icon: [{ url: "/favicon.svg?v=20260612verdact-white", type: "image/svg+xml" }],
     shortcut: "/favicon.svg?v=20260612verdact-white",
