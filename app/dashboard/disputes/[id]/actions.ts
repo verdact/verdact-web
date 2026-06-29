@@ -93,6 +93,10 @@ export async function generateNarrativeAction(input: {
   const disputeId = input.disputeId?.trim();
   if (!disputeId) return { ok: false, error: 'Missing dispute reference.' };
 
+  // PRE-GO-LIVE GATE: before flipping VERDACT_AI_NARRATIVE_ENABLED=true, add a
+  // per-user/per-dispute server-side rate limit here (reuse lib checkRateLimit).
+  // The client button-disable is not a server control; without this a compromised
+  // session could loop this action and drain API spend. Safe while inert (off).
   await verifySession();
   const membership = await getMerchant();
   if (!membership) return { ok: false, error: 'No merchant account found.' };
@@ -136,12 +140,15 @@ export async function generateNarrativeAction(input: {
     productDescription,
     proofSummary: {
       delivery: purposes.has('service_documentation'),
+      // No file purpose encodes "usage" in this schema (usage derives from
+      // session signals, not uploads), so it is honestly false at the file layer.
       usage: false,
       comms: purposes.has('communication'),
       policyAttached: purposes.has('refund_policy') || purposes.has('cancellation_policy'),
     },
   });
 
+  // Strip `model` (internal detail) — return only the editable text to the client.
   if (result.ok) return { ok: true, text: result.text };
   return { ok: false, error: result.error };
 }

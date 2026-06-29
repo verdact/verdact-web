@@ -146,6 +146,9 @@ export async function generateAiNarrative(
     }
     return { ok: true, text, model };
   } catch (error: unknown) {
-    return { ok: false, error: errorMessage(error) };
+    // Log the real error server-side; return a generic message so SDK detail
+    // (account/quota/rate-limit/trace strings) never reaches the merchant UI.
+    console.error('[ai-narrative] API error:', errorMessage(error));
+    return { ok: false, error: 'AI drafting is temporarily unavailable.' };
   }
 }
