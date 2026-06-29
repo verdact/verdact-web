@@ -469,7 +469,12 @@ export function ReviewStage({ data }: { data: WorkbenchData }) {
           Account health, separate from this case
         </summary>
         <div className="mt-4">
-          <AccountRiskPanel ratio={data.vampRatio} ce3Eligible={data.ce3Eligible} />
+          <AccountRiskPanel
+            ratio={data.vampRatio}
+            ce3Eligible={data.ce3Eligible}
+            network={data.record.network}
+            reason={data.record.reason}
+          />
         </div>
       </details>
 
@@ -1201,7 +1206,22 @@ function SignalLadderDisclosure({ ladder }: { ladder: SignalLadder }) {
   );
 }
 
-function AccountRiskPanel({ ratio, ce3Eligible }: { ratio: number | null; ce3Eligible?: boolean }) {
+function AccountRiskPanel({
+  ratio,
+  ce3Eligible,
+  network,
+  reason,
+}: {
+  ratio: number | null;
+  ce3Eligible?: boolean;
+  network?: string | null;
+  reason?: string | null;
+}) {
+  // Independent render-side enforcement of the CE 3.0 gate (Visa + fraudulent
+  // 10.4 only) — defense-in-depth so the banner can never show for a dispute
+  // outside the gate, regardless of how ce3Eligible was sourced upstream.
+  const ce3GatePasses = network === 'visa' && reason === 'fraudulent';
+  const showCe3 = ce3Eligible === true && ce3GatePasses;
   return (
     <section className={`${styles.card} overflow-hidden`}>
       <header className="flex items-center justify-between gap-3 border-b border-rule px-5 py-4">
@@ -1238,7 +1258,7 @@ function AccountRiskPanel({ ratio, ce3Eligible }: { ratio: number | null; ce3Eli
             10.4, not to service disputes.
           </p>
         </details>
-        {ce3Eligible === true && (
+        {showCe3 && (
           <div className="mt-4 flex items-start gap-3 rounded-md border border-trust-rule bg-trust-soft px-3 py-3">
             <span className="mt-0.5 grid h-4 w-4 flex-none place-items-center rounded-full bg-trust text-[0.55rem] font-bold text-white">
               ✓
@@ -1246,8 +1266,9 @@ function AccountRiskPanel({ ratio, ce3Eligible }: { ratio: number | null; ce3Eli
             <div>
               <p className="text-xs font-semibold text-trust">CE 3.0 may apply to this dispute</p>
               <p className="mt-1 text-xs leading-5 text-ink-mute">
-                Visa found at least two prior settled transactions on this card. Confirm with your
-                acquirer — Visa data-extract lag means eligibility can change.
+                We found at least two prior settled charges on this card in your Stripe history,
+                which may make this dispute CE 3.0 eligible. Visa makes the final determination —
+                confirm with your acquirer.
               </p>
             </div>
           </div>

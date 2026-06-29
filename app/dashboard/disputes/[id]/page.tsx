@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import { AppShell } from '../../../_components/app-chrome';
 import { getLatestVampSnapshot, getMerchant, verifySession } from '@/lib/dal';
 import { createClient } from '@/lib/supabase/server';
@@ -199,27 +200,40 @@ export default async function EvidenceRecordWorkbench({ params }: WorkbenchPageP
       customerStripeId: enrichment.customerStripeId,
       cardFingerprint: enrichment.cardFingerprint,
       stripeAccountId,
-      disputeCreatedAt: record.created_at,
+      // Anchor on the disputed transaction's date, not the dispute-filed date.
+      disputedChargeAt: enrichment.purchaseAt ?? record.created_at,
       cachedCheckedAt: record.ce3_checked_at,
+      cachedEligible: record.ce3_eligible,
     });
     ce3Eligible = ce3Result.eligible;
-    // Non-blocking write-through — cache the result for next page-load.
-    // Errors are silently ignored so a DB hiccup never breaks the render.
-    void (async () => {
-      try {
-        await supabase
-          .from('disputes')
-          .update({
-            ce3_eligible: ce3Result.eligible,
-            ce3_checked_at: new Date().toISOString(),
-            ce3_check_payload: { priorTransactionCount: ce3Result.priorTransactionCount },
-          })
-          .eq('id', record.id)
-          .eq('merchant_id', membership.merchant.id);
-      } catch {
-        // intentionally silent
-      }
-    })();
+    // Write through ONLY when a live recompute actually ran — a fresh-cache hit
+    // (recomputed:false) must not re-stamp ce3_checked_at, or the 24h window
+    // would slide forward forever and the value would never refresh.
+    if (ce3Result.recomputed) {
+      // after() runs post-response so Next keeps the invocation alive on Vercel
+      // serverless (a bare floating promise can be torn down before it lands).
+      after(async () => {
+        try {
+          await supabase
+            .from('disputes')
+            .update({
+              ce3_eligible: ce3Result.eligible,
+              ce3_checked_at: new Date().toISOString(),
+              // schema_version is REQUIRED on every disputes JSONB payload — the
+              // require_schema_version_on_jsonb_columns() trigger rejects the
+              // UPDATE without it (silently defeating the staleness cache).
+              ce3_check_payload: {
+                schema_version: 'v1',
+                priorTransactionCount: ce3Result.priorTransactionCount,
+              },
+            })
+            .eq('id', record.id)
+            .eq('merchant_id', membership.merchant.id);
+        } catch {
+          // intentionally silent — the advisory still rendered correctly
+        }
+      });
+    }
   }
 
   const evidenceAnalysis = analyzeEvidence({

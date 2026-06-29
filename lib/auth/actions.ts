@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { BETA_ACCESS_MESSAGE, emailHasBetaAccess } from './admission';
+import { LAST_ACTIVE_COOKIE, SESSION_START_COOKIE } from './session';
 
 export type AuthFormState =
   | {
@@ -173,6 +175,12 @@ export async function requestPasswordResetAction(
 export async function signOutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  // Clear the session-timeout tracking cookies too, so a later login bootstraps
+  // a clean idle/absolute window instead of inheriting a stale session_start
+  // (which would otherwise trip a spurious 'session_expired' bounce).
+  const cookieStore = await cookies();
+  cookieStore.delete(LAST_ACTIVE_COOKIE);
+  cookieStore.delete(SESSION_START_COOKIE);
   revalidatePath('/', 'layout');
   redirect('/login');
 }
