@@ -1,752 +1,790 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MarketingHeader } from '../marketing/marketing-header';
-import { MarketingFooter } from '../marketing/marketing-footer';
-import styles from '../../page.module.css';
+import styles from './homepage.module.css';
 
-/* ─── seals (verified ring-check / gap dashed-alert) ────────────────────── */
+const EXHIBIT_ROWS = [
+  { name: 'Stripe charge record', gap: false },
+  { name: 'Signed scope of work', gap: false },
+  { name: 'Delivery log', gap: false },
+  { name: 'Client approval email', gap: false },
+  { name: 'Account login activity', gap: false },
+  { name: 'Invoice, paid in full', gap: false },
+  { name: 'Reason-code mapping, RC 13.1', gap: false },
+  { name: 'Missing: final acceptance note', gap: true },
+] as const;
 
-function SealOk({ size, stroke = 'var(--verdict)', width = 2.4 }: {
-  size: number; stroke?: string; width?: number;
-}) {
+const FAQ_ITEMS = [
+  {
+    q: 'Does Verdact file disputes for me?',
+    a: 'No. We assemble the case and flag the gap. You review it and file it yourself through Stripe, in your own name. Nothing is submitted without your approval.',
+  },
+  {
+    q: 'Do you take a cut of what I recover?',
+    a: 'No, never. We charge a flat fee, and it is free during the beta. We do not take a percentage of your recovery, ever.',
+  },
+  {
+    q: 'What if I do not win?',
+    a: 'There are no guarantees, and we will tell you straight if a case is too weak to bother filing, before you spend a minute on it. If you do file and lose, you keep the assembled case and the gap we flagged, and you owe nothing during the beta.',
+  },
+  {
+    q: 'Do you read my email?',
+    a: 'No. We organize records you already have and choose to share. We never read anyone’s inbox, and you see exactly what was used before anything is final.',
+  },
+] as const;
+
+function VIcon({ size = 26, stroke = 4.4 }: { size?: number; stroke?: number }) {
   return (
-    <svg className={styles.seal} width={size} height={size} viewBox="0 0 26 26" fill="none" aria-hidden="true">
-      <circle cx="13" cy="13" r="11" stroke={stroke} strokeWidth={width} />
-      <path d="M8.2 13.4l3.1 3.1 6.5-6.8" stroke={stroke} strokeWidth={width} strokeLinecap="square" />
+    <svg viewBox="0 0 26 26" width={size} height={size} fill="none" aria-hidden="true">
+      <path
+        d="M5.5 7.7 L11.6 19.7 L15.64 12.89 L19.52 6.35 L20.5 4.7"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+      />
     </svg>
   );
 }
 
-function SealGap({ size, width = 2.4 }: { size: number; width?: number }) {
+function VStrike({ size = 15 }: { size?: number }) {
   return (
-    <svg className={styles.seal} width={size} height={size} viewBox="0 0 26 26" fill="none" aria-hidden="true">
-      <circle cx="13" cy="13" r="11" stroke="var(--gap)" strokeWidth={width} strokeDasharray="4 3.5" />
-      <path d="M13 8v6" stroke="var(--gap)" strokeWidth={width} strokeLinecap="square" />
-      <circle cx="13" cy="17.6" r="1.5" fill="var(--gap)" />
+    <svg viewBox="0 0 26 26" width={size} height={size} fill="none" aria-hidden="true">
+      <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
+      <path d="M19.52 6.35 L20.5 4.7" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" />
+      <path className="bridge" d="M15.64 12.89 L19.52 6.35" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" />
     </svg>
   );
 }
-
-function GapRule({ onDeep = false }: { onDeep?: boolean }) {
-  return (
-    <div
-      className={`${styles.gaprule} ${onDeep ? styles.gapruleOndeep : ''}`}
-      aria-hidden="true"
-    >
-      <i className={styles.g1} /><span className={styles.gx} /><i className={styles.g2} />
-    </div>
-  );
-}
-
-const iVar = (i: number) => ({ '--i': i } as CSSProperties);
-
-/* ─── data ─────────────────────────────────────────────────────────────── */
-
-const LEDGER_ROWS: { label: string; sub?: string; gap?: boolean }[] = [
-  { label: 'Stripe payment confirmed' },
-  { label: 'Contract / scope attached' },
-  { label: 'Service delivery proof found' },
-  { label: 'Client approval found' },
-  { label: 'Refund policy linked' },
-  { label: '+ 2 more verified', sub: '(access logs, message thread)' },
-  { label: 'Missing: final acceptance note', gap: true },
-];
-
-const STEPS: { title: string; body: string; factLead: string; fact: string; gapStep?: boolean }[] = [
-  {
-    title: 'Connect Stripe',
-    body: 'Verdact pulls the disputed charge, the reason, and the deadline so you start with the facts, not a blank form.',
-    factLead: "Through Stripe's own authorization flow.",
-    fact: 'You never type or share an API key, and you can disconnect anytime from your Stripe dashboard.',
-  },
-  {
-    title: 'Build the evidence record',
-    body: 'Add your scope, delivery proof, approvals, and messages. Verdact shows what is strong and what is missing while you build.',
-    factLead: 'The gap is flagged early,',
-    fact: 'while there is still time to add or substitute the missing piece.',
-    gapStep: true,
-  },
-  {
-    title: 'Review and file',
-    body: 'Review the assembled response. Approve it and Verdact submits it through Stripe, or download the packet and file it yourself.',
-    factLead: 'One response, evidence attached,',
-    fact: 'matched to the reason code and ready before the deadline.',
-  },
-];
-
-const MROWS: { pn: string; src: React.ReactNode; gap?: boolean }[] = [
-  { pn: 'Payment', src: 'Stripe charge, captured' },
-  { pn: 'Scope', src: 'Signed proposal (PDF)' },
-  { pn: 'Delivery', src: '3 milestones delivered, last on Apr 12' },
-  { pn: 'Access and usage', src: 'Client logins through Apr 20' },
-  { pn: 'Client approval', src: <><em>&ldquo;Looks great, ship it&rdquo;</em> (message, Apr 12)</> },
-  { pn: 'Communication', src: '28 messages across the project' },
-  { pn: 'Policy', src: 'Refund policy accepted at checkout' },
-  { pn: 'Final acceptance note', src: 'Add it or substitute it before filing', gap: true },
-];
-
-const MINIS: { label: string; chip: string; you?: boolean }[] = [
-  { label: 'Disputed charge and deadline', chip: 'Stripe' },
-  { label: 'Project thread imported', chip: 'Slack' },
-  { label: 'Approval email uploaded', chip: 'Added by you', you: true },
-  { label: 'Final acceptance note', chip: 'Added by you', you: true },
-];
-
-const CHECKS: string[] = [
-  'Deadline window open',
-  'Reason code matched to evidence',
-  'Format and size within limits',
-  'No gaps remaining',
-];
-
-const CLAUSES: { main: string; sub: string }[] = [
-  {
-    main: 'Nothing goes out without you, and we never take a cut of what you recover.',
-    sub: 'Auto-submit is off by default. Every filing waits for your explicit approval of that specific response, and if you ever turn auto-submit on you can pause it any time.',
-  },
-  {
-    main: "Stripe connects through Stripe's own authorization flow.",
-    sub: 'You never type or share an API key, Verdact never stores one, and you can disconnect any time from your Stripe dashboard.',
-  },
-  {
-    main: 'No guarantees.',
-    sub: 'Verdact helps you build the strongest evidence you actually have, and is honest about what is missing. No honest tool can promise outcomes.',
-  },
-  {
-    main: 'Your evidence stays yours.',
-    sub: 'Client data is never sold and never used to train public models.',
-  },
-];
-
-const FREE_FEATURES = [
-  'Connect Stripe and import your disputes',
-  'Build and view your full evidence record',
-  'Every gap flagged while there is time to fix it',
-  "Account-health read against Stripe's guidance",
-];
-
-const PAID_FEATURES = [
-  'Submit the response to Stripe from Verdact',
-  'Download and export the packet',
-  'Deadline and dispute-rate alerts',
-  'Slack import and evidence auto-gather',
-];
-
-const TYPES: { tn: string; td: string }[] = [
-  { tn: 'Services not rendered', td: 'The customer claims the work was never done (Visa reason code 13.1; other networks use equivalents).' },
-  { tn: 'Service not as described', td: 'The customer says the work fell short after it was delivered.' },
-  { tn: 'Cancellation or refund disagreement', td: 'A dispute over your refund or cancellation terms.' },
-  { tn: 'Credit not processed', td: 'The customer expected a refund that has not posted yet.' },
-];
-
-const SEGMENTS = ['Freelancers', 'Consultants', 'Agencies', 'SaaS implementation', 'B2B services'];
-
-const COUNT_BEATS = [1, 2, 3, 4, 5, 7];
-
-/* ─── component ─────────────────────────────────────────────────────────── */
 
 export function HomepageClient() {
-  const [keyGo, setKeyGo] = useState(false);
-  const [ledgerPlay, setLedgerPlay] = useState(false);
-  const [readNum, setReadNum] = useState(7);
-  const [gapClosed, setGapClosed] = useState(false);
-  const [ruleRevealed, setRuleRevealed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [instrBig, setInstrBig] = useState('0.31%');
+  const [exhibitIn, setExhibitIn] = useState(false);
+  const [provCount, setProvCount] = useState(7);
 
-  const ledgerRef = useRef<HTMLDivElement>(null);
-  const closingRuleRef = useRef<HTMLDivElement>(null);
-  const containersRef = useRef<(HTMLElement | null)[]>([]);
+  const mastRef = useRef<HTMLElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const spineFillRef = useRef<HTMLDivElement>(null);
+  const spineHeadRef = useRef<HTMLDivElement>(null);
+  const spineBreakRef = useRef<HTMLDivElement>(null);
+  const spineSealRef = useRef<HTMLDivElement>(null);
+  const heroH1Ref = useRef<HTMLHeadingElement>(null);
+  const instrRef = useRef<HTMLElement>(null);
+  const instColRef = useRef<SVGGElement>(null);
+  const holdDotRef = useRef<SVGCircleElement>(null);
+  const exhibitRef = useRef<HTMLDivElement>(null);
 
-  const setContainer = (idx: number) => (el: HTMLElement | null) => {
-    containersRef.current[idx] = el;
-  };
-
-  /* arm CSS gates */
+  // Scroll-driven spine + masthead transition
   useEffect(() => {
-    document.documentElement.classList.add('js');
-    return () => { document.documentElement.classList.remove('js'); };
-  }, []);
+    let heroH = 0;
+    let ticking = false;
+    let brkSealed = false;
+    let sealed = false;
+    let motionOn = false;
 
-  /* H1 underline: the gap closes shortly after load */
-  useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) { setKeyGo(true); return; }
-    const t = setTimeout(() => setKeyGo(true), 600);
-    return () => clearTimeout(t);
-  }, []);
+    function measure() {
+      if (heroRef.current) heroH = heroRef.current.offsetHeight;
+    }
 
-  /* hero ledger: visibility-gated verification sequence + count beats */
-  useEffect(() => {
-    const el = ledgerRef.current;
-    if (!el) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function frame() {
+      ticking = false;
+      const y = window.scrollY;
+      mastRef.current?.classList.toggle('scrolled', y > heroH - 80);
 
-    function play() {
-      setLedgerPlay(true);
-      if (!reduced) {
-        setReadNum(0);
-        COUNT_BEATS.forEach((v, i) => {
-          setTimeout(() => setReadNum(v), 300 + i * 90);
-        });
+      if (!motionOn || !spineFillRef.current || !pageRef.current) return;
+      const total = pageRef.current.scrollHeight - window.innerHeight;
+      if (total <= 0) return;
+      const prog = Math.min(1, Math.max(0, y / total));
+      spineFillRef.current.style.transform = `translateX(-50%) scaleY(${prog.toFixed(4)})`;
+      if (spineHeadRef.current) {
+        spineHeadRef.current.style.top = `${(prog * 100).toFixed(3)}%`;
+        if (y > 40) spineHeadRef.current.classList.add('live');
+      }
+      if (!brkSealed && prog > 0.155 && spineBreakRef.current) {
+        spineBreakRef.current.classList.add('sealed');
+        brkSealed = true;
+      }
+      if (!sealed && prog > 0.985 && spineSealRef.current) {
+        spineSealRef.current.classList.add('on');
+        sealed = true;
       }
     }
 
+    function onScroll() {
+      if (!ticking) { ticking = true; requestAnimationFrame(frame); }
+    }
+
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => { measure(); onScroll(); }, { passive: true });
+    frame();
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduced) {
+      motionOn = true;
+      document.documentElement.classList.add('motion');
+      setInstrBig('0.00%');
+      measure();
+      frame();
+    }
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      document.documentElement.classList.remove('motion');
+    };
+  }, []);
+
+  // Hero h1 blur-in reveal
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) { heroH1Ref.current?.classList.add('lit'); return; }
+    let fired = false;
+    function litHero() {
+      if (fired) return;
+      fired = true;
+      heroH1Ref.current?.classList.add('lit');
+    }
+    if (document.fonts?.ready) document.fonts.ready.then(litHero);
+    const t = setTimeout(litHero, 420);
+    return () => clearTimeout(t);
+  }, []);
+
+  // data-rise IntersectionObserver
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-rise]'));
+    if (!els.length) return;
     if (reduced || !('IntersectionObserver' in window)) {
-      setLedgerPlay(true);
+      els.forEach(el => el.classList.add('in'));
       return;
     }
     const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) { play(); io.unobserve(e.target); }
-        });
-      },
-      { threshold: 0.35 }
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      }),
+      { threshold: 0.15, rootMargin: '0px 0px -6% 0px' }
     );
-    io.observe(el);
+    els.forEach(el => io.observe(el));
     return () => io.disconnect();
   }, []);
 
-  /* closing seal: gap closes in view, reopens out of view */
+  // Instrument animation
   useEffect(() => {
-    const el = closingRuleRef.current;
+    const el = instrRef.current;
     if (!el) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || !('IntersectionObserver' in window)) {
-      setGapClosed(true);
-      setRuleRevealed(true);
+      instColRef.current?.classList.add('grown');
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          setGapClosed(e.isIntersecting);
-          if (e.isIntersecting) setRuleRevealed(true);
-        });
-      },
-      { threshold: 0.5 }
-    );
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        setTimeout(() => instColRef.current?.classList.add('grown'), 350);
+        setTimeout(() => {
+          let n = 0;
+          const iv = setInterval(() => {
+            n++;
+            setInstrBig((Math.floor(Math.random() * 100) / 100).toFixed(2) + '%');
+            if (n >= 14) {
+              clearInterval(iv);
+              let start: number | null = null;
+              function step(ts: number) {
+                if (!start) start = ts;
+                const p = Math.min(1, (ts - start) / 820);
+                const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+                setInstrBig((0.31 * eased).toFixed(2) + '%');
+                if (p < 1) requestAnimationFrame(step);
+              }
+              requestAnimationFrame(step);
+            }
+          }, 44);
+        }, 1150);
+        setTimeout(() => {
+          if (holdDotRef.current) {
+            holdDotRef.current.style.animation = 'holdbreathe 2.6s cubic-bezier(.4,0,.2,1) infinite';
+          }
+        }, 1900);
+      });
+    }, { threshold: 0.4 });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  /* one-shot scroll reveals: .rv elements + choreography containers */
+  // Exhibit ledger reveal + count
   useEffect(() => {
+    const el = exhibitRef.current;
+    if (!el) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const rvEls = Array.from(document.querySelectorAll<HTMLElement>('.rv'));
-    const containers = containersRef.current.filter(Boolean) as HTMLElement[];
-    const targets = [...rvEls, ...containers];
-    if (!targets.length) return;
-
     if (reduced || !('IntersectionObserver' in window)) {
-      targets.forEach((t) => t.classList.add('in'));
+      setExhibitIn(true);
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-        });
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -30px 0px' }
-    );
-    targets.forEach((t) => io.observe(t));
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        setExhibitIn(true);
+        setProvCount(0);
+        [1, 2, 3, 4, 5, 6, 7].forEach((v, i) => setTimeout(() => setProvCount(v), i * 90));
+      });
+    }, { threshold: 0.3 });
+    io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return (
     <>
-      <MarketingHeader />
+      {/* Grain texture overlay */}
+      <svg className={styles.grain} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <filter id="vg">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#vg)" />
+      </svg>
 
-      <main id="main" className={styles.page}>
+      {/* ── Masthead (fixed, transparent → frosted on scroll) ── */}
+      <header ref={mastRef} className={styles.mast} id="mast">
+        <div className={styles.mastInner}>
+          <Link href="/" className={styles.mastBrand} aria-label="Verdact home">
+            <VIcon size={24} />
+            <span className={styles.mastBrandWord}>Verdact<b>.</b></span>
+          </Link>
 
-        {/* ── 1 · HERO ─────────────────────────────────────────────── */}
-        <section className={styles.hero} aria-labelledby="hero-h">
-          <div className="wrap">
-            <div className={styles.heroGrid}>
-              <div className={styles.heroCopy}>
-                <p className="eyebrow">For service businesses on Stripe</p>
-                <h1 id="hero-h" className={styles.heroHeadline}>
-                  Win the Stripe disputes everyone else marks{' '}
-                  <span className={`${styles.key} ${keyGo ? 'go' : ''}`}>
-                    unwinnable.
-                    <em className={styles.gapfill} aria-hidden="true" />
-                  </span>
-                </h1>
-                <p className={styles.lede}>
-                  Services-not-rendered and cancelled-subscription chargebacks are the hardest
-                  to fight, because the proof lives in your email and delivery logs, not in Stripe.
-                  Verdact turns that evidence into a structured, bank-ready argument. Nothing is
-                  filed without your approval.
-                </p>
-                <div className={styles.heroCtas}>
-                  <Link href="/audit" className={`${styles.btn} ${styles.btnPrimary}`}>
-                    See your winnable cases, free
-                  </Link>
-                  <Link href="/#how" className={`${styles.btn} ${styles.btnGhost}`}>
-                    See how it works
-                  </Link>
-                </div>
-                <p className={styles.ctaNote}>
-                  Free to build and review your evidence record. No card required.
-                  Nothing is filed without your approval.
-                </p>
-              </div>
+          <nav aria-label="Primary">
+            <ul className={styles.mastNav}>
+              <li><a href="#line">The line</a></li>
+              <li><a href="#how">How it works</a></li>
+              <li><a href="#control">Control</a></li>
+              <li><a href="#plans">Plans</a></li>
+            </ul>
+          </nav>
 
-              <div
-                ref={ledgerRef}
-                className={`${styles.ledger} ${ledgerPlay ? 'play' : ''}`}
-                role="img"
-                aria-label="Example dispute: 2,400 dollars, services not rendered, due in 8 days. Seven evidence items verified, including Stripe payment, contract and scope, delivery proof, client approval, refund policy, access logs and the message thread. One missing: final acceptance note. Readiness reads 7 of 8 provable."
-              >
-                <div className={styles.ledgerHead}>
-                  <div>
-                    <div className={styles.amount}>
-                      <span className={styles.amtNum}>$2,400</span>{' '}
-                      <span className={styles.amtWord}>disputed</span>
-                    </div>
-                    <div className={styles.reason}>Services not rendered</div>
-                  </div>
-                  <div className={styles.headMeta}>
-                    <span className={styles.chipExample}>Example case</span>
-                    <span className={styles.due}>
-                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                        <circle cx="7" cy="7" r="5.6" stroke="currentColor" strokeWidth="1.8" />
-                        <path d="M7 4.2V7l2 1.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" />
-                      </svg>
-                      Due in 8 days
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.ledgerRows}>
-                  {LEDGER_ROWS.map((row, i) => (
-                    <div
-                      key={row.label}
-                      className={`${styles.ev} ${row.gap ? styles.gapRow : ''}`}
-                      style={iVar(i)}
-                    >
-                      {row.gap ? <SealGap size={19} /> : <SealOk size={19} />}
-                      <span className={styles.lab}>
-                        {row.label}
-                        {row.sub ? <> <span className={styles.sub}>{row.sub}</span></> : null}
-                      </span>
-                      <span className={styles.state}>{row.gap ? 'Gap' : 'Verified'}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className={styles.ledgerRead}>
-                  <span className={styles.readNum}>{readNum}</span>
-                  <span className={styles.readOf}>of 8 provable</span>
-                  <div className={styles.readMeter} aria-hidden="true">
-                    {Array.from({ length: 7 }, (_, i) => (
-                      <i key={i} style={iVar(i)} />
-                    ))}
-                    <i className={styles.open} />
-                  </div>
-                </div>
-                <div className={styles.ledgerFoot}>
-                  <p><strong>Verdact shows you the gap before the bank does.</strong></p>
-                  <p>Nothing is filed without your approval.</p>
-                </div>
-              </div>
-            </div>
+          <div className={styles.mastSpacer} />
 
-            <div className={styles.heroBase}>
-              <GapRule />
-            </div>
-          </div>
-        </section>
-
-        {/* ── 2 · HOW IT WORKS ─────────────────────────────────────── */}
-        <section id="how" className={`${styles.band} ${styles.howBand}`} aria-labelledby="how-h">
-          <div className="wrap">
-            <div className={`${styles.secHead} rv`}>
-              <p className="eyebrow">Three steps</p>
-              <h2 id="how-h">How Verdact works</h2>
-            </div>
-            <div className={styles.steps} ref={setContainer(0)}>
-              {STEPS.map((s, i) => (
-                <div
-                  key={s.title}
-                  className={`${styles.step} ${s.gapStep ? styles.gapStep : ''} rv-row`}
-                  style={iVar(i)}
-                >
-                  <span className={styles.n}>0{i + 1}</span>
-                  <h3>{s.title}</h3>
-                  <p>{s.body}</p>
-                  <p className={styles.fact}><strong>{s.factLead}</strong> {s.fact}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── pull: deadline urgency (the mid-page statement) ──────── */}
-        <div className={styles.urgencyPull}>
-          <svg className={styles.urgencySeal} viewBox="0 0 26 26" fill="none" aria-hidden="true" focusable="false">
-            <circle cx="13" cy="13" r="11" stroke="rgba(191,227,210,.09)" strokeWidth="1.1" strokeDasharray="2.6 2.2" />
-            <path d="M13 8v6" stroke="rgba(191,227,210,.09)" strokeWidth="1.1" strokeLinecap="square" />
-            <circle cx="13" cy="17.6" r="0.9" fill="rgba(191,227,210,.09)" />
-          </svg>
-          <div className="wrap">
-            <GapRule onDeep />
-            <p className={`${styles.urgencyP} rv`}>
-              <span className={styles.uSet}>A chargeback response has a deadline.</span>
-              Once you file, missing evidence cannot be submitted.
-            </p>
+          <div className={styles.mastRight}>
+            <Link href="/login" className={styles.mastSign}>Sign in</Link>
+            <Link href="/signup" className={styles.navCta}>
+              Start free <VStrike size={14} />
+            </Link>
+            <button
+              className={styles.menuBtn}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(v => !v)}
+            >
+              {mobileOpen ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* ── 3 · ONE DISPUTE, MAPPED ──────────────────────────────── */}
-        <section className={styles.feature} aria-labelledby="mapped-h">
-          <div className="wrap">
-            <div className={`${styles.centerHead} rv`}>
-              <p className="eyebrow">What the bank actually weighs</p>
-              <h2 id="mapped-h">The proof Stripe can&rsquo;t see, made into an argument</h2>
-              <p className={styles.lede}>
-                For a service dispute, the bank is not looking for a shipping label.
-                It is looking for proof that you scoped the work, delivered it, and got
-                the client&rsquo;s acceptance. That evidence lives in your email, delivery
-                logs, and account, where Stripe-native tools cannot reach it. The same $2,400
-                dispute from the top of the page, every item mapped to its source.
+        {mobileOpen && (
+          <nav className={styles.mNav} aria-label="Mobile">
+            <a href="#line" onClick={() => setMobileOpen(false)}>The line</a>
+            <a href="#how" onClick={() => setMobileOpen(false)}>How it works</a>
+            <a href="#control" onClick={() => setMobileOpen(false)}>Control</a>
+            <a href="#plans" onClick={() => setMobileOpen(false)}>Plans</a>
+            <Link href="/login" onClick={() => setMobileOpen(false)}>Sign in</Link>
+            <Link href="/signup" onClick={() => setMobileOpen(false)}>Start free →</Link>
+          </nav>
+        )}
+      </header>
+
+      {/* ── Page (relative container for spine + all content) ── */}
+      <div ref={pageRef} className={styles.pageWrap} id="top">
+
+        {/* Continuous gapped spine */}
+        <div className={styles.spine} aria-hidden="true">
+          <div className={styles.spineTrack} />
+          <div ref={spineBreakRef} className={styles.spineBreak}>
+            <span className={styles.brkTick}>RC 13.1 · the gap</span>
+          </div>
+          <div ref={spineFillRef} className={styles.spineFill} />
+          <div ref={spineHeadRef} className={styles.spineHead} />
+          <div ref={spineSealRef} className={styles.spineSeal} />
+        </div>
+
+        <main>
+
+          {/* ── 1. Hero (dark) ── */}
+          <section ref={heroRef} className={`${styles.hero} ${styles.dark}`} id="hero">
+            <div className={styles.rail}>
+              <div className={styles.heroGrid}>
+
+                {/* Copy (left) */}
+                <div className={styles.heroCopy}>
+                  <p className="eyebrow" data-rise>Stripe dispute · reason code 13.1</p>
+                  <h1 ref={heroH1Ref} className={styles.heroH1}>
+                    The Stripe disputes everyone writes off as{' '}
+                    <span className={styles.heroStruck}>unwinnable.</span>{' '}
+                    <span className={styles.heroWin}>You can win them.</span>
+                  </h1>
+                  <p className={`lede ${styles.heroLede}`} data-rise data-d="1">
+                    A chargeback hit, the money is already pulled, and the clock is ticking.
+                    The proof you need is real. It is just scattered across Stripe, your delivery logs,
+                    and your client&apos;s own approval. Verdact assembles it.
+                  </p>
+                  <div className={styles.heroCta} data-rise data-d="2">
+                    <div className={styles.heroCtas}>
+                      <Link href="/signup" className={`${styles.btn} ${styles.btnOndeep}`}>
+                        See your winnable cases <VStrike />
+                      </Link>
+                    </div>
+                    <p className={styles.heroNote}>
+                      <b>Free during beta.</b> No cut taken. Nothing filed without your approval.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Instrument figure (right) */}
+                <div className={styles.heroFig} data-rise data-d="1">
+                  <figure
+                    ref={instrRef}
+                    className={styles.instrument}
+                    aria-label="Example dispute-rate instrument. Your rate sits at 0.31%, held safely below Stripe's published 0.75% threshold."
+                  >
+                    <svg viewBox="0 0 400 446" fill="none" style={{ overflow: 'visible', width: '100%' }}>
+                      <defs>
+                        <linearGradient id="sigGrad" x1="0" y1="1" x2="0" y2="0">
+                          <stop offset="0" stopColor="var(--verdict-deep)" />
+                          <stop offset="1" stopColor="var(--verdict)" />
+                        </linearGradient>
+                      </defs>
+                      {/* Track background */}
+                      <rect x="262" y="40" width="74" height="340" rx="7" fill="rgba(191,227,210,.05)" stroke="var(--on-deep-line)" strokeWidth="1" />
+                      {/* Signal column — animated scaleY(0→1) via .grown class */}
+                      <g ref={instColRef} className={styles.instCol} style={{ transformBox: 'fill-box', transformOrigin: 'bottom' } as React.CSSProperties}>
+                        <rect x="262" y="275" width="74" height="105" rx="7" fill="url(#sigGrad)" />
+                        <rect x="262" y="271" width="74" height="6" rx="3" fill="var(--verdict-bright)" />
+                      </g>
+                      {/* Current rate marker */}
+                      <circle cx="299" cy="273" r="5" fill="var(--mint)" />
+                      <circle
+                        ref={holdDotRef}
+                        cx="299"
+                        cy="273"
+                        r="9"
+                        fill="none"
+                        stroke="var(--mint)"
+                        strokeWidth="1.5"
+                        opacity="0.55"
+                        style={{ transformBox: 'fill-box', transformOrigin: 'center' } as React.CSSProperties}
+                      />
+                      {/* Stripe's 0.75% danger line */}
+                      <line x1="234" y1="125" x2="352" y2="125" stroke="var(--gap-on-deep)" strokeWidth="2.5" strokeDasharray="7 6" />
+                      {/* Held margin bracket */}
+                      <g stroke="var(--mint)" strokeWidth="1.3" opacity="0.5">
+                        <line x1="348" y1="129" x2="348" y2="269" />
+                        <line x1="344" y1="129" x2="352" y2="129" />
+                        <line x1="344" y1="269" x2="352" y2="269" />
+                      </g>
+                      <text x="368" y="199" fill="var(--mint)" fontSize="11" fontWeight="700" letterSpacing="0.12em" transform="rotate(90 368 199)" textAnchor="middle">HELD CLEAR</text>
+                      {/* Labels */}
+                      <text x="14" y="118" fill="var(--gap-on-deep)" fontSize="27" fontWeight="800" letterSpacing="-0.02em">0.75%</text>
+                      <text x="15" y="139" fill="var(--on-deep-2)" fontSize="11" fontWeight="700" letterSpacing="0.1em">STRIPE&apos;S PUBLISHED LINE</text>
+                      <text x="12" y="290" fill="var(--mint)" fontSize="50" fontWeight="800" letterSpacing="-0.035em" style={{ fontVariantNumeric: 'tabular-nums' }}>{instrBig}</text>
+                      <circle cx="18" cy="311" r="4" fill="var(--verdict-bright)" />
+                      <text x="30" y="315" fill="var(--on-deep-2)" fontSize="11" fontWeight="700" letterSpacing="0.12em">YOU · WATCHED</text>
+                    </svg>
+                  </figure>
+                </div>
+              </div>
+
+              <div className={styles.heroStrip}>
+                <ul aria-label="How Verdact works, in short">
+                  <li>We assemble the evidence</li>
+                  <li><span className={styles.sep}> · </span></li>
+                  <li>You approve every word</li>
+                  <li><span className={styles.sep}> · </span></li>
+                  <li>You file it yourself</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 2. Stake strip ── */}
+          <section className={styles.stake} aria-label="Case register and guarantees">
+            <div className={styles.stakeInner}>
+              <div className={styles.stakeReg} aria-hidden="true">
+                <div className={styles.marqueeTrack}>
+                  {[0, 1].map(n => (
+                    <span key={n} className={styles.marqueeItem}>
+                      Case file<span className={styles.pip}> · </span>
+                      Stripe disputes<span className={styles.pip}> · </span>
+                      Reason code 13.1<span className={styles.pip}> · </span>
+                      Services not rendered<span className={styles.pip}> · </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.stakeGuard}>
+                <div><span className={styles.stakeX}>/</span> No cut taken</div>
+                <div><span className={styles.stakeX}>/</span> Nothing filed without you</div>
+                <div><span className={styles.stakeX}>/</span> We never read your inbox</div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 3. Reframe ── */}
+          <section className={styles.reframe} data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>Why these look unwinnable</p>
+              <p className={styles.statement} data-rise data-d="1">
+                Banks are not finding flaws in your evidence. They are finding{' '}
+                <span className={styles.statementRed}>gaps you do not know you have.</span>{' '}
+                <em>Verdact finds yours first.</em>
               </p>
             </div>
-            <div className={styles.mapped} ref={setContainer(1)}>
-              <div className={styles.mappedCap}>
-                <span>$2,400 · Services not rendered</span>
-                <span>Item → status → source</span>
-              </div>
-              {MROWS.map((row, i) => (
-                <div
-                  key={row.pn}
-                  className={`${styles.mrow} ${row.gap ? styles.gapRow : ''} rv-row`}
-                  style={iVar(i)}
-                >
-                  <span className={styles.pn}>{row.pn}</span>
-                  <span className={styles.st}>
-                    {row.gap ? <SealGap size={15} width={2.8} /> : <SealOk size={15} width={2.8} />}
-                    {row.gap ? 'Missing' : 'Verified'}
-                  </span>
-                  <span className={styles.src}>{row.src}</span>
-                </div>
-              ))}
-            </div>
-            <div className={`${styles.belowTable} rv`}>
-              <Link href="/audit" className={styles.textlink}>
-                See your own disputes scored this way, free
-              </Link>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 4 · WHO IT IS FOR ────────────────────────────────────── */}
-        <section className={`${styles.tight} ${styles.whoBand}`} aria-labelledby="who-h">
-          <div className="wrap">
-            <div className={styles.split}>
-              <div className="rv">
-                <p className="eyebrow">Built only for service merchants</p>
-                <h2 id="who-h">Built for how service businesses actually get paid</h2>
-              </div>
-              <div className={`${styles.splitBody} rv`}>
-                <p className={styles.lede} style={{ maxWidth: 'none' }}>
-                  A service chargeback happens when a customer disputes a card payment for
-                  work you already delivered, not a product you shipped.
-                </p>
-                <p style={{ marginTop: 20, maxWidth: 'none' }}>
-                  Verdact is for freelancers, agencies, consultants, SaaS implementation
-                  teams, and B2B service businesses on Stripe. They are the only merchants
-                  we build for.
-                </p>
-                <p style={{ maxWidth: 'none' }}>
-                  Most chargeback tools are made for e-commerce, where winning means showing
-                  a tracking number. Your work does not ship in a box. Your proof is the work
-                  itself: the scope, the delivery, the client approvals, and the messages
-                  along the way. Verdact is built around that proof.
-                </p>
-                <div className={styles.segments} aria-label="Who Verdact serves">
-                  {SEGMENTS.map((s) => <span key={s}>{s}</span>)}
+          {/* ── 4. Exhibit A — evidence ledger ── */}
+          <section className={styles.exhibit} id="exhibit" data-section>
+            <div className={styles.rail}>
+              <div className={styles.exhibitGrid}>
+                <div className={styles.exhibitCopy}>
+                  <p className="eyebrow" data-rise>The product, at fidelity</p>
+                  <h2 data-rise data-d="1">We build the case. We find the gap first.</h2>
+                  <p className="lede" data-rise data-d="2">
+                    Every piece of proof, pulled from records you already hold, mapped to the reason code,
+                    and laid out the way an issuer reads it.
+                  </p>
+                  <div className={styles.countLine} data-rise data-d="2">
+                    <span className={styles.countN}>{provCount}</span>
+                    <span className={styles.countOf}>of 8 provable</span>
+                  </div>
+                  <p className={styles.countCap}>
+                    We flag the one piece the bank would have found first, while you still have time to add it.
+                  </p>
+                </div>
+
+                <div ref={exhibitRef} data-rise data-d="1">
+                  <figure
+                    className={styles.ledger}
+                    aria-label="Example evidence record. A $2,400 dispute, services not rendered, due in 8 days."
+                  >
+                    <figcaption className={styles.ledgerStamp}>Exhibit A · Case file #8824-V · Example</figcaption>
+                    <div className={styles.ledgerHead}>
+                      <div>
+                        <div className={styles.amtLab}>Disputed amount</div>
+                        <div className={styles.amt}>$2,400</div>
+                      </div>
+                      <div className={styles.caseMeta}>
+                        <span className={styles.caseNr}>Services not rendered</span>
+                        <span className={styles.caseRc}>RC 13.1</span>
+                        <span className={styles.caseDue}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+                          </svg>
+                          Due in 8 days
+                        </span>
+                      </div>
+                    </div>
+
+                    <ul className={styles.ledgerRows}>
+                      {EXHIBIT_ROWS.map((row, i) => {
+                        const isGap = (row as { gap: boolean }).gap;
+                        const delay = isGap
+                          ? `${(EXHIBIT_ROWS.length - 1) * 80 + 380}ms`
+                          : `${i * 80}ms`;
+                        return (
+                          <li
+                            key={row.name}
+                            className={`${styles.lrow} ${isGap ? styles.lrowGap : ''} ${exhibitIn ? 'in' : ''}`}
+                            style={exhibitIn ? { transitionDelay: delay } : undefined}
+                          >
+                            <span className={styles.lrowSeal}>
+                              {isGap ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" width="14" height="14">
+                                  <path d="M12 7v6M12 16.5v.5" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="square" strokeLinejoin="miter" width="18" height="18">
+                                  <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89 L19.52 6.35 L20.5 4.7" />
+                                </svg>
+                              )}
+                            </span>
+                            <span className={styles.lrowName}>{row.name}</span>
+                            <span className={styles.lrowStat}>{isGap ? 'Gap' : 'Verified'}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    <figcaption className={styles.ledgerFoot}>
+                      <b>7 of 8 provable.</b> The eighth is the piece the bank looks for first.
+                    </figcaption>
+                  </figure>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 5 · WORKBENCH: THE GAP, RESOLVED ─────────────────────── */}
-        <section className={styles.feature} aria-labelledby="bench-h">
-          <div className="wrap">
-            <div className={`${styles.centerHead} rv`}>
-              <p className="eyebrow">Behind the case</p>
-              <h2 id="bench-h">A Stripe-first evidence workbench</h2>
-              <p className={styles.lede}>
-                The workbench reads your Stripe dispute, organizes every piece of proof into
-                one record, and runs a check for missing pieces. The output is a single
-                response, evidence attached and matched to the reason code, ready before the
-                deadline. Here is the same case after the acceptance note was added.
+          {/* ── 5. How it works ── */}
+          <section className={styles.how} id="how" data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>How it works</p>
+              <h2 data-rise data-d="1">Three steps. You hold the pen the whole way.</h2>
+              <div className={styles.howBeats}>
+                <div className={styles.beat} data-rise>
+                  <span className={styles.beatGhost} aria-hidden="true">01</span>
+                  <p className={styles.beatNo}>Step 01</p>
+                  <h3>You tell us what happened.</h3>
+                  <p>One dispute, one short brief. No integrations you do not want, no access to anything you did not choose to share.</p>
+                </div>
+                <div className={styles.beat} data-rise data-d="1">
+                  <span className={styles.beatGhost} aria-hidden="true">02</span>
+                  <p className={styles.beatNo}>Step 02</p>
+                  <h3><span className={styles.beatYou}>We</span> assemble. <span className={styles.beatYou}>You</span> review.</h3>
+                  <p>We gather your evidence, map it to the reason code, and flag the gap. You read every line before anything is final.</p>
+                </div>
+                <div className={styles.beat} data-rise data-d="2">
+                  <span className={styles.beatGhost} aria-hidden="true">03</span>
+                  <p className={styles.beatNo}>Step 03</p>
+                  <h3><span className={styles.beatYou}>You</span> file it yourself.</h3>
+                  <p>You submit it through Stripe, in your own name, and you keep everything you recover. We never take a cut.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 6. THE LINE EXPLAINED (dark) ── */}
+          <section className={`${styles.explainSection} ${styles.dark}`} id="line" data-section>
+            <div className={styles.rail}>
+              <div className={styles.explainGrid}>
+                <div className={styles.miniInst} data-rise aria-hidden="true">
+                  <svg viewBox="0 0 240 200" fill="none" width="100%">
+                    <line x1="20" y1="58" x2="220" y2="58" stroke="var(--gap-on-deep)" strokeWidth="2" strokeDasharray="6 5" />
+                    <text x="20" y="48" fill="var(--gap-on-deep)" fontFamily="Schibsted Grotesk, sans-serif" fontSize="13" fontWeight="700" letterSpacing="0.04em">0.75%: the line</text>
+                    <rect x="20" y="120" width="200" height="56" rx="6" fill="rgba(191,227,210,.10)" />
+                    <rect x="20" y="120" width="84" height="56" rx="6" fill="var(--mint)" opacity="0.8" />
+                    <text x="118" y="154" fill="var(--mint)" fontFamily="Schibsted Grotesk, sans-serif" fontSize="15" fontWeight="800" letterSpacing="-0.01em">You · 0.31%</text>
+                    <line x1="190" y1="60" x2="190" y2="118" stroke="var(--mint)" strokeWidth="1.2" opacity="0.5" />
+                    <line x1="186" y1="60" x2="194" y2="60" stroke="var(--mint)" strokeWidth="1.2" opacity="0.5" />
+                    <line x1="186" y1="118" x2="194" y2="118" stroke="var(--mint)" strokeWidth="1.2" opacity="0.5" />
+                  </svg>
+                </div>
+                <div className={styles.explainCopy}>
+                  <p className="eyebrow" data-rise>The line you cannot see</p>
+                  <h2 data-rise data-d="1">Win the dispute. Keep the account.</h2>
+                  <p className={styles.explainBody} data-rise data-d="2">
+                    Stripe publishes a 0.75% dispute-rate guidance. Cross it and a win can still cost you your account.
+                    Most owners do not know it exists. Verdact tracks you against it, so winning a dispute never puts your Stripe account at risk.
+                  </p>
+                  <p className={styles.explainCap} data-rise data-d="2">
+                    Stripe&apos;s published guidance. Verdact is not affiliated with or endorsed by Stripe.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 7. Urgency (dark) ── */}
+          <section className={`${styles.urgency} ${styles.dark}`} data-section>
+            <span className={styles.urgencyGhost} aria-hidden="true">
+              <svg viewBox="0 0 26 26" width="280" height="280" fill="none">
+                <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89 M19.52 6.35 L20.5 4.7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" />
+              </svg>
+            </span>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>The clock is real</p>
+              <p className={styles.urgencyStatement} data-rise data-d="1">
+                Card networks give you days, not weeks, to respond. The sooner the case is built, the stronger it is.
+              </p>
+              <p className={styles.urgencySub} data-rise data-d="2">
+                Here is what to do right now: join the beta, and we will be ready the moment your dispute lands.
               </p>
             </div>
-            <div className={styles.bench} ref={setContainer(2)}>
-              <div className={styles.benchBar}>
-                <span className={styles.t}>Dispute workbench · $2,400 · Due in 8 days</span>
-                <span className={styles.resolved}>
-                  <SealOk size={14} width={2.8} />
-                  Gap resolved: acceptance note added
+          </section>
+
+          {/* ── 8. Who it's for ── */}
+          <section className={styles.whoFor} data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>Who it&apos;s for</p>
+              <p className={styles.whoIntro} data-rise data-d="1">
+                Built for the owners who do the work themselves, and file the disputes themselves too.
+              </p>
+              <div className={styles.whoNames}>
+                {(['SaaS founders', 'Agencies', 'Consultants', 'Freelancers', 'B2B services'] as const).map((name, i) => (
+                  <Link
+                    key={name}
+                    href="/signup"
+                    className={styles.whoName}
+                    data-rise
+                    {...(i > 1 ? { 'data-d': String(Math.min(i - 1, 2)) } : {})}
+                  >
+                    {name}
+                    <svg className={styles.whoMark} viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                      <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
+                      <path d="M19.52 6.35 L20.5 4.7" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" />
+                      <path className="bridge" d="M15.64 12.89 L19.52 6.35" stroke="currentColor" strokeWidth="4.4" strokeLinecap="square" />
+                    </svg>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── 9. Control clauses ── */}
+          <section className={styles.control} id="control" data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>Control is the product</p>
+              <h2 data-rise data-d="1">Four clauses we do not break.</h2>
+              <div className={styles.clauses}>
+                <div className={styles.clause} data-rise>
+                  <h3><span className={styles.clauseNo}>No</span> cut taken.</h3>
+                  <p>We charge a flat beta price, never a share of what you recover. Your win is yours.</p>
+                </div>
+                <div className={styles.clause} data-rise data-d="1">
+                  <h3><span className={styles.clauseNo}>Nothing</span> filed without you.</h3>
+                  <p>You approve every exhibit before anything leaves. We never submit on your behalf.</p>
+                </div>
+                <div className={styles.clause} data-rise>
+                  <h3><span className={styles.clauseNo}>Your</span> data stays yours.</h3>
+                  <p>We organize records you already have. We never read anyone&apos;s inbox.</p>
+                </div>
+                <div className={styles.clause} data-rise data-d="1">
+                  <h3><span className={styles.clauseNo}>Walk</span> away anytime.</h3>
+                  <p>Stop at any step and keep everything we built together. No lock-in, no penalty.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── 10. Plans ── */}
+          <section className={styles.plans} id="plans" data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>Plans</p>
+              <h2 data-rise data-d="1">Free during the beta.</h2>
+              <div className={styles.planFeature} data-rise data-d="1">
+                <div>
+                  <p className={styles.planTier}>Beta access</p>
+                  <p className={styles.planPrice}>Free</p>
+                </div>
+                <div className={styles.planRight}>
+                  <p>
+                    Full case assembly, gap flagging, and account-line tracking, free while we are in beta.
+                    No credit card, and never a cut of anything you recover.
+                  </p>
+                  <Link href="/signup" className={`${styles.btn} ${styles.btnOndeep}`} style={{ marginTop: 'var(--s6)', display: 'inline-flex' }}>
+                    See your winnable cases <VStrike />
+                  </Link>
+                </div>
+              </div>
+              <div className={styles.planNote} data-rise data-d="1">
+                <span className={styles.planNoteLabel}>After beta</span>
+                <span className={styles.planNoteBody}>
+                  A flat fee per case. No percentage, ever. We will share exact pricing at launch, before you owe anything.
                 </span>
               </div>
-              <div className={styles.benchCols}>
-                <div className={styles.benchCol}>
-                  <p className={styles.label}>Evidence record</p>
-                  {MINIS.map((m, i) => (
-                    <div key={m.label} className={styles.mini} style={iVar(i)}>
-                      <SealOk size={16} width={2.6} />
-                      {m.label}
-                      <span className={`${styles.srcChip} ${m.you ? styles.you : ''}`}>{m.chip}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className={styles.benchCol}>
-                  <p className={styles.label}>Packet validator</p>
-                  {CHECKS.map((c, i) => (
-                    <div key={c} className={styles.check} style={iVar(i)}>
-                      <SealOk size={15} width={2.8} />
-                      {c}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className={styles.benchRead}>
-                <span className={styles.readNum}>8</span>
-                <span className={styles.readOf}>of 8</span>
-                <span className={styles.ready}>Ready to file, pending your approval</span>
-                <div className={styles.readMeter} aria-hidden="true">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <i key={i} style={iVar(i)} />
-                  ))}
-                </div>
-              </div>
             </div>
-            <div className={`${styles.belowTable} rv`}>
-              <p className={`${styles.small} ${styles.muted}`} style={{ marginTop: 26, maxWidth: 720 }}>
-                <strong style={{ color: 'var(--ink)' }}>
-                  Stripe connects directly. Slack threads can be imported.
-                </strong>{' '}
-                Email evidence is added by you: uploaded, pasted, or screenshotted.
-                You decide what goes in.
-              </p>
-              <Link href="/audit" className={styles.textlink}>
-                Start at step one, free, no card required
-              </Link>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 6 · ACCOUNT HEALTH ───────────────────────────────────── */}
-        <section id="health" className={styles.band} aria-labelledby="health-h">
-          <div className="wrap">
-            <div className={styles.healthGrid}>
-              <div>
-                <div className={`${styles.secHead} rv`}>
-                  <p className="eyebrow">Account health</p>
-                  <h2 id="health-h">Account risk should not be a surprise</h2>
-                  <p className={styles.lede}>
-                    Every dispute counts against your Stripe account, not just one payment.
-                    Verdact tracks your dispute rate against the 0.75% level Stripe publishes
-                    as guidance, and shows how each open dispute moves it, so you know which
-                    disputes are worth fighting before you commit.
-                  </p>
-                </div>
-                <div className="rv">
-                  <Link href="/audit" className={styles.textlink}>
-                    See where your account stands, free
-                  </Link>
-                  <p className={`${styles.micro} ${styles.muted}`} style={{ marginTop: 14 }}>
-                    Just want a number?{' '}
-                    <Link
-                      href="/tools/vamp-check"
-                      style={{
-                        color: 'var(--verdict)',
-                        fontWeight: 600,
-                        textDecoration: 'underline',
-                        textUnderlineOffset: '3px',
-                      }}
-                    >
-                      Estimate your dispute rate now, no signup
-                    </Link>
-                    .
-                  </p>
-                </div>
-              </div>
-              <div className={`${styles.gaugePanel} rv`} ref={setContainer(3)}>
-                <p className={styles.label}>Dispute rate</p>
-                <div
-                  className={styles.gauge}
-                  role="img"
-                  aria-label="Dispute-rate gauge from zero to one point five percent. A marker shows an example merchant in the safe zone, below the tick at Stripe's published 0.75 percent guidance."
-                >
-                  <span className={styles.safe} />
-                  <span className={styles.risk} />
-                  <span className={styles.tick} />
-                  <span className={styles.you} />
-                  <span className={styles.tickLabel}>Stripe&rsquo;s published 0.75% guidance</span>
-                </div>
-                <div className={styles.gaugeEnds} aria-hidden="true">
-                  <span>0%</span><span>1.5%</span>
-                </div>
-                <p className={styles.gaugeNote}>
-                  Verdact tracks your rate as disputes arrive and warns you while there is
-                  still time to act.
-                </p>
+          {/* ── 11. FAQ ── */}
+          <section className={styles.faq} id="faq" data-section>
+            <div className={styles.rail}>
+              <p className="eyebrow" data-rise>The questions you are right to ask</p>
+              <h2 data-rise data-d="1">Straight answers.</h2>
+              <div className={styles.faqList} data-rise data-d="1">
+                {FAQ_ITEMS.map(item => (
+                  <details key={item.q} className={styles.faqItem}>
+                    <summary>
+                      <span className={styles.faqQt}>{item.q}</span>
+                      <span className={styles.faqSign} aria-hidden="true" />
+                    </summary>
+                    <p className={styles.faqA}>{item.a}</p>
+                  </details>
+                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 7 · CONTROL + SECURITY ───────────────────────────────── */}
-        <section id="control" aria-labelledby="control-h">
-          <div className="wrap">
-            <div className={`${styles.secHead} rv`}>
-              <p className="eyebrow">Control and security</p>
-              <h2 id="control-h">Nothing goes out without you</h2>
-            </div>
-            <div className={styles.clauses} ref={setContainer(4)}>
-              {CLAUSES.map((c, i) => (
-                <div key={c.main} className={`${styles.clause} rv-row`} style={iVar(i)}>
-                  <p>
-                    {c.main}
-                    <span className={styles.sub}>{c.sub}</span>
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        </main>
 
-        {/* ── 8 · WHAT IT COSTS ────────────────────────────────────── */}
-        <section id="plans" className={styles.band} aria-labelledby="plans-h">
-          <div className="wrap">
-            <div className={`${styles.secHead} rv`}>
-              <p className="eyebrow">What it costs</p>
-              <h2 id="plans-h">Free to build the case. Subscribe to file it.</h2>
-            </div>
-            <div className={styles.tiers} ref={setContainer(5)}>
-              <div className={`${styles.tier} rv-row`} style={iVar(0)}>
-                <p className={styles.tname}>Free</p>
-                <p className={styles.tsub}>Build the case and see exactly where you stand.</p>
-                <ul>
-                  {FREE_FEATURES.map((feat) => (
-                    <li key={feat}>
-                      <SealOk size={16} width={2.6} />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/audit" className={`${styles.btn} ${styles.btnGhost} ${styles.tierCta}`}>
-                  Get started
-                </Link>
-              </div>
-              <div className={`${styles.tier} ${styles.paid} rv-row`} style={iVar(1)}>
-                <p className={styles.tierTag}>Free during beta</p>
-                <p className={styles.tname}>Paid</p>
-                <p className={styles.tsub}>File it from Verdact, and never miss the next one.</p>
-                <ul>
-                  {PAID_FEATURES.map((feat) => (
-                    <li key={feat}>
-                      <SealOk size={16} width={2.6} stroke="var(--mint)" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/audit" className={`${styles.btn} ${styles.btnOndeep} ${styles.tierCta}`}>
-                  Start free
-                </Link>
-              </div>
-            </div>
-            <p className={`${styles.betaLine} rv`}>
-              Verdact is in beta. All paid features are currently free for beta merchants.
-            </p>
-          </div>
-        </section>
-
-        {/* ── 9 · PLAIN ANSWERS ────────────────────────────────────── */}
-        <section className={styles.tight} aria-labelledby="faq-h">
-          <div className="wrap">
-            <div className={`${styles.secHead} rv`}>
-              <p className="eyebrow">Plain answers</p>
-              <h2 id="faq-h">What is a service chargeback?</h2>
-            </div>
-            <aside className={`${styles.answerLead} rv`}>
-              <p>
-                A service chargeback is when a customer asks their card issuer to reverse a
-                payment for a service you already delivered, rather than a physical product.
-                The issuer weighs evidence from both sides and decides. For service work the
-                deciding evidence is rarely a tracking number. It is proof that you scoped
-                the work, delivered it, and got the client&rsquo;s acceptance.
-              </p>
-            </aside>
-            <div className={`${styles.types} rv`}>
-              {TYPES.map((t) => (
-                <div key={t.tn} className={styles.type}>
-                  <span className={styles.tn}>{t.tn}</span>
-                  <span className={styles.td}>{t.td}</span>
-                </div>
-              ))}
-            </div>
-            <aside className={`${styles.answer} rv`}>
-              <p className={styles.q}>Can&rsquo;t I just respond in the Stripe dashboard?</p>
-              <p>
-                You can. Stripe gives you a form. Verdact gives you what the form does not:
-                the proof structure issuers expect for service disputes, a check for what is
-                missing while there is still time to fix it, and a validated,
-                submission-ready packet. <strong>You approve before anything is filed.</strong>
-              </p>
-            </aside>
-          </div>
-        </section>
-
-        {/* ── 10 · CLOSING ─────────────────────────────────────────── */}
-        <section className={styles.closing} aria-labelledby="closing-h">
-          <svg className={styles.closingStrike} viewBox="0 0 26 26" fill="none" aria-hidden="true" focusable="false">
-            <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="rgba(191,227,210,.07)" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
-            <path d="M19.52 6.35 L20.5 4.7" stroke="rgba(191,227,210,.07)" strokeWidth="4.4" strokeLinecap="square" />
-          </svg>
-          <div className="wrap">
-            <div
-              ref={closingRuleRef}
-              className={`${styles.closingRule} rv ${ruleRevealed ? 'in' : ''} ${gapClosed ? 'gap-closed' : ''}`}
-              aria-hidden="true"
-            >
-              <i />
-              <svg width="40" height="40" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-                <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="var(--mint)" strokeWidth="4.4" strokeLinecap="square" strokeLinejoin="miter" />
-                <path d="M19.52 6.35 L20.5 4.7" stroke="var(--mint)" strokeWidth="4.4" strokeLinecap="square" />
-                <path className={styles.bridge} d="M15.64 12.89 L19.52 6.35" stroke="var(--mint)" strokeWidth="4.4" strokeLinecap="square" />
+        {/* ── 12. Closing (dark) ── */}
+        <section className={`${styles.closing} ${styles.dark}`} id="join">
+          <div className={styles.rail}>
+            <div className={styles.closingBaseline} aria-hidden="true">
+              <svg className={styles.sealMark} viewBox="0 0 26 26" width="80" height="80" fill="none" style={{ overflow: 'visible' }}>
+                <path d="M5.5 7.7 L11.6 19.7 L15.64 12.89" stroke="var(--mint)" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" />
+                <path d="M19.52 6.35 L20.5 4.7" stroke="var(--mint)" strokeWidth="3" strokeLinecap="square" />
+                <path d="M15.64 12.89 L19.52 6.35" stroke="var(--mint)" strokeWidth="3" strokeLinecap="square" />
               </svg>
-              <i />
             </div>
-            <p className={styles.closingCap} aria-hidden="true">The gap, closed</p>
-            <h2 id="closing-h">
-              Your dispute already has a deadline. Start the response{' '}
-              <span className={`${styles.key} ${styles.keyStatic}`}>today.</span>
-            </h2>
-            <p className={styles.lede}>
-              Connect Stripe, see your evidence mapped, and approve the response before
-              anything is filed.
+            <p className="eyebrow" data-rise style={{ justifyContent: 'center' }}>The gap, closed</p>
+            <p className={styles.closingPoster} data-rise data-d="1">
+              The win was always there. We just close the <span className={styles.sealWord}>gap.</span>
             </p>
-            <div className={styles.closingCtas}>
-              <Link href="/audit" className={`${styles.btn} ${styles.btnOndeep}`}>
-                Start your response, free
+            <div className={styles.closingCta} data-rise data-d="2">
+              <Link href="/signup" className={`${styles.btn} ${styles.btnOndeep}`}>
+                Start free — no card required <VStrike />
               </Link>
-              <Link href="/#plans" className={`${styles.btn} ${styles.btnGhostOndeep}`}>
-                See what it costs
-              </Link>
+              <p className={styles.closingMicro}>
+                <b>Free during beta.</b> No cut taken. Nothing filed without your approval.
+              </p>
             </div>
-            <p className={styles.ctaNote}>No card required. All paid features are free during beta.</p>
           </div>
         </section>
 
-      </main>
+        {/* ── Footer (abyss bg) ── */}
+        <footer className={styles.foot}>
+          <div className={styles.rail}>
+            <div className={styles.footTop}>
+              <div>
+                <Link href="/" className={styles.footBrand} aria-label="Verdact home">
+                  <VIcon size={22} />
+                  <span>Verdact<b style={{ color: 'var(--mint)' }}>.</b></span>
+                </Link>
+                <p className={styles.footTagline}>A verdict is the truth, delivered.</p>
+              </div>
+              <div className={styles.footLinks}>
+                <div className={styles.footCol}>
+                  <h3>Product</h3>
+                  <ul>
+                    <li><a href="#how">How it works</a></li>
+                    <li><a href="#line">The line</a></li>
+                    <li><a href="#control">Control</a></li>
+                    <li><a href="#plans">Plans</a></li>
+                  </ul>
+                </div>
+                <div className={styles.footCol}>
+                  <h3>Account</h3>
+                  <ul>
+                    <li><Link href="/signup">Start free</Link></li>
+                    <li><Link href="/login">Sign in</Link></li>
+                    <li><Link href="/dashboard">Dashboard</Link></li>
+                  </ul>
+                </div>
+                <div className={styles.footCol}>
+                  <h3>Legal</h3>
+                  <ul>
+                    <li><Link href="/privacy">Privacy</Link></li>
+                    <li><Link href="/terms">Terms</Link></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className={styles.footBase}>
+              <span className={styles.footColophon}>&copy; 2026 Verdact</span>
+              <span className={styles.footLegal}>
+                Not affiliated with or endorsed by Stripe, Inc. Dispute outcomes vary by case; we do not guarantee recovery.
+              </span>
+            </div>
+          </div>
+        </footer>
 
-      <MarketingFooter />
+      </div>
     </>
   );
 }
