@@ -14,3 +14,9 @@ Verdact is an AI-assisted dispute resolution platform built specifically for B2B
 - [Verdact Homepage](https://www.verdact.io/) - Landing page with positioning, how it works, and waitlist registration.
 - [VAMP Threshold Checker](https://www.verdact.io/tools/vamp-check) - Free calculator to analyze standing dispute rates against the standard 0.75% network line.
 - [Dispute Audit Tool](https://www.verdact.io/audit) - Self-serve tool to calculate a dispute score and get detailed recommendations.
+
+## Social & Contact
+
+- [LinkedIn](https://www.linkedin.com/company/verdact/)
+- [X / Twitter](https://x.com/verdact_io)
+- Email: support@verdact.io

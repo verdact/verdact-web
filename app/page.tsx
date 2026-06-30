@@ -21,6 +21,15 @@ const ORG_SCHEMA = {
   name: 'Verdact',
   url: 'https://www.verdact.io/',
   logo: 'https://www.verdact.io/favicon.svg',
+  sameAs: [
+    'https://www.linkedin.com/company/verdact/',
+    'https://x.com/verdact_io',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'support@verdact.io',
+    contactType: 'customer support',
+  },
 };
 
 const APP_SCHEMA = {
