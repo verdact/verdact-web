@@ -46,6 +46,7 @@ export default function RootLayout({
       className={`h-full antialiased ${schibsted.variable}`}
     >
       <head>
+        <link rel="llms" href="/llms.txt" />
         {/* Resolve the app theme before first paint — prevents FOUC and makes
             system-dark deterministic. An explicit Light/Dark choice wins; with
             no stored choice we follow the OS via matchMedia and set the

@@ -1,0 +1,16 @@
+# Verdact
+
+Verdact is an AI-assisted dispute resolution platform built specifically for B2B SaaS, agencies, freelancers, and service businesses using Stripe. It helps merchants turn delivered work into structured, bank-ready dispute evidence.
+
+## Core Capabilities
+
+- **Stripe Connect Integration**: Connects securely to Stripe to read disputes, backfill historical details, and map evidence.
+- **Evidence Record Workbench**: A guided, progressive-disclosure interface that organizes evidence into structured categories (Identity, Activity, Network, App Metadata, Policy, and Payment).
+- **VAMP Monitor**: Tracks the merchant's standing dispute rate against the Stripe 0.75% monitoring threshold (Visa/Mastercard monitoring programs).
+- **Audit Funnel**: A value-first funnel that scores a prospect's dispute risk based on historical dispute rates.
+
+## Key Resources
+
+- [Verdact Homepage](https://www.verdact.io/) - Landing page with positioning, how it works, and waitlist registration.
+- [VAMP Threshold Checker](https://www.verdact.io/tools/vamp-check) - Free calculator to analyze standing dispute rates against the standard 0.75% network line.
+- [Dispute Audit Tool](https://www.verdact.io/audit) - Self-serve tool to calculate a dispute score and get detailed recommendations.

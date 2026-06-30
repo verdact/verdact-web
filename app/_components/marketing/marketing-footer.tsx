@@ -10,7 +10,7 @@ const PRODUCT_LINKS = [
 
 const ACCOUNT_LINKS = [
   { label: 'Sign in', href: '/login' },
-  { label: 'support@verdact.io', href: 'mailto:support@verdact.io' },
+  { label: 'Contact Support', href: 'mailto:support@verdact.io' },
   { label: 'Terms', href: '/terms' },
   { label: 'Privacy', href: '/privacy' },
 ];
