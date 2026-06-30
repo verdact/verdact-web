@@ -60,9 +60,7 @@ function VStrike({ size = 15 }: { size?: number }) {
 
 export function HomepageClient() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [instrBig, setInstrBig] = useState('0.31%');
   const [exhibitIn, setExhibitIn] = useState(false);
-  const [provCount, setProvCount] = useState(7);
 
   const mastRef = useRef<HTMLElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -74,35 +72,45 @@ export function HomepageClient() {
   const heroH1Ref = useRef<HTMLHeadingElement>(null);
   const instrRef = useRef<HTMLElement>(null);
   const instColRef = useRef<SVGGElement>(null);
+  const instrTextRef = useRef<SVGTextElement>(null);
   const holdDotRef = useRef<SVGCircleElement>(null);
   const exhibitRef = useRef<HTMLDivElement>(null);
+  const provCountRef = useRef<HTMLSpanElement>(null);
 
   // Scroll-driven spine + masthead transition
   useEffect(() => {
     let heroH = 0;
+    let spineHeightPx = 0;
+    let totalScrollable = 1;
     let ticking = false;
     let brkSealed = false;
     let sealed = false;
     let motionOn = false;
 
+    // Cache layout-dependent measurements once per resize/content-change
+    // instead of forcing a layout read on every scroll frame.
     function measure() {
       if (heroRef.current) heroH = heroRef.current.offsetHeight;
+      if (pageRef.current) {
+        spineHeightPx = pageRef.current.scrollHeight;
+        totalScrollable = Math.max(1, spineHeightPx - window.innerHeight);
+      }
     }
 
     function frame() {
       ticking = false;
+      // ---- reads ----
       const y = window.scrollY;
-      mastRef.current?.classList.toggle('scrolled', y > heroH - 80);
+      const past = y > heroH - 80;
+      // ---- writes ----
+      mastRef.current?.classList.toggle('scrolled', past);
 
-      if (!motionOn || !spineFillRef.current || !pageRef.current) return;
-      const total = pageRef.current.scrollHeight - window.innerHeight;
-      if (total <= 0) return;
-      const prog = Math.min(1, Math.max(0, y / total));
+      if (!motionOn || !spineFillRef.current || !spineHeadRef.current) return;
+      const prog = Math.min(1, Math.max(0, y / totalScrollable));
+      // transform-only writes (compositor thread, no reflow)
       spineFillRef.current.style.transform = `translateX(-50%) scaleY(${prog.toFixed(4)})`;
-      if (spineHeadRef.current) {
-        spineHeadRef.current.style.top = `${(prog * 100).toFixed(3)}%`;
-        if (y > 40) spineHeadRef.current.classList.add('live');
-      }
+      spineHeadRef.current.style.transform = `translateY(${(prog * spineHeightPx).toFixed(1)}px)`;
+      if (y > 40) spineHeadRef.current.classList.add('live');
       if (!brkSealed && prog > 0.155 && spineBreakRef.current) {
         spineBreakRef.current.classList.add('sealed');
         brkSealed = true;
@@ -117,22 +125,39 @@ export function HomepageClient() {
       if (!ticking) { ticking = true; requestAnimationFrame(frame); }
     }
 
+    function onResize() {
+      measure();
+      onScroll();
+    }
+
     measure();
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', () => { measure(); onScroll(); }, { passive: true });
-    frame();
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // Catches height changes onResize misses: FAQ <details> expanding,
+    // web-font swap reflowing text, or any other content-driven resize —
+    // without this, totalScrollable goes stale and the spine desyncs from
+    // actual scroll position.
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined' && pageRef.current) {
+      ro = new ResizeObserver(() => { measure(); onScroll(); });
+      ro.observe(pageRef.current);
+    }
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduced) {
       motionOn = true;
       document.documentElement.classList.add('motion');
-      setInstrBig('0.00%');
       measure();
-      frame();
     }
+    frame();
+
+    document.fonts?.ready?.then(() => { measure(); onScroll(); });
 
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      ro?.disconnect();
       document.documentElement.classList.remove('motion');
     };
   }, []);
@@ -189,7 +214,9 @@ export function HomepageClient() {
           let n = 0;
           const iv = setInterval(() => {
             n++;
-            setInstrBig((Math.floor(Math.random() * 100) / 100).toFixed(2) + '%');
+            if (instrTextRef.current) {
+              instrTextRef.current.textContent = (Math.floor(Math.random() * 100) / 100).toFixed(2) + '%';
+            }
             if (n >= 14) {
               clearInterval(iv);
               let start: number | null = null;
@@ -197,7 +224,9 @@ export function HomepageClient() {
                 if (!start) start = ts;
                 const p = Math.min(1, (ts - start) / 820);
                 const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-                setInstrBig((0.31 * eased).toFixed(2) + '%');
+                if (instrTextRef.current) {
+                  instrTextRef.current.textContent = (0.31 * eased).toFixed(2) + '%';
+                }
                 if (p < 1) requestAnimationFrame(step);
               }
               requestAnimationFrame(step);
@@ -229,8 +258,10 @@ export function HomepageClient() {
         if (!e.isIntersecting) return;
         io.unobserve(e.target);
         setExhibitIn(true);
-        setProvCount(0);
-        [1, 2, 3, 4, 5, 6, 7].forEach((v, i) => setTimeout(() => setProvCount(v), i * 90));
+        if (provCountRef.current) provCountRef.current.textContent = '0';
+        [1, 2, 3, 4, 5, 6, 7].forEach((v, i) => setTimeout(() => {
+          if (provCountRef.current) provCountRef.current.textContent = String(v);
+        }, i * 90));
       });
     }, { threshold: 0.3 });
     io.observe(el);
@@ -394,7 +425,7 @@ export function HomepageClient() {
                       {/* Labels */}
                       <text x="14" y="118" fill="var(--gap-on-deep)" fontSize="27" fontWeight="800" letterSpacing="-0.02em">0.75%</text>
                       <text x="15" y="139" fill="var(--on-deep-2)" fontSize="11" fontWeight="700" letterSpacing="0.1em">STRIPE&apos;S PUBLISHED LINE</text>
-                      <text x="12" y="290" fill="var(--mint)" fontSize="50" fontWeight="800" letterSpacing="-0.035em" style={{ fontVariantNumeric: 'tabular-nums' }}>{instrBig}</text>
+                      <text ref={instrTextRef} x="12" y="290" fill="var(--mint)" fontSize="50" fontWeight="800" letterSpacing="-0.035em" style={{ fontVariantNumeric: 'tabular-nums' }}>0.31%</text>
                       <circle cx="18" cy="311" r="4" fill="var(--verdict-bright)" />
                       <text x="30" y="315" fill="var(--on-deep-2)" fontSize="11" fontWeight="700" letterSpacing="0.12em">YOU · WATCHED</text>
                     </svg>
@@ -461,7 +492,7 @@ export function HomepageClient() {
                     and laid out the way an issuer reads it.
                   </p>
                   <div className={styles.countLine} data-rise data-d="2">
-                    <span className={styles.countN}>{provCount}</span>
+                    <span ref={provCountRef} className={styles.countN}>7</span>
                     <span className={styles.countOf}>of 8 provable</span>
                   </div>
                   <p className={styles.countCap}>
