@@ -1963,6 +1963,10 @@ html.js .rv-row.in {
   color: var(--ink);
   outline: none;
   overflow-x: clip;
+  /* Reserve clearance for the fixed "Send feedback" FAB (bottom-right:
+     var(--space-5) offset + 44px tall). Without this the FAB sits on top of the
+     last rows of content when scrolled to the bottom. = offset + height + gap. */
+  padding-bottom: calc(44px + var(--space-5) * 2);
 }
 
 /* ── Mobile top bar ───────────────────────────────────────────────────────── */

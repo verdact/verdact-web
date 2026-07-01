@@ -52,6 +52,17 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* On narrow screens the app shows a fixed 56px bottom nav in the bottom band.
+   The FAB's default bottom offset (var(--space-5)) would place it ON TOP of a
+   nav tab, covering it. Lift the FAB clear of that band. Also applies on
+   marketing/auth (no bottom nav there), where sitting slightly higher is
+   harmless. env(safe-area-inset-bottom) keeps it clear of the iOS home bar. */
+@media (max-width: 1023px) {
+  .fab {
+    bottom: calc(56px + var(--space-3) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Collapse to an icon-only 44px target under 560px. */
 @media (max-width: 560px) {
   .fab {
