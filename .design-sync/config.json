@@ -1,0 +1,7 @@
+{
+  "shape": "package",
+  "pkg": "verdact",
+  "globalName": "Verdact",
+  "cssEntry": ".design-sync/verdact-tokens.css",
+  "readmeHeader": ".design-sync/conventions.md"
+}
