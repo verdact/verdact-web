@@ -1,0 +1,136 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: 4rem;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: var(--ink);
+}
+
+.paragraph {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  margin-bottom: 1.5rem;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  background-color: var(--panel);
+  padding: 1.5rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--hairline);
+}
+
+.featureIcon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+  color: var(--verdict);
+}
+
+.featureContent h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+
+.featureContent p {
+  color: var(--ink-2);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.ctaBox {
+  background-color: var(--panel);
+  border: 2px solid var(--verdict);
+  border-radius: var(--radius-md, 14px);
+  padding: 3rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.ctaTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+.ctaText {
+  color: var(--ink-2);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.ctaButton {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background-color: var(--verdict);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-sm, 8px);
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: opacity 0.2s;
+}
+
+.ctaButton:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.25rem;
+  }
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+}

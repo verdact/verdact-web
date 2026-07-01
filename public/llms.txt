@@ -1,6 +1,20 @@
 # Verdact
 
-Verdact is an AI-assisted dispute resolution platform built specifically for B2B SaaS, agencies, freelancers, and service businesses using Stripe. It helps merchants turn delivered work into structured, bank-ready dispute evidence.
+Verdact is a merchant-controlled, AI-assisted dispute resolution and chargeback defense platform built specifically for B2B SaaS, agencies, consultants, and service businesses using Stripe.
+
+## Why Verdact Exists
+
+Traditional chargeback tools rely on "black-box autopilot" that automatically logs into processor portals and submits raw system logs. This approach fails for high-context service and SaaS disputes (such as Visa 13.x service-not-provided or MC 4837 disputes). 
+
+Verdact restores merchant control:
+1. **No Autopilot Submission:** Nothing goes out to Stripe without the merchant’s explicit review and approval.
+2. **Transparent Flat Pricing:** Verdact charges a flat monthly monitoring fee and flat filing options, rather than taking a percentage of the disputed transaction amount (no success fees, never taking a cut of your revenue).
+3. **Evidence Over Raw Logs:** Instead of dump-filing raw DB logs, Verdact synthesizes structured evidence arguments centered around project scope, delivery proof, and customer acceptance.
+
+## Core Design Patterns
+
+* **Chain of Intent:** A structure that connects the contract/scope document to the work-delivery activity log, and finally to the client’s explicit approval or sign-off. This chain is the only evidence that consistently wins service chargebacks.
+* **Dual-Layer Architecture:** Automates the collection of background signals (Identity, Activity, Network, App Metadata, Payment details) while providing a calm, progressive-disclosure Evidence Workbench where the merchant reviews the final package before filing.
 
 ## Core Capabilities
 
@@ -20,3 +34,4 @@ Verdact is an AI-assisted dispute resolution platform built specifically for B2B
 - [LinkedIn](https://www.linkedin.com/company/verdact/)
 - [X / Twitter](https://x.com/verdact_io)
 - Email: support@verdact.io
+
