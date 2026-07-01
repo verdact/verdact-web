@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!detail) return {};
 
   const title = `Verdact vs ${detail.name}: Best Stripe Dispute Alternative`;
-  const description = `Compare Verdact and ${detail.name}. Learn why B2B SaaS and service agencies choose Verdact for flat-fee pricing and merchant-controlled chargeback defense.`;
+  const description = `Compare Verdact and ${detail.name}. Learn why B2B SaaS and service agencies choose Verdact for merchant-controlled chargeback defense.`;
 
   return {
     title,
@@ -42,19 +42,13 @@ export default async function competitorDetailPage({ params }: Props) {
 
   const SCHEMA = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
+    '@type': 'SoftwareApplication',
     name: 'Verdact',
-    description: 'Flat-fee, merchant-controlled Stripe dispute resolution and chargeback defense platform.',
+    description: 'Merchant-controlled Stripe dispute resolution and chargeback defense platform.',
+    applicationCategory: 'BusinessApplication',
     brand: {
       '@type': 'Brand',
       name: 'Verdact',
-    },
-    offers: {
-      '@type': 'Offer',
-      price: '49',
-      priceCurrency: 'USD',
-      priceValidUntil: '2027-01-01',
-      url: 'https://www.verdact.io/',
     },
   };
 
@@ -123,7 +117,7 @@ export default async function competitorDetailPage({ params }: Props) {
         <section className={styles.section}>
           <h2 className={styles.sectionHeading}>Why SaaS Founders Choose Verdact</h2>
           <p className={styles.paragraph}>
-            Unlike generic chargeback tools that charge a percentage of your won revenue, Verdact believes you should keep the money you earn. We charge a flat monthly fee for full monitoring and dynamic evidence compilation, ensuring your cost is predictable as you scale.
+            Unlike generic chargeback tools that lock you into one pricing model, Verdact lets you choose how you pay for VAMP monitoring and evidence compilation, so a single high-value win isn't automatically shrunk by someone else's success fee.
           </p>
           <p className={styles.paragraph}>
             Furthermore, automated "autopilot" tools often submit weak, template-based evidence to the card networks. For high-context service and software disputes, a single copy-paste response is not enough. Verdact constructs a structured <em>Chain of Intent</em> evidence record matching your exact deliverables, access logs, and communications.
@@ -144,7 +138,7 @@ export default async function competitorDetailPage({ params }: Props) {
             </Link>
           </div>
           <p className={styles.ctaTrust}>
-            Free during beta. Nothing is filed without you. We never take a cut.
+            Free during beta. Nothing is filed without you, and we take no cut while you're testing.
           </p>
         </section>
       </main>

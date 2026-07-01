@@ -32,6 +32,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/tools/vamp-check`, lastModified, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/signup`, lastModified, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/login`, lastModified, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/use-cases/saas`, lastModified, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/use-cases/agencies`, lastModified, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/privacy`, lastModified, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE}/terms`, lastModified, changeFrequency: 'yearly', priority: 0.2 },
     ...reasonCodeEntries,

@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   description:
     'Compare Verdact with Chargeflow, Disputifier, and Revano. Discover flat-fee, merchant-controlled alternatives for SaaS and agency dispute resolution.',
   alternates: { canonical: 'https://www.verdact.io/alternatives' },
+  openGraph: {
+    title: 'Stripe Dispute Software Alternatives & Comparisons | Verdact',
+    description: 'Compare the leading Stripe chargeback software solutions to find the best fit for your SaaS or agency.',
+    url: 'https://www.verdact.io/alternatives',
+    siteName: 'Verdact',
+    type: 'website',
+  },
 };
 
 const ORG_SCHEMA = {

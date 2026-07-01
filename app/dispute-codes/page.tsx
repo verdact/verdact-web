@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   description:
     'Complete guide to Visa, Mastercard, and American Express dispute reason codes on Stripe. Learn what they mean, how to gather evidence, and how to defend them.',
   alternates: { canonical: 'https://www.verdact.io/dispute-codes' },
+  openGraph: {
+    title: 'Stripe Dispute & Chargeback Reason Codes Reference | Verdact',
+    description: 'Complete guide to Visa, Mastercard, and American Express dispute reason codes on Stripe.',
+    url: 'https://www.verdact.io/dispute-codes',
+    siteName: 'Verdact',
+    type: 'website',
+  },
 };
 
 const ORG_SCHEMA = {
