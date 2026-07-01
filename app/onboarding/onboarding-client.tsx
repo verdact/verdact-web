@@ -68,7 +68,14 @@ export function OnboardingClient({
   }, [step]);
 
   return (
-    <div className={s.shell}>
+    // data-app-surface opts the setup flow into the app's theme tokens so it
+    // follows the OS color scheme (and any stored Light/Dark choice) exactly
+    // like the dashboard — instead of rendering hardcoded light. The setup flow
+    // has no theme toggle by design; this only makes it honor system/stored
+    // preference. Dark tokens are scoped to .app-shell / [data-app-surface] in
+    // globals.css, so adding the hook here (without the .app-shell nav chrome)
+    // is the minimal, correct fix.
+    <div className={s.shell} data-app-surface>
       <header className={s.topbar}>
         <span className={s.brand}>
           <span className={s.brandMark} aria-hidden="true">
