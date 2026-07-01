@@ -1,0 +1,95 @@
+<!-- @dsCard group="Foundations" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verdact Tokens</title>
+  <link rel="stylesheet" href="../../../styles.css" />
+  <style>
+    body { margin: 0; background: var(--paper); color: var(--ink);
+      font-family: var(--font-body); padding: var(--space-8); }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--ink-3); margin: var(--space-8) 0 var(--space-4);
+      font-family: var(--font-mono); }
+    h2:first-of-type { margin-top: 0; }
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+      gap: var(--space-3); }
+    .sw { border: 1px solid var(--hairline); border-radius: var(--radius-card);
+      overflow: hidden; box-shadow: var(--elev-1); }
+    .sw .chip { height: 56px; }
+    .sw .meta { padding: var(--space-3); font-size: 12px; }
+    .sw .name { font-weight: 700; color: var(--ink); }
+    .sw .val { color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+    .type-row { display: flex; align-items: baseline; gap: var(--space-4);
+      padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); }
+    .type-row .lbl { width: 90px; color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+    .space-row { display: flex; align-items: center; gap: var(--space-4); padding: 6px 0; }
+    .space-row .lbl { width: 90px; color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+    .space-row .bar { height: 14px; background: var(--verdict); border-radius: 3px; }
+    .radii { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+    .radii .r { width: 88px; height: 64px; background: var(--verdict-tint);
+      border: 1px solid var(--verdict); display: grid; place-items: end center;
+      font-family: var(--font-mono); font-size: 10px; color: var(--verdict-deep); padding-bottom: 4px; }
+    .elev { display: flex; gap: var(--space-6); flex-wrap: wrap; }
+    .elev .e { width: 120px; height: 72px; background: var(--panel); border-radius: var(--radius-card);
+      display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); }
+  </style>
+</head>
+<body>
+  <h2>Color — the two-color law</h2>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:var(--verdict)"></div><div class="meta"><div class="name">verdict</div><div class="val">#0A5C44 · action</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--verdict-press)"></div><div class="meta"><div class="name">verdict-press</div><div class="val">hover/active</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--verdict-deep)"></div><div class="meta"><div class="name">verdict-deep</div><div class="val">deep</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--verdict-tint)"></div><div class="meta"><div class="name">verdict-tint</div><div class="val">soft fill</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--mint)"></div><div class="meta"><div class="name">mint</div><div class="val">light accent</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--gap)"></div><div class="meta"><div class="name">gap</div><div class="val">#D14418 · missing only</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--gap-text)"></div><div class="meta"><div class="name">gap-text</div><div class="val">text-safe</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--gap-tint)"></div><div class="meta"><div class="name">gap-tint</div><div class="val">soft fill</div></div></div>
+  </div>
+
+  <h2>Surfaces &amp; ink</h2>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:var(--paper)"></div><div class="meta"><div class="name">paper</div><div class="val">base surface</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--paper-2)"></div><div class="meta"><div class="name">paper-2</div><div class="val">sunken</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--panel)"></div><div class="meta"><div class="name">panel</div><div class="val">raised</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--ink)"></div><div class="meta"><div class="name" style="color:var(--paper)">ink</div><div class="val">primary text</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--ink-2)"></div><div class="meta"><div class="name">ink-2</div><div class="val">secondary</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--ink-3)"></div><div class="meta"><div class="name">ink-3</div><div class="val">muted</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--hairline)"></div><div class="meta"><div class="name">hairline</div><div class="val">border</div></div></div>
+    <div class="sw"><div class="chip" style="background:var(--watch)"></div><div class="meta"><div class="name">watch</div><div class="val">monitoring</div></div></div>
+  </div>
+
+  <h2>Type — Schibsted Grotesk</h2>
+  <div class="type-row"><span class="lbl">48 / 800</span><span style="font-size:48px;font-weight:800;letter-spacing:-.02em">Win the dispute</span></div>
+  <div class="type-row"><span class="lbl">28 / 700</span><span style="font-size:28px;font-weight:700;letter-spacing:-.01em">Keep the account</span></div>
+  <div class="type-row"><span class="lbl">16 / 400</span><span style="font-size:16px">Body — the proof you need is real, just scattered.</span></div>
+  <div class="type-row"><span class="lbl">mono 12</span><span style="font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)">Reason code 13.1</span></div>
+
+  <h2>Spacing scale</h2>
+  <div class="space-row"><span class="lbl">space-2 · 8</span><span class="bar" style="width:8px"></span></div>
+  <div class="space-row"><span class="lbl">space-4 · 16</span><span class="bar" style="width:16px"></span></div>
+  <div class="space-row"><span class="lbl">space-6 · 24</span><span class="bar" style="width:24px"></span></div>
+  <div class="space-row"><span class="lbl">space-8 · 32</span><span class="bar" style="width:32px"></span></div>
+  <div class="space-row"><span class="lbl">space-12 · 48</span><span class="bar" style="width:48px"></span></div>
+  <div class="space-row"><span class="lbl">space-16 · 64</span><span class="bar" style="width:64px"></span></div>
+
+  <h2>Radius</h2>
+  <div class="radii">
+    <div class="r" style="border-radius:var(--radius-chip)">chip 5</div>
+    <div class="r" style="border-radius:var(--radius-input)">input 8</div>
+    <div class="r" style="border-radius:var(--radius-card)">card 12</div>
+    <div class="r" style="border-radius:var(--radius-lg)">lg 16</div>
+    <div class="r" style="border-radius:var(--radius-xl)">xl 18</div>
+    <div class="r" style="border-radius:var(--radius-pill)">pill</div>
+  </div>
+
+  <h2>Elevation</h2>
+  <div class="elev">
+    <div class="e" style="box-shadow:var(--elev-1)">elev-1</div>
+    <div class="e" style="box-shadow:var(--elev-2)">elev-2</div>
+    <div class="e" style="box-shadow:var(--elev-pop)">elev-pop</div>
+  </div>
+</body>
+</html>
